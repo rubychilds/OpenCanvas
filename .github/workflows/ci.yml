@@ -57,6 +57,11 @@ jobs:
       - name: MCP stdio smoke test
         run: node scripts/smoke-mcp.mjs
 
+      - name: opencanvas init smoke test
+        run: |
+          pnpm --filter @opencanvas/cli build
+          node scripts/smoke-init.mjs
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 

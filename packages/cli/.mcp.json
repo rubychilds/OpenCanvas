@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "opencanvas": {
+      "command": "pnpm",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

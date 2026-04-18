@@ -10,7 +10,7 @@ OpenCanvas is a local-first, HTML/CSS-native visual canvas that AI coding agents
 
 AI coding agents currently generate frontend UI **blind**. They produce React components from text prompts alone, with no ability to see a visual design, iterate spatially, or maintain layout relationships. Design engineers spend 2–4 hours a day in prompt → preview → re-prompt cycles getting agents to match their visual intent.
 
-Proprietary tools (Paper.design, Pencil.dev) are solving pieces of this problem, but they lock the design-to-code pipeline into a vendor dependency at exactly the moment the ecosystem is standardizing on an open protocol (MCP). OpenCanvas is the open-source answer: **MIT-licensed, local-first, self-hostable, built on existing open-source foundations** (GrapesJS, the MCP TypeScript SDK, html-to-image).
+Two proprietary tools are closing this gap from different angles. **Paper.design** ships an HTML/CSS-native canvas — the design *is* the production code — but as a hosted SaaS product tied to its own backend. **Pencil.dev** ships a local-first, git-native canvas that any agent can drive over MCP — but the design file is a vector format in a closed renderer, not the HTML/CSS that ships to production. OpenCanvas combines both bets: **HTML/CSS-native like Paper, local-first and git-native like Pencil, MIT-licensed**, and built on open-source foundations (GrapesJS, the MCP TypeScript SDK, html-to-image).
 
 ## How it works
 
@@ -54,7 +54,16 @@ Opens the canvas at http://localhost:3000. The WebSocket bridge listens on `127.
 
 ### Connect an AI agent
 
-**Claude Code (user scope):**
+**Auto-configure (Claude Code / Cursor / VS Code):**
+
+```bash
+pnpm --filter @opencanvas/cli build       # one-time
+node packages/cli/dist/index.js init      # detects IDE dirs, writes MCP config
+```
+
+This writes `.mcp.json` (Claude Code / generic), `.cursor/mcp.json`, or `.vscode/mcp.json` in the current project depending on which IDE config dirs are present. Use `--ide <name>` to pick explicitly. When published to npm, this becomes `npx opencanvas init`.
+
+**Manual (Claude Code, user scope):**
 
 ```bash
 claude mcp add opencanvas --scope user \
@@ -63,8 +72,6 @@ claude mcp add opencanvas --scope user \
 
 Start a new Claude Code session, then `/mcp` should list `opencanvas` with all v0.1 tools.
 
-**Cursor / VS Code / Codex:** point the MCP config at the `opencanvas-mcp` stdio binary (auto-generation via `npx opencanvas init` is on the roadmap).
-
 ## Packages
 
 | Package | Purpose |
@@ -72,6 +79,7 @@ Start a new Claude Code session, then `/mcp` should list `opencanvas` with all v
 | [`packages/app`](./packages/app) | Vite + React SPA hosting the GrapesJS canvas. Embeds a WebSocket hub (port 29170) that relays messages between the MCP server and the browser. |
 | [`packages/mcp-server`](./packages/mcp-server) | Standalone stdio MCP server. Registers all tools, forwards calls over WebSocket to the canvas. |
 | [`packages/bridge`](./packages/bridge) | Shared Zod schemas for the WS wire protocol and MCP tool I/O. |
+| [`packages/cli`](./packages/cli) | `opencanvas init` — detects the installed IDE(s) and writes the right MCP config. |
 
 ## MCP tools (v0.1)
 

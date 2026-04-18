@@ -1,0 +1,21 @@
+{
+  "name": "@opencanvas/cli",
+  "version": "0.1.0-dev",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "opencanvas": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

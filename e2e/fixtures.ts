@@ -2,6 +2,7 @@ import { test as base, expect, type Page } from "@playwright/test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { McpTestClient } from "./mcp-client";
 
 const PROJECT_FILE = resolve(__dirname, "../.opencanvas.json");
 const ARTIFACTS_DIR = resolve(__dirname, "../.e2e-artifacts");
@@ -18,6 +19,8 @@ export interface EditorAPI {
 interface Fixtures {
   /** Starts on a clean canvas (no saved project on disk). */
   freshApp: Page;
+  /** Bridge peer connected as role="mcp-server". */
+  mcp: McpTestClient;
 }
 
 export const test = base.extend<Fixtures>({
@@ -30,6 +33,13 @@ export const test = base.extend<Fixtures>({
     await use(page);
 
     if (existsSync(PROJECT_FILE)) await rm(PROJECT_FILE);
+  },
+
+  mcp: async ({ freshApp: _page }, use) => {
+    const client = new McpTestClient();
+    await client.connect();
+    await use(client);
+    client.dispose();
   },
 });
 

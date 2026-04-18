@@ -15,12 +15,17 @@ interface Peer {
 
 /**
  * Runs a WebSocket hub on BRIDGE_PORT that relays messages between the MCP
- * server process (role: "mcp-server") and the browser canvas (role: "canvas").
- * Requests from mcp-server → canvas; responses from canvas → mcp-server.
+ * server process(es) (role: "mcp-server") and the browser canvas (role:
+ * "canvas"). The canvas is single; any number of mcp-server peers may connect
+ * concurrently. Requests are forwarded to the canvas along with the requester's
+ * socket, and responses are routed back to the originating mcp-server peer by
+ * pending request id.
  */
 export function bridgeServerPlugin(): Plugin {
   let wss: WebSocketServer | null = null;
   const peers = new Map<WebSocket, Peer>();
+  /** requestId → socket that sent the request, for response routing. */
+  const pending = new Map<string, WebSocket>();
 
   const peerByRole = (role: BridgeRole): Peer | undefined => {
     for (const p of peers.values()) if (p.role === role) return p;
@@ -53,10 +58,14 @@ export function bridgeServerPlugin(): Plugin {
         if (!msg.success) return;
 
         if (msg.data.type === "hello") {
-          const existing = peerByRole(msg.data.role);
-          if (existing && existing.socket !== socket) {
-            existing.socket.close(4000, "replaced by new peer");
-            peers.delete(existing.socket);
+          // Canvas is singleton — new canvas kicks out the previous one.
+          // mcp-server peers are multiplexed; multiple may connect concurrently.
+          if (msg.data.role === "canvas") {
+            const existing = peerByRole("canvas");
+            if (existing && existing.socket !== socket) {
+              existing.socket.close(4000, "replaced by new canvas");
+              peers.delete(existing.socket);
+            }
           }
           peers.set(socket, { role: msg.data.role, socket });
           console.log(`[opencanvas:bridge] peer connected: ${msg.data.role}`);
@@ -78,14 +87,18 @@ export function bridgeServerPlugin(): Plugin {
             socket.send(JSON.stringify(error));
             return;
           }
+          pending.set(msg.data.id, socket);
           canvas.socket.send(raw.toString());
           return;
         }
 
         if (msg.data.type === "response" && me.role === "canvas") {
-          const mcp = peerByRole("mcp-server");
-          if (!mcp) return;
-          mcp.socket.send(raw.toString());
+          const target = pending.get(msg.data.id);
+          if (!target) return;
+          pending.delete(msg.data.id);
+          if (target.readyState === target.OPEN) {
+            target.send(raw.toString());
+          }
           return;
         }
       });
@@ -94,6 +107,11 @@ export function bridgeServerPlugin(): Plugin {
         const me = peers.get(socket);
         if (me) console.log(`[opencanvas:bridge] peer disconnected: ${me.role}`);
         peers.delete(socket);
+        // Drop any pending requests originating from this socket — no one left
+        // to receive the response.
+        for (const [id, sender] of pending) {
+          if (sender === socket) pending.delete(id);
+        }
       });
     });
   };
@@ -102,6 +120,7 @@ export function bridgeServerPlugin(): Plugin {
     if (!wss) return;
     for (const { socket } of peers.values()) socket.close();
     peers.clear();
+    pending.clear();
     wss.close();
     wss = null;
   };

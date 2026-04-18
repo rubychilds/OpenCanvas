@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "opencanvas": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "opencanvas-mcp"
+      ]
+    }
+  }
+}
