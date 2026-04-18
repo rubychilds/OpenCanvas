@@ -33,3 +33,7 @@ playwright-report/
 
 # Claude / local tooling caches
 .claude/cache/
+
+# Local research clones — external repos pulled in for reading, not vendored.
+# Keep their own .git intact and out of our tree.
+penpot/
