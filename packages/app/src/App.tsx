@@ -5,6 +5,7 @@ import type { Editor } from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 
 import { editorOptions } from "./canvas/editor-options.js";
+import { attachPasteImport, importPastedHtml } from "./canvas/paste-import.js";
 import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
 import { BridgeClient } from "./bridge/client.js";
 import { buildHandlers } from "./bridge/handlers.js";
@@ -58,6 +59,7 @@ export function App() {
         return data;
       },
       clear: () => editor.Components.clear(),
+      paste: (html: string) => importPastedHtml(editor, html),
     };
     window.dispatchEvent(new CustomEvent("opencanvas:ready"));
 
@@ -83,7 +85,9 @@ export function App() {
     const client = new BridgeClient(handlers, { onStatus: setConnected });
     client.connect();
 
-    disposersRef.current.push(disposePersist, () => client.dispose());
+    const disposePaste = attachPasteImport(editor);
+
+    disposersRef.current.push(disposePersist, () => client.dispose(), disposePaste);
 
     requestAnimationFrame(() => {
       (editor.Styles as unknown as { __trgCustom?: () => void }).__trgCustom?.();
