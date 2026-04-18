@@ -11,6 +11,10 @@ export const editorOptions: EditorConfig = {
   canvas: {
     scripts: [TAILWIND_V4_CDN],
     styles: [],
+    // Spatial, pannable/zoomable canvas that hosts multiple artboard frames
+    // at their own world-coordinates (x/y/width/height per addFrame call).
+    // Flagged experimental in GrapesJS 0.22 but is load-bearing for Epic 5.
+    infiniteCanvas: true,
   },
   blockManager: {
     blocks: DEFAULT_BLOCKS,
