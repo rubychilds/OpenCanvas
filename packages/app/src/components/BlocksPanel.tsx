@@ -6,7 +6,7 @@ export function BlocksPanel() {
   const editor = useEditorMaybe();
   return (
     <BlocksProvider>
-      {({ mapCategoryBlocks }) => (
+      {({ mapCategoryBlocks, dragStart, dragStop }) => (
         <div className="flex flex-col gap-3">
           {Array.from(mapCategoryBlocks.entries()).map(([category, blocks]) => (
             <section key={category} className="flex flex-col">
@@ -30,6 +30,16 @@ export function BlocksPanel() {
                       }
                       title={block.getLabel()}
                       data-block-id={id}
+                      // Drag-to-canvas: hand the native pointer event to GrapesJS's
+                      // BlockManager. It tracks pointermove on the canvas iframe and
+                      // creates the component on drop. Click-to-insert (below) still
+                      // fires for press-and-release with no movement.
+                      onPointerDown={(e) => {
+                        dragStart(block, e.nativeEvent);
+                      }}
+                      onPointerUp={() => {
+                        dragStop(false);
+                      }}
                       onClick={() => {
                         const content = block.get("content");
                         if (typeof content === "string") editor?.addComponents(content);
