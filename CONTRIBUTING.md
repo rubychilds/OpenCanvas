@@ -51,9 +51,15 @@ pnpm typecheck              # all packages
 pnpm --filter @opencanvas/bridge build
 pnpm smoke:bridge           # WebSocket round-trip (no browser)
 node scripts/smoke-mcp.mjs  # MCP stdio handshake + tools/list
+pnpm test:e2e               # Playwright E2E tests (boots the dev server)
+pnpm test:e2e:ui            # Same, with the Playwright UI runner
 ```
 
-The CI pipeline runs the same checks on every push and PR.
+The CI pipeline runs the same checks on every push and PR. Before running Playwright for the first time, install the browser: `pnpm exec playwright install chromium`.
+
+### E2E test layout
+
+End-to-end tests live in [`e2e/`](./e2e) and run against a real browser booting `pnpm dev`. They exercise the app through `window.__opencanvas` (an editor handle exposed at runtime in dev) to keep interactions deterministic; iframe drag-drop is avoided because it's fragile. Each story has its own spec — e.g. `story-1.4-block-palette.spec.ts`.
 
 ## Code conventions
 

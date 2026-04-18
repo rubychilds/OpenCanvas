@@ -1,58 +1,127 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import GjsEditor from "@grapesjs/react";
+import grapesjs from "grapesjs";
 import type { Editor } from "grapesjs";
-import { Canvas } from "./canvas/Canvas.js";
+import "grapesjs/dist/css/grapes.min.css";
+
+import { editorOptions } from "./canvas/editor-options.js";
+import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
 import { BridgeClient } from "./bridge/client.js";
 import { buildHandlers } from "./bridge/handlers.js";
+import { Topbar, type SaveStatus } from "./components/Topbar.js";
+import { Shell } from "./components/Shell.js";
 
 export function App() {
   const [connected, setConnected] = useState(false);
-  const [editorReady, setEditorReady] = useState(false);
-  const editorRef = useRef<Editor | null>(null);
-  const clientRef = useRef<BridgeClient | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleEditor = (editor: Editor) => {
-    editorRef.current = editor;
-    setEditorReady(true);
-  };
+  const editorRef = useRef<Editor | null>(null);
+  const disposersRef = useRef<Array<() => void>>([]);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (!editorReady || !editorRef.current) return;
-    const handlers = buildHandlers(editorRef.current);
-    const client = new BridgeClient(handlers, {
-      onStatus: setConnected,
-    });
-    clientRef.current = client;
-    client.connect();
     return () => {
-      client.dispose();
-      clientRef.current = null;
+      disposersRef.current.forEach((fn) => {
+        try {
+          fn();
+        } catch {
+          // ignore
+        }
+      });
+      disposersRef.current = [];
     };
-  }, [editorReady]);
+  }, []);
+
+  const handleReady = useCallback(async (editor: Editor) => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    editorRef.current = editor;
+
+    try {
+      const saved = await loadProject();
+      if (saved) editor.loadProjectData(saved);
+    } catch (err) {
+      console.warn("[opencanvas] load failed:", err);
+    }
+
+    (window as unknown as { __opencanvas?: unknown }).__opencanvas = {
+      editor,
+      addHtml: (html: string) => editor.addComponents(html),
+      getHtml: () => editor.getHtml(),
+      getProjectData: () => editor.getProjectData(),
+      save: () => saveProject(editor.getProjectData()),
+      load: async () => {
+        const data = await loadProject();
+        if (data) editor.loadProjectData(data);
+        return data;
+      },
+      clear: () => editor.Components.clear(),
+    };
+    window.dispatchEvent(new CustomEvent("opencanvas:ready"));
+
+    editor.Keymaps.add("oc:duplicate", "ctrl+d,command+d", () => {
+      editor.runCommand("core:copy");
+      editor.runCommand("core:paste");
+      return undefined;
+    });
+
+    const disposePersist = attachPersistence(editor, {
+      onSaveStart: () => setSaveStatus("saving"),
+      onSaved: () => {
+        setSaveStatus("saved");
+        setSaveError(null);
+      },
+      onError: (err) => {
+        setSaveStatus("error");
+        setSaveError(err.message);
+      },
+    });
+
+    const handlers = buildHandlers(editor);
+    const client = new BridgeClient(handlers, { onStatus: setConnected });
+    client.connect();
+
+    disposersRef.current.push(disposePersist, () => client.dispose());
+
+    requestAnimationFrame(() => {
+      (editor.Styles as unknown as { __trgCustom?: () => void }).__trgCustom?.();
+      (editor.Blocks as unknown as { __trgCustom?: () => void }).__trgCustom?.();
+      (editor.Layers as unknown as { __trgCustom?: () => void }).__trgCustom?.();
+      (editor.Traits as unknown as { __trgCustom?: () => void }).__trgCustom?.();
+    });
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    setSaveStatus("saving");
+    try {
+      await saveProject(editor.getProjectData());
+      setSaveStatus("saved");
+      setSaveError(null);
+    } catch (err) {
+      setSaveStatus("error");
+      setSaveError(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
 
   return (
     <div className="oc-shell">
-      <div className="oc-topbar">
-        <span className="oc-topbar__title">OpenCanvas</span>
-        <span style={{ color: "#5a6270", fontSize: 11 }}>v0.1-dev</span>
-        <div className="oc-topbar__status">
-          <span className={`oc-topbar__dot${connected ? " oc-topbar__dot--connected" : ""}`} />
-          <span>{connected ? "Bridge connected" : "Bridge disconnected"}</span>
-        </div>
-      </div>
-
-      <aside className="oc-panel">
-        <h2 className="oc-panel__title">Layers</h2>
-        <p style={{ color: "#5a6270" }}>Layer tree — coming in Story 1.3</p>
-      </aside>
-
-      <main className="oc-canvas">
-        <Canvas onEditor={handleEditor} />
-      </main>
-
-      <aside className="oc-panel oc-panel--right">
-        <h2 className="oc-panel__title">Style</h2>
-        <p style={{ color: "#5a6270" }}>Style panel — coming in Story 1.3 / 1.6</p>
-      </aside>
+      <Topbar
+        connected={connected}
+        saveStatus={saveStatus}
+        saveError={saveError}
+        onSave={handleSave}
+      />
+      <GjsEditor
+        grapesjs={grapesjs}
+        options={editorOptions}
+        onReady={handleReady}
+        className="oc-editor"
+      >
+        <Shell />
+      </GjsEditor>
     </div>
   );
 }
