@@ -2,14 +2,21 @@ import type { Editor, ProjectData } from "grapesjs";
 
 const ROUTE = "/__opencanvas/project";
 
-export async function loadProject(): Promise<ProjectData | null> {
+/**
+ * The on-disk shape: GrapesJS ProjectData plus arbitrary sidecar fields
+ * (e.g. `cssVariables` for Story 6.2). Sidecars round-trip through the load
+ * → save cycle without touching ProjectData itself.
+ */
+export type SavedProject = ProjectData & Record<string, unknown>;
+
+export async function loadProject(): Promise<SavedProject | null> {
   const res = await fetch(ROUTE, { method: "GET" });
   if (!res.ok) throw new Error(`load failed: ${res.status}`);
-  const data = (await res.json()) as { exists: boolean; project?: ProjectData };
+  const data = (await res.json()) as { exists: boolean; project?: SavedProject };
   return data.exists ? (data.project ?? null) : null;
 }
 
-export async function saveProject(project: ProjectData): Promise<void> {
+export async function saveProject(project: Record<string, unknown>): Promise<void> {
   const res = await fetch(ROUTE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,6 +32,13 @@ export interface PersistenceHooks {
   onSaveStart?: () => void;
   onSaved?: () => void;
   onError?: (err: Error) => void;
+  /**
+   * Optional getter returning extra fields to merge into the saved JSON
+   * alongside the GrapesJS project data — used to persist sidecar state
+   * (e.g. CSS variables) without modifying GrapesJS's getProjectData().
+   * Called on every save; keep it cheap.
+   */
+  getExtras?: () => Record<string, unknown>;
 }
 
 /**
@@ -43,8 +57,9 @@ export function attachPersistence(editor: Editor, hooks: PersistenceHooks = {}):
     dirty = false;
     hooks.onSaveStart?.();
     try {
-      const data = editor.getProjectData();
-      await saveProject(data);
+      const data = editor.getProjectData() as Record<string, unknown>;
+      const extras = hooks.getExtras?.() ?? {};
+      await saveProject({ ...data, ...extras });
       hooks.onSaved?.();
     } catch (err) {
       dirty = true; // try again next cycle

@@ -71,6 +71,14 @@ export const GetJsxInput = z
   .strict();
 export const GetJsxOutput = z.object({ jsx: z.string() });
 
+export const GetVariablesInput = z.object({}).strict();
+export const GetVariablesOutput = z.object({ variables: z.record(z.string()) });
+
+export const SetVariablesInput = z
+  .object({ variables: z.record(z.string()) })
+  .strict();
+export const SetVariablesOutput = z.object({ variables: z.record(z.string()) });
+
 export const TOOL_SCHEMAS = {
   ping: { input: PingInput, output: PingOutput },
   get_tree: { input: GetTreeInput, output: GetTreeOutput },
@@ -82,6 +90,8 @@ export const TOOL_SCHEMAS = {
   update_styles: { input: UpdateStylesInput, output: UpdateStylesOutput },
   delete_nodes: { input: DeleteNodesInput, output: DeleteNodesOutput },
   get_jsx: { input: GetJsxInput, output: GetJsxOutput },
+  get_variables: { input: GetVariablesInput, output: GetVariablesOutput },
+  set_variables: { input: SetVariablesInput, output: SetVariablesOutput },
 } as const;
 
 export type ToolName = keyof typeof TOOL_SCHEMAS;
@@ -106,4 +116,8 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
     "Remove components and their children by id. Returns the total count of deleted nodes.",
   get_jsx:
     "Convert canvas HTML to a JSX component string. mode='tailwind' (default) preserves className and drops style props expressible as Tailwind utilities (padding, margin, color, background-color, width, height, display, flex-direction). mode='inline' converts every CSS property to a JSX style object. Optional componentId scopes output to a subtree.",
+  get_variables:
+    "Read CSS custom properties currently applied to the canvas iframe :root. Returns a flat key→value map (e.g. { '--brand-primary': 'oklch(0.55 0.2 260)' }).",
+  set_variables:
+    "Write CSS custom properties to the canvas iframe :root. Variables are merged into the existing set (existing keys overwritten, others preserved). Persisted to .opencanvas.json under cssVariables and re-applied on reload. Returns the full updated map.",
 };

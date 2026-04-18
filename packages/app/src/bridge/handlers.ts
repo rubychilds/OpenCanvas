@@ -9,10 +9,13 @@ import {
   GetJsxInput,
   GetScreenshotInput,
   GetTreeInput,
+  GetVariablesInput,
   PingInput,
+  SetVariablesInput,
   UpdateStylesInput,
 } from "@opencanvas/bridge";
 import { htmlToJsx, mergeStylesIntoHtml } from "../canvas/jsx-export.js";
+import { getVariables, setVariables } from "../canvas/variables.js";
 
 type ToolHandler = (params: unknown) => Promise<unknown> | unknown;
 
@@ -159,6 +162,17 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       }
       const merged = mergeStylesIntoHtml(html, css);
       return { jsx: htmlToJsx(merged, input.mode ?? "tailwind") };
+    },
+
+    get_variables: (params) => {
+      GetVariablesInput.parse(params);
+      return { variables: getVariables() };
+    },
+
+    set_variables: (params) => {
+      const input = SetVariablesInput.parse(params);
+      const updated = setVariables(editor, input.variables);
+      return { variables: updated };
     },
   };
 }

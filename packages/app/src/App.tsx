@@ -7,6 +7,12 @@ import "grapesjs/dist/css/grapes.min.css";
 import { editorOptions } from "./canvas/editor-options.js";
 import { attachPasteImport, importPastedHtml } from "./canvas/paste-import.js";
 import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
+import {
+  getVariables,
+  loadVariables,
+  resetVariablesStore,
+  setVariables,
+} from "./canvas/variables.js";
 import { BridgeClient } from "./bridge/client.js";
 import { buildHandlers } from "./bridge/handlers.js";
 import { Topbar, type SaveStatus } from "./components/Topbar.js";
@@ -40,9 +46,20 @@ export function App() {
     initializedRef.current = true;
     editorRef.current = editor;
 
+    // Reset the module-scoped variables store so a Vite HMR reload doesn't
+    // carry stale entries forward into the rehydration step below.
+    resetVariablesStore();
+
     try {
       const saved = await loadProject();
-      if (saved) editor.loadProjectData(saved);
+      if (saved) {
+        const { cssVariables, ...projectData } = saved as {
+          cssVariables?: Record<string, string>;
+          [k: string]: unknown;
+        };
+        editor.loadProjectData(projectData);
+        if (cssVariables) loadVariables(editor, cssVariables);
+      }
     } catch (err) {
       console.warn("[opencanvas] load failed:", err);
     }
@@ -52,14 +69,27 @@ export function App() {
       addHtml: (html: string) => editor.addComponents(html),
       getHtml: () => editor.getHtml(),
       getProjectData: () => editor.getProjectData(),
-      save: () => saveProject(editor.getProjectData()),
+      save: () =>
+        saveProject({
+          ...(editor.getProjectData() as Record<string, unknown>),
+          cssVariables: getVariables(),
+        }),
       load: async () => {
         const data = await loadProject();
-        if (data) editor.loadProjectData(data);
+        if (data) {
+          const { cssVariables, ...projectData } = data as {
+            cssVariables?: Record<string, string>;
+            [k: string]: unknown;
+          };
+          editor.loadProjectData(projectData);
+          if (cssVariables) loadVariables(editor, cssVariables);
+        }
         return data;
       },
       clear: () => editor.Components.clear(),
       paste: (html: string) => importPastedHtml(editor, html),
+      getVariables: () => getVariables(),
+      setVariables: (vars: Record<string, string>) => setVariables(editor, vars),
     };
     window.dispatchEvent(new CustomEvent("opencanvas:ready"));
 
@@ -79,6 +109,7 @@ export function App() {
         setSaveStatus("error");
         setSaveError(err.message);
       },
+      getExtras: () => ({ cssVariables: getVariables() }),
     });
 
     const handlers = buildHandlers(editor);
@@ -102,7 +133,10 @@ export function App() {
     if (!editor) return;
     setSaveStatus("saving");
     try {
-      await saveProject(editor.getProjectData());
+      await saveProject({
+        ...(editor.getProjectData() as Record<string, unknown>),
+        cssVariables: getVariables(),
+      });
       setSaveStatus("saved");
       setSaveError(null);
     } catch (err) {
