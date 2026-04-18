@@ -1,0 +1,64 @@
+name: Feature request
+description: Propose a new capability or change to existing behaviour.
+title: "feat: "
+labels: ["feature", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For new MCP tools specifically, please use the **MCP tool request** template instead — it captures the input/output schema details we need for design.
+        For broader design discussion before filing an issue, head to Discussions.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user pain or workflow gap. Avoid jumping to a solution.
+      placeholder: When I'm doing X, I have to do Y manually because there's no way to Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should OpenCanvas do? Sketch the UX or API surface.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you weigh? Why is the proposal preferred?
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which surface?
+      multiple: true
+      options:
+        - Canvas / editor UI
+        - MCP tool surface
+        - Bridge protocol
+        - CLI
+        - Persistence format
+        - Docs
+    validations:
+      required: true
+
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: Roadmap fit (rough guess)
+      options:
+        - v0.1 (active)
+        - v0.2 (artboards / export / polish)
+        - v0.3 (extension / multi-agent / IDE)
+        - Out of scope but worth discussing
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Links to similar features in Paper, Pencil, Figma, Penpot, prior art, etc.

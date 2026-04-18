@@ -1,0 +1,82 @@
+name: Bug report
+description: Something in OpenCanvas isn't working as expected.
+title: "bug: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report. The more concrete the repro, the faster we can fix it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A short, plain-language description of the bug.
+      placeholder: When I do X, I expect Y, but I see Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. If it's a UI bug, "click X then Y" is fine; if it's an MCP tool bug, paste the tool call and arguments.
+      placeholder: |
+        1. `pnpm dev`
+        2. Open http://localhost:3000
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: OpenCanvas version / commit
+      description: Output of `git rev-parse --short HEAD`, or the version from `package.json`.
+      placeholder: e.g. 0.1.0-dev (commit abc1234)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface?
+      multiple: true
+      options:
+        - Canvas / editor UI (`packages/app`)
+        - MCP server / tools (`packages/mcp-server`)
+        - Bridge / WebSocket (`packages/bridge`)
+        - CLI (`opencanvas init` / scaffolder)
+        - Persistence (`.opencanvas.json`)
+        - CI / build
+        - Docs / README
+    validations:
+      required: true
+
+  - type: input
+    id: agent
+    attributes:
+      label: AI agent / IDE (if relevant)
+      description: e.g. Claude Code 2.6, Cursor 0.46, VS Code 1.95 + Copilot.
+      placeholder: Claude Code 2.6 on macOS
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack traces
+      description: Browser console, MCP server stderr (`process.stderr` lines from `[opencanvas-mcp]`), or Playwright trace if applicable.
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, GIFs, related issues — drop them here.

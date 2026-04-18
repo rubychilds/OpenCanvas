@@ -1,0 +1,79 @@
+name: MCP tool request
+description: Propose a new MCP tool (or a change to an existing one) for AI agents to call.
+title: "mcp: "
+labels: ["mcp", "feature", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tool design is wire-format design. We add Zod schemas in `packages/bridge/src/tools.ts` and a handler in `packages/app/src/bridge/handlers.ts` for every tool, so please draft both up front.
+
+  - type: input
+    id: name
+    attributes:
+      label: Tool name
+      description: snake_case, verb_noun, namespaced if needed (e.g. `add_components`, `create_artboard`).
+      placeholder: do_thing
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: What can't agents do today?
+      description: Describe the workflow that's blocked or awkward without this tool.
+    validations:
+      required: true
+
+  - type: textarea
+    id: input
+    attributes:
+      label: Input schema (TypeScript / Zod sketch)
+      description: Field names, types, required vs optional. We'll formalise as Zod in review.
+      render: typescript
+      placeholder: |
+        {
+          componentId?: string;
+          mode?: "tailwind" | "inline";
+        }
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output shape
+      description: Same drill — TS sketch is fine.
+      render: typescript
+      placeholder: |
+        {
+          jsx: string;
+        }
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example agent prompt + tool call
+      description: Show the realistic before/after — what would Claude Code or Cursor send and receive?
+      placeholder: |
+        Prompt: "Convert the selected card to a React component."
+        Tool call: get_jsx({ componentId: "abc123", mode: "tailwind" })
+        Response: { jsx: "export default function Component() { ... }" }
+
+  - type: textarea
+    id: errors
+    attributes:
+      label: Failure modes
+      description: How should this tool reject bad input? Component-not-found errors, partial successes, etc.
+
+  - type: dropdown
+    id: roadmap
+    attributes:
+      label: Roadmap fit
+      options:
+        - v0.1 (existing 9 tools)
+        - v0.2 (artboards, codegen, tokens, paste)
+        - v0.3 (browser extension, multi-agent, IDE)
+        - Speculative / future
