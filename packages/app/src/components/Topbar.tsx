@@ -31,7 +31,7 @@ export function Topbar({ connected, saveStatus, saveError, onSave }: TopbarProps
 
   return (
     <div
-      className="flex items-center gap-3 h-[var(--topbar-height)] px-4 border-b border-border bg-surface"
+      className="flex items-center gap-3 h-(--topbar-height) px-4 border-b border-border bg-surface"
       data-testid="oc-topbar"
     >
       <span className="text-sm font-semibold tracking-tight" data-testid="oc-topbar-title">
