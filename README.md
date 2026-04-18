@@ -112,9 +112,36 @@ See [`packages/bridge/src/tools.ts`](./packages/bridge/src/tools.ts) for exact i
 
 ## Roadmap
 
-- **v0.1** (weeks 1–4) — canvas foundation, MCP server, HTML paste import ← *in progress*
-- **v0.2** (weeks 5–8) — multi-artboard spatial canvas, JSX export, design tokens, Figma copy-paste
-- **v0.3** (weeks 9–12) — browser extension for site capture, multi-agent mode, IDE distribution
+### v0.1 — canvas + MCP foundation *(in progress, weeks 1–4)*
+
+Core is functionally complete. Paste-import and 30-second demo assets are the remaining gaps.
+
+**Shipped**
+- [x] Three-pane editor shell — resizable panels, layers tree, style manager, traits, all keyboard shortcuts
+- [x] GrapesJS canvas with Tailwind v4 (CDN in iframe) and flexbox controls
+- [x] Block palette — 25 blocks across Layout / Typography / Form / Media (click-to-insert)
+- [x] Save/load to `.opencanvas.json` — Cmd+S, 30s autosave, reload-restore, git-diffable
+- [x] MCP server (stdio) + WebSocket bridge on `127.0.0.1:29170`, multi-peer routing
+- [x] All 9 v0.1 MCP tools (`ping`, `get_tree`, `get_html`, `get_css`, `get_screenshot`, `get_selection`, `add_components`, `update_styles`, `delete_nodes`) — verified end-to-end via 14 Playwright specs
+- [x] `opencanvas init` CLI — auto-detects Claude Code / Cursor / VS Code and writes the right MCP config
+- [x] CI: typecheck, build, smoke tests (bridge round-trip, MCP stdio, init), Playwright E2E
+- [x] Repo: MIT, CONTRIBUTING, RELEASING (Changesets), light + dark themes (Phase A of ADR-0001 — frontend UI stack)
+
+**Remaining for v0.1**
+- [ ] HTML/Tailwind clipboard paste import (Epic 3)
+- [ ] `npm create opencanvas@latest` scaffolder
+- [ ] Drag-to-canvas from React block palette (click-to-insert works today)
+- [ ] User-extensible block config + custom Tailwind config loading
+- [ ] Demo GIF, per-tool examples, troubleshooting docs (Epic 4)
+- [ ] GitHub issue templates + Projects board
+
+### v0.2 — artboards, export, polish *(weeks 5–8)*
+
+Multi-artboard spatial canvas, pan/zoom, design tokens (`get_variables` / `set_variables`), `get_jsx` MCP tool, Figma copy-paste import, responsive preview, selection-overlay polish. Phase A of ADR-0001 (Tailwind v4 + shadcn/ui + tokens, all panels migrated, `NumberInput`) has already landed as prerequisite work.
+
+### v0.3 — extension, multi-agent, IDE *(weeks 9–12)*
+
+Chrome extension for site capture (DOM walk + computed-style serialization), concurrent MCP sessions with workspace isolation (foundation already in the bridge), VS Code custom editor for `.opencanvas.json`, shadcn/ui block library.
 
 Detailed stories and acceptance criteria live in the PRD (not checked in).
 

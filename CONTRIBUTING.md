@@ -71,7 +71,7 @@ End-to-end tests live in [`e2e/`](./e2e) and run against a real browser booting 
 
 ## Editor-chrome UI conventions (ADR-0001)
 
-The editor chrome — everything outside the GrapesJS iframe — follows [ADR-0001](../Ruby%20Obsidian%20Notes/OpenCanvas-Notes/adr-0001-frontend-ui-stack.md). Summary:
+The editor chrome — everything outside the GrapesJS iframe — follows [ADR-0001](./docs/adr/0001-frontend-ui-stack.md). Summary:
 
 - **Tailwind v4 + shadcn/ui + Radix**: style with Tailwind utilities, compose from `components/ui/`. shadcn components are copied into the repo, not imported as a package — edit them freely.
 - **Tokens in [`styles/tokens.css`](./packages/app/src/styles/tokens.css)**, mirrored into Tailwind's `@theme inline` block in [`globals.css`](./packages/app/src/styles/globals.css). `bg-background`, `text-muted-foreground`, `border-border`, etc. resolve to tokens — prefer those over raw hex.
@@ -79,7 +79,7 @@ The editor chrome — everything outside the GrapesJS iframe — follows [ADR-00
 - **Type scale capped at 14px in the chrome.** Use `text-xs` (11) / `text-sm` (12) / `text-base` (13) / `text-lg` (14). Anything larger belongs to modals, toasts, or onboarding.
 - **Icons via `lucide-react`**: 16px default (`size-4`), 14px in dense controls (`size-3.5`). Stroke weight 1.5 (Lucide default). Avoid filled icons unless conveying state.
 - **Tests anchor on `data-testid`**, not CSS classes. CSS refactors shouldn't break E2E.
-- **When reaching for a new library**: first check [ADR-0001](../Ruby%20Obsidian%20Notes/OpenCanvas-Notes/adr-0001-frontend-ui-stack.md) § "Specialized design-tool pieces". Don't add a second component library — that's an ADR change.
+- **When reaching for a new library**: first check [ADR-0001](./docs/adr/0001-frontend-ui-stack.md) § "Specialized design-tool pieces". Don't add a second component library — that's an ADR change.
 
 ### Adding a shadcn primitive
 
