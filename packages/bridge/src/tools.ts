@@ -63,6 +63,14 @@ export const UpdateStylesOutput = z.object({ styles: z.record(z.string()) });
 export const DeleteNodesInput = z.object({ componentIds: z.array(z.string()) }).strict();
 export const DeleteNodesOutput = z.object({ deleted: z.number().int().nonnegative() });
 
+export const GetJsxInput = z
+  .object({
+    componentId: z.string().optional(),
+    mode: z.enum(["tailwind", "inline"]).optional(),
+  })
+  .strict();
+export const GetJsxOutput = z.object({ jsx: z.string() });
+
 export const TOOL_SCHEMAS = {
   ping: { input: PingInput, output: PingOutput },
   get_tree: { input: GetTreeInput, output: GetTreeOutput },
@@ -73,6 +81,7 @@ export const TOOL_SCHEMAS = {
   add_components: { input: AddComponentsInput, output: AddComponentsOutput },
   update_styles: { input: UpdateStylesInput, output: UpdateStylesOutput },
   delete_nodes: { input: DeleteNodesInput, output: DeleteNodesOutput },
+  get_jsx: { input: GetJsxInput, output: GetJsxOutput },
 } as const;
 
 export type ToolName = keyof typeof TOOL_SCHEMAS;
@@ -95,4 +104,6 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
     "Update CSS properties on an existing component. Accepts both CSS properties and Tailwind utility strings (via the 'class' key convention).",
   delete_nodes:
     "Remove components and their children by id. Returns the total count of deleted nodes.",
+  get_jsx:
+    "Convert canvas HTML to a JSX component string. mode='tailwind' (default) preserves className and drops style props expressible as Tailwind utilities (padding, margin, color, background-color, width, height, display, flex-direction). mode='inline' converts every CSS property to a JSX style object. Optional componentId scopes output to a subtree.",
 };

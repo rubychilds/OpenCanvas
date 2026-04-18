@@ -6,11 +6,13 @@ import {
   DeleteNodesInput,
   GetCssInput,
   GetHtmlInput,
+  GetJsxInput,
   GetScreenshotInput,
   GetTreeInput,
   PingInput,
   UpdateStylesInput,
 } from "@opencanvas/bridge";
+import { htmlToJsx, mergeStylesIntoHtml } from "../canvas/jsx-export.js";
 
 type ToolHandler = (params: unknown) => Promise<unknown> | unknown;
 
@@ -140,6 +142,23 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
         c.remove();
       }
       return { deleted };
+    },
+
+    get_jsx: (params) => {
+      const input = GetJsxInput.parse(params);
+      let html: string;
+      let css: string;
+      if (input.componentId) {
+        const c = findById(editor, input.componentId);
+        if (!c) throw new Error(`component not found: ${input.componentId}`);
+        html = c.toHTML();
+        css = editor.getCss({ component: c }) ?? "";
+      } else {
+        html = editor.getHtml();
+        css = editor.getCss() ?? "";
+      }
+      const merged = mergeStylesIntoHtml(html, css);
+      return { jsx: htmlToJsx(merged, input.mode ?? "tailwind") };
     },
   };
 }
