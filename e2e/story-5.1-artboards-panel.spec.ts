@@ -56,7 +56,13 @@ test.describe("Story 5.1: artboards panel (rename + delete)", () => {
     freshApp: page,
   }) => {
     await waitForEditor(page);
-    await page.locator('[data-testid="oc-add-artboard-tablet"]').click();
+    // Preset buttons moved from the top nav; use the editor API directly.
+    await page.evaluate(() => {
+      const edt = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas.editor as {
+        Canvas: { addFrame: (props: unknown) => unknown };
+      };
+      edt.Canvas.addFrame({ name: "Tablet", width: 768, height: 1024, x: 1520, y: 0 });
+    });
     await page.getByRole("tab", { name: "Artboards" }).click();
 
     await expect(page.locator('[data-testid^="oc-artboard-row-"]')).toHaveCount(2);

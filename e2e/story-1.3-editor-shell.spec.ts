@@ -12,11 +12,11 @@ test.describe("Story 1.3: editor shell", () => {
     // two resize handles between three panels (react-resizable-panels separators)
     await expect(page.locator("[data-separator]")).toHaveCount(2);
 
-    // zoom toolbar has Fit + 3 presets
-    await expect(page.locator('[data-testid="oc-zoom-fit"]')).toBeVisible();
-    await expect(page.locator('[data-testid="oc-zoom-50"]')).toBeVisible();
-    await expect(page.locator('[data-testid="oc-zoom-100"]')).toBeVisible();
-    await expect(page.locator('[data-testid="oc-zoom-200"]')).toBeVisible();
+    // floating zoom control (bottom-right of canvas) shows the current % and −/+ buttons
+    await expect(page.locator('[data-testid="oc-zoom-control"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-zoom-readout"]')).toContainText(/\d+%/);
+    await expect(page.locator('[data-testid="oc-zoom-in"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-zoom-out"]')).toBeVisible();
   });
 
   test("panels respect percentage sizing (left ~18%, center ~62%, right ~20%)", async ({

@@ -30,7 +30,9 @@ test.describe("Story 5.2: minimap", () => {
     freshApp: page,
   }) => {
     await waitForEditor(page);
-    await page.locator('[data-testid="oc-add-artboard-mobile"]').click();
+    // InsertRail Frame button goes through createArtboard → emits
+    // ARTBOARDS_CHANGED, which the Minimap subscribes to for refresh.
+    await page.locator('[data-testid="oc-insert-frame"]').click();
     await expect(page.locator('[data-testid^="oc-minimap-frame-"]')).toHaveCount(2);
   });
 
