@@ -1,10 +1,12 @@
 import type { Editor, Component, Frame } from "grapesjs";
 import { toPng, toJpeg } from "html-to-image";
 import {
+  AddClassesInput,
   AddComponentsInput,
   type ComponentNodeT,
   CreateArtboardInput,
   DeleteNodesInput,
+  DeselectInput,
   FindPlacementInput,
   GetCssInput,
   GetHtmlInput,
@@ -14,6 +16,9 @@ import {
   GetVariablesInput,
   ListArtboardsInput,
   PingInput,
+  RemoveClassesInput,
+  SelectInput,
+  SetTextInput,
   SetVariablesInput,
   UpdateStylesInput,
 } from "@opencanvas/bridge";
@@ -45,6 +50,20 @@ function serializeComponent(component: Component, maxDepth: number, depth = 0): 
     textContent: typeof component.get("content") === "string" ? (component.get("content") as string) : undefined,
     children,
   };
+}
+
+/**
+ * Pull a stable string list of class names off a GrapesJS Component.
+ * `component.getClasses()` returns either string[] or Selector models depending
+ * on which collection it traverses, so we coerce both shapes here.
+ */
+function classNamesOf(component: Component): string[] {
+  const raw = component.getClasses() as unknown as Array<
+    string | { get: (k: string) => unknown }
+  >;
+  return raw
+    .map((c) => (typeof c === "string" ? c : (c.get("name") as string | undefined)))
+    .filter((c): c is string => typeof c === "string");
 }
 
 function findById(editor: Editor, id: string): Component | undefined {
@@ -273,6 +292,76 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
     find_placement: (params) => {
       const input = FindPlacementInput.parse(params);
       return findPlacement(editor, input.width, input.height);
+    },
+
+    add_classes: (params) => {
+      const input = AddClassesInput.parse(params);
+      const c = findById(editor, input.componentId);
+      if (!c) throw new Error(`component not found: ${input.componentId}`);
+      const adder = c as unknown as { addClass: (name: string) => unknown };
+      for (const name of input.classes) {
+        if (name) adder.addClass(name);
+      }
+      return { classes: classNamesOf(c) };
+    },
+
+    remove_classes: (params) => {
+      const input = RemoveClassesInput.parse(params);
+      const c = findById(editor, input.componentId);
+      if (!c) throw new Error(`component not found: ${input.componentId}`);
+      const remover = c as unknown as { removeClass: (name: string) => unknown };
+      for (const name of input.classes) {
+        if (name) remover.removeClass(name);
+      }
+      return { classes: classNamesOf(c) };
+    },
+
+    set_text: (params) => {
+      const input = SetTextInput.parse(params);
+      const c = findById(editor, input.componentId);
+      if (!c) throw new Error(`component not found: ${input.componentId}`);
+      const setter = c as unknown as {
+        get: (k: string) => unknown;
+        set: (k: string, v: unknown) => void;
+        empty?: () => void;
+        append: (x: unknown) => void;
+      };
+      // Two cases:
+      //  1. The component IS a textnode (parent.get('type') === 'textnode') —
+      //     update its `content` field directly.
+      //  2. The component is an element whose body is a (possibly single) text
+      //     child — wipe its children and append one textnode. This handles
+      //     button / h1 / p / label / span etc. where the text lives in a
+      //     child textnode and `set('content', ...)` on the parent is a no-op.
+      if (setter.get("type") === "textnode") {
+        setter.set("content", input.text);
+        return { text: input.text };
+      }
+      setter.empty?.();
+      setter.append({ type: "textnode", content: input.text });
+      return { text: input.text };
+    },
+
+    select: (params) => {
+      const input = SelectInput.parse(params);
+      const components: Component[] = [];
+      for (const id of input.componentIds) {
+        const c = findById(editor, id);
+        if (!c) throw new Error(`component not found: ${id}`);
+        components.push(c);
+      }
+      // editor.select replaces the current selection; pass the array form so
+      // multi-select is honoured.
+      (editor as unknown as { select: (c: Component[] | Component | null) => void }).select(
+        components,
+      );
+      return { componentIds: editor.getSelectedAll().map((c) => c.getId()) };
+    },
+
+    deselect: (params) => {
+      DeselectInput.parse(params);
+      (editor as unknown as { select: (c: Component[] | Component | null) => void }).select([]);
+      return { componentIds: editor.getSelectedAll().map((c) => c.getId()) };
     },
   };
 }

@@ -117,6 +117,38 @@ export const FindPlacementInput = z
   .strict();
 export const FindPlacementOutput = z.object({ x: z.number(), y: z.number() });
 
+export const AddClassesInput = z
+  .object({
+    componentId: z.string(),
+    classes: z.array(z.string()),
+  })
+  .strict();
+export const AddClassesOutput = z.object({ classes: z.array(z.string()) });
+
+export const RemoveClassesInput = z
+  .object({
+    componentId: z.string(),
+    classes: z.array(z.string()),
+  })
+  .strict();
+export const RemoveClassesOutput = z.object({ classes: z.array(z.string()) });
+
+export const SetTextInput = z
+  .object({
+    componentId: z.string(),
+    text: z.string(),
+  })
+  .strict();
+export const SetTextOutput = z.object({ text: z.string() });
+
+export const SelectInput = z
+  .object({ componentIds: z.array(z.string()) })
+  .strict();
+export const SelectOutput = z.object({ componentIds: z.array(z.string()) });
+
+export const DeselectInput = z.object({}).strict();
+export const DeselectOutput = z.object({ componentIds: z.array(z.string()) });
+
 export const TOOL_SCHEMAS = {
   ping: { input: PingInput, output: PingOutput },
   get_tree: { input: GetTreeInput, output: GetTreeOutput },
@@ -133,6 +165,11 @@ export const TOOL_SCHEMAS = {
   create_artboard: { input: CreateArtboardInput, output: CreateArtboardOutput },
   list_artboards: { input: ListArtboardsInput, output: ListArtboardsOutput },
   find_placement: { input: FindPlacementInput, output: FindPlacementOutput },
+  add_classes: { input: AddClassesInput, output: AddClassesOutput },
+  remove_classes: { input: RemoveClassesInput, output: RemoveClassesOutput },
+  set_text: { input: SetTextInput, output: SetTextOutput },
+  select: { input: SelectInput, output: SelectOutput },
+  deselect: { input: DeselectInput, output: DeselectOutput },
 } as const;
 
 export type ToolName = keyof typeof TOOL_SCHEMAS;
@@ -167,4 +204,14 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
     "List all artboards currently on the canvas with their ids, names, positions (x/y world coordinates), and dimensions. Use the returned ids with create_artboard's positioning, or scope get_tree / get_screenshot to a specific frame.",
   find_placement:
     "Suggest non-overlapping canvas-world coordinates for an artboard of the given width and height. Returns { x, y } placed to the right of the rightmost existing artboard with an 80px gap. Use this to pick coordinates for create_artboard without colliding.",
+  add_classes:
+    "Add Tailwind / CSS class names to an existing component without touching unrelated classes. Idempotent: classes already present are left alone. Returns the component's full class list after the add.",
+  remove_classes:
+    "Remove Tailwind / CSS class names from an existing component. Classes not currently on the component are silently skipped. Returns the component's full class list after the remove.",
+  set_text:
+    "Replace a component's text content. Targets the GrapesJS `content` field, so this works for elements whose body is a single text node (h1/p/span/button/label and similar). Returns the text that was set.",
+  select:
+    "Programmatically set the editor's current selection to one or more components by id. Useful for highlighting what the agent is about to change so the user's eyes follow along. Throws if any id is unknown. Returns the component ids that ended up selected.",
+  deselect:
+    "Clear the editor's current selection. Returns the (now empty) selection.",
 };
