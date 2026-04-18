@@ -109,7 +109,7 @@ export function App() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="oc-shell">
+      <div className="flex flex-col h-screen w-screen overflow-hidden">
         <Topbar
           connected={connected}
           saveStatus={saveStatus}
@@ -120,7 +120,7 @@ export function App() {
           grapesjs={grapesjs}
           options={editorOptions}
           onReady={handleReady}
-          className="oc-editor"
+          className="flex-1 min-h-0 flex"
         >
           <Shell />
         </GjsEditor>

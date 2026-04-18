@@ -1,37 +1,23 @@
-import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs.js";
 import { BlocksPanel } from "./BlocksPanel.js";
 import { LayersPanel } from "./LayersPanel.js";
 
-type Tab = "blocks" | "layers";
-
 export function LeftPanel() {
-  const [tab, setTab] = useState<Tab>("blocks");
   return (
-    <aside className="oc-panel">
-      <div className="oc-panel__tabs">
-        <button
-          type="button"
-          className={`oc-panel__tab${tab === "blocks" ? " oc-panel__tab--active" : ""}`}
-          onClick={() => setTab("blocks")}
-        >
-          Blocks
-        </button>
-        <button
-          type="button"
-          className={`oc-panel__tab${tab === "layers" ? " oc-panel__tab--active" : ""}`}
-          onClick={() => setTab("layers")}
-        >
-          Layers
-        </button>
-      </div>
-      <div className="oc-panel__body">
-        <div style={{ display: tab === "blocks" ? "block" : "none" }}>
-          <BlocksPanel />
-        </div>
-        <div style={{ display: tab === "layers" ? "block" : "none" }}>
-          <LayersPanel />
-        </div>
-      </div>
-    </aside>
+    <Tabs
+      defaultValue="blocks"
+      className="flex flex-col h-full bg-surface border-r border-border overflow-hidden"
+    >
+      <TabsList>
+        <TabsTrigger value="blocks">Blocks</TabsTrigger>
+        <TabsTrigger value="layers">Layers</TabsTrigger>
+      </TabsList>
+      <TabsContent value="blocks" className="p-2">
+        <BlocksPanel />
+      </TabsContent>
+      <TabsContent value="layers" className="p-1.5">
+        <LayersPanel />
+      </TabsContent>
+    </Tabs>
   );
 }

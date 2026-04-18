@@ -9,16 +9,14 @@ test.describe("Story 1.3: editor shell", () => {
     await expect(page.locator('#oc-center')).toBeVisible();
     await expect(page.locator('#oc-right')).toBeVisible();
 
-    // two resize handles between three panels
-    await expect(page.locator(".oc-resize-handle")).toHaveCount(2);
+    // two resize handles between three panels (react-resizable-panels separators)
+    await expect(page.locator("[data-separator]")).toHaveCount(2);
 
     // zoom toolbar has Fit + 3 presets
-    const zooms = page.locator(".oc-canvas__zoom");
-    await expect(zooms).toHaveCount(4);
-    await expect(zooms.nth(0)).toHaveText("Fit");
-    await expect(zooms.nth(1)).toHaveText("50%");
-    await expect(zooms.nth(2)).toHaveText("100%");
-    await expect(zooms.nth(3)).toHaveText("200%");
+    await expect(page.locator('[data-testid="oc-zoom-fit"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-zoom-50"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-zoom-100"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-zoom-200"]')).toBeVisible();
   });
 
   test("panels respect percentage sizing (left ~18%, center ~62%, right ~20%)", async ({
@@ -53,7 +51,7 @@ test.describe("Story 1.3: editor shell", () => {
     const beforeBox = await leftPanel.boundingBox();
     if (!beforeBox) throw new Error("left panel not visible");
 
-    const handle = page.locator(".oc-resize-handle").first();
+    const handle = page.locator("[data-separator]").first();
     const handleBox = await handle.boundingBox();
     if (!handleBox) throw new Error("resize handle not visible");
 
