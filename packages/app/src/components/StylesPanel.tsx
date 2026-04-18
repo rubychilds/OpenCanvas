@@ -1,7 +1,14 @@
-import { StylesProvider } from "@grapesjs/react";
-import type { Property, Sector } from "grapesjs";
+import { useEffect, useState } from "react";
+import { StylesProvider, useEditorMaybe } from "@grapesjs/react";
+import type { Component, Property, Sector } from "grapesjs";
 import { cn } from "../lib/utils.js";
 import { NumberInput } from "./ui/number-input.js";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion.js";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group.js";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
+import { optionsForProperty } from "../canvas/alignment-icons.js";
+import { isSectorVisibleFor } from "../canvas/style-filters.js";
+import { usePersistedState } from "../hooks/usePersistedState.js";
 
 interface PropertyOption {
   id?: string;
@@ -20,22 +27,55 @@ function PropertyRow({ property }: { property: Property }) {
   const type = property.get("type") as string | undefined;
   const units = property.get("units") as string[] | undefined;
 
-  const commonLabel = (
+  const label = (
     <span className="text-xs text-muted-foreground truncate" title={name}>
       {name}
     </span>
   );
 
+  // Icon ToggleGroup for alignment-shaped properties.
+  const iconOptions = propName ? optionsForProperty(propName) : null;
+  if (iconOptions) {
+    return (
+      <label className="grid grid-cols-[80px_1fr] items-center gap-2 py-0.5">
+        {label}
+        <ToggleGroup
+          type="single"
+          value={value}
+          onValueChange={(v) => {
+            if (v) upValue(property, v);
+          }}
+          data-testid={testId}
+        >
+          {iconOptions.map(({ value: val, label: optLabel, Icon }) => (
+            <Tooltip key={val}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem
+                  value={val}
+                  aria-label={optLabel}
+                  data-testid={`${testId}-${val}`}
+                >
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{optLabel}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </label>
+    );
+  }
+
   if (type === "select" || type === "radio") {
     const options = (property.get("options") as PropertyOption[]) ?? [];
     return (
       <label className="grid grid-cols-[80px_1fr] items-center gap-2 py-0.5">
-        {commonLabel}
+        {label}
         <select
           value={value}
           onChange={(e) => upValue(property, e.target.value)}
           className={cn(
-            "h-7 w-full rounded-md border border-border bg-background px-2 text-sm",
+            "h-(--row-height) w-full rounded-md border border-border bg-background px-2 text-sm",
             "focus:border-oc-accent focus:outline-none",
           )}
           data-testid={testId}
@@ -54,7 +94,7 @@ function PropertyRow({ property }: { property: Property }) {
     const unit = units && units.length > 0 ? (units[0] ?? "") : "";
     return (
       <label className="grid grid-cols-[80px_1fr] items-center gap-2 py-0.5">
-        {commonLabel}
+        {label}
         <NumberInput
           value={value}
           onChange={(n) => upValue(property, `${n}${unit}`)}
@@ -68,13 +108,13 @@ function PropertyRow({ property }: { property: Property }) {
 
   return (
     <label className="grid grid-cols-[80px_1fr] items-center gap-2 py-0.5">
-      {commonLabel}
+      {label}
       <input
         type="text"
         value={value}
         onChange={(e) => upValue(property, e.target.value)}
         className={cn(
-          "h-7 w-full rounded-md border border-border bg-background px-2 text-sm",
+          "h-(--row-height-comfy) w-full rounded-md border border-border bg-background px-2 text-sm",
           "focus:border-oc-accent focus:outline-none",
         )}
         data-testid={testId}
@@ -83,23 +123,29 @@ function PropertyRow({ property }: { property: Property }) {
   );
 }
 
-function SectorView({ sector }: { sector: Sector }) {
-  const props = sector.getProperties() as Property[];
-  return (
-    <section className="flex flex-col gap-1 pb-3 mb-3 border-b border-border last:border-0 last:pb-0 last:mb-0">
-      <h3 className="text-xs uppercase tracking-wider text-muted-foreground px-0.5">
-        {sector.getName()}
-      </h3>
-      <div className="flex flex-col">
-        {props.map((p) => (
-          <PropertyRow key={p.getId()} property={p} />
-        ))}
-      </div>
-    </section>
-  );
+function useSelectedComponent(): Component | null {
+  const editor = useEditorMaybe();
+  const [selected, setSelected] = useState<Component | null>(null);
+  useEffect(() => {
+    if (!editor) return;
+    const update = () => setSelected(editor.getSelected() ?? null);
+    update();
+    editor.on("component:selected component:deselected", update);
+    return () => {
+      editor.off("component:selected component:deselected", update);
+    };
+  }, [editor]);
+  return selected;
 }
 
 export function StylesPanel() {
+  // Open-by-default sectors; overwritten from localStorage per usePersistedState.
+  const [openSectors, setOpenSectors] = usePersistedState<string[]>(
+    "opencanvas:styles:open-sectors",
+    ["Layout"],
+  );
+  const selected = useSelectedComponent();
+
   return (
     <StylesProvider>
       {({ sectors }) => {
@@ -110,12 +156,34 @@ export function StylesPanel() {
             </div>
           );
         }
+
+        const visibleSectors: Sector[] = sectors.filter((s) => isSectorVisibleFor(s.getName(), selected));
+
         return (
-          <div className="flex flex-col">
-            {sectors.map((sector) => (
-              <SectorView key={sector.getId()} sector={sector} />
-            ))}
-          </div>
+          <Accordion
+            type="multiple"
+            value={openSectors}
+            onValueChange={(v) => setOpenSectors(v as string[])}
+            className="-mx-2"
+          >
+            {visibleSectors.map((sector) => {
+              const props = sector.getProperties() as Property[];
+              return (
+                <AccordionItem key={sector.getId()} value={sector.getName()}>
+                  <AccordionTrigger data-testid={`oc-sector-${sector.getName()}`}>
+                    {sector.getName()}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col">
+                      {props.map((p) => (
+                        <PropertyRow key={p.getId()} property={p} />
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
         );
       }}
     </StylesProvider>
