@@ -41,8 +41,9 @@ jobs:
 
       - name: Bridge round-trip smoke test
         run: |
+          set -m
           pnpm --filter @opencanvas/app dev &
-          APP_PID=$!
+          APP_PGID=$!
           # wait up to 20s for the bridge to come up
           for i in $(seq 1 20); do
             if (echo > /dev/tcp/127.0.0.1/29170) 2>/dev/null; then break; fi
@@ -50,8 +51,8 @@ jobs:
           done
           node scripts/smoke-bridge.mjs
           SMOKE_RC=$?
-          kill $APP_PID 2>/dev/null || true
-          wait $APP_PID 2>/dev/null || true
+          kill -- -$APP_PGID 2>/dev/null || true
+          wait 2>/dev/null || true
           exit $SMOKE_RC
 
       - name: MCP stdio smoke test
@@ -61,6 +62,31 @@ jobs:
         run: |
           pnpm --filter @opencanvas/cli build
           node scripts/smoke-init.mjs
+
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build @opencanvas/bridge
+        run: pnpm --filter @opencanvas/bridge build
+
+      - name: Build all packages
+        run: pnpm -r --filter '!@opencanvas/bridge' build
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
