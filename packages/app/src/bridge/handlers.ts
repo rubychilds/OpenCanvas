@@ -1,19 +1,23 @@
-import type { Editor, Component } from "grapesjs";
+import type { Editor, Component, Frame } from "grapesjs";
 import { toPng, toJpeg } from "html-to-image";
 import {
   AddComponentsInput,
   type ComponentNodeT,
+  CreateArtboardInput,
   DeleteNodesInput,
+  FindPlacementInput,
   GetCssInput,
   GetHtmlInput,
   GetJsxInput,
   GetScreenshotInput,
   GetTreeInput,
   GetVariablesInput,
+  ListArtboardsInput,
   PingInput,
   SetVariablesInput,
   UpdateStylesInput,
 } from "@opencanvas/bridge";
+import { createArtboard, findPlacement, listArtboards } from "../canvas/artboards.js";
 import { htmlToJsx, mergeStylesIntoHtml } from "../canvas/jsx-export.js";
 import { getVariables, setVariables } from "../canvas/variables.js";
 
@@ -59,6 +63,56 @@ function findById(editor: Editor, id: string): Component | undefined {
   return undefined;
 }
 
+/**
+ * Returns every plausible id for a Frame: GrapesJS Backbone models carry a
+ * `cid` (like "c69"), an optional model `id`, and a `getId()` method that
+ * may return either. Phase B's `artboards.ts.readFrameData` reads them in
+ * one order; the bridge sometimes sees a different one back. Match against
+ * the union to be robust.
+ */
+function frameIds(frame: Frame): string[] {
+  const ids: string[] = [];
+  const get = (frame as unknown as { getId?: () => string }).getId;
+  if (typeof get === "function") {
+    const v = get.call(frame);
+    if (typeof v === "string" && v) ids.push(v);
+  }
+  const id = (frame as unknown as { id?: unknown }).id;
+  if (typeof id === "string" && id) ids.push(id);
+  const cid = (frame as unknown as { cid?: unknown }).cid;
+  if (typeof cid === "string" && cid) ids.push(cid);
+  return ids;
+}
+
+function findFrameById(editor: Editor, id: string): Frame | undefined {
+  return editor.Canvas.getFrames().find((f) => frameIds(f).includes(id));
+}
+
+function frameWrapper(frame: Frame): Component | undefined {
+  const c = (frame as unknown as { get: (k: string) => unknown }).get("component");
+  return c as Component | undefined;
+}
+
+/**
+ * Resolve the iframe DOM element for a specific Frame. GrapesJS exposes the
+ * iframe via `frame.view.frame` (the <iframe> directly) or `frame.view.el`
+ * (the wrapper element that contains it). Try both since the field name has
+ * shifted across GrapesJS versions.
+ */
+function frameIframe(frame: Frame): HTMLIFrameElement | undefined {
+  const view = (frame as unknown as { view?: unknown }).view as
+    | { frame?: unknown; el?: unknown }
+    | undefined;
+  if (!view) return undefined;
+  if (view.frame instanceof HTMLIFrameElement) return view.frame;
+  if (view.el instanceof HTMLElement) {
+    if (view.el.tagName === "IFRAME") return view.el as HTMLIFrameElement;
+    const inner = view.el.querySelector("iframe");
+    if (inner) return inner as HTMLIFrameElement;
+  }
+  return undefined;
+}
+
 export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
   return {
     ping: (params) => {
@@ -68,7 +122,15 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
 
     get_tree: (params) => {
       const input = GetTreeInput.parse(params);
-      const wrapper = editor.getWrapper();
+      let wrapper: Component | undefined;
+      if (input.artboardId) {
+        const frame = findFrameById(editor, input.artboardId);
+        if (!frame) throw new Error(`artboard not found: ${input.artboardId}`);
+        wrapper = frameWrapper(frame);
+        if (!wrapper) throw new Error(`artboard ${input.artboardId} has no wrapper component`);
+      } else {
+        wrapper = editor.getWrapper() ?? undefined;
+      }
       if (!wrapper) return { root: null };
       const depth = input.depth ?? Number.POSITIVE_INFINITY;
       return { root: serializeComponent(wrapper, depth) };
@@ -98,7 +160,15 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       const input = GetScreenshotInput.parse(params);
       const scale = input.scale ?? 1;
       const format = input.format ?? "png";
-      const frameEl = editor.Canvas.getFrameEl() as HTMLIFrameElement | null;
+      let frameEl: HTMLIFrameElement | undefined;
+      if (input.artboardId) {
+        const frame = findFrameById(editor, input.artboardId);
+        if (!frame) throw new Error(`artboard not found: ${input.artboardId}`);
+        frameEl = frameIframe(frame);
+        if (!frameEl) throw new Error(`artboard ${input.artboardId} iframe not available`);
+      } else {
+        frameEl = (editor.Canvas.getFrameEl() as HTMLIFrameElement | null) ?? undefined;
+      }
       const doc = frameEl?.contentDocument;
       const body = doc?.body;
       if (!body) throw new Error("canvas iframe not ready");
@@ -173,6 +243,28 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       const input = SetVariablesInput.parse(params);
       const updated = setVariables(editor, input.variables);
       return { variables: updated };
+    },
+
+    create_artboard: (params) => {
+      const input = CreateArtboardInput.parse(params);
+      const artboard = createArtboard(editor, {
+        name: input.name,
+        width: input.width,
+        height: input.height,
+        x: input.x,
+        y: input.y,
+      });
+      return { artboard };
+    },
+
+    list_artboards: (params) => {
+      ListArtboardsInput.parse(params);
+      return { artboards: listArtboards(editor) };
+    },
+
+    find_placement: (params) => {
+      const input = FindPlacementInput.parse(params);
+      return findPlacement(editor, input.width, input.height);
     },
   };
 }

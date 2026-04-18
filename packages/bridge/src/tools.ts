@@ -3,7 +3,12 @@ import { z } from "zod";
 export const PingInput = z.object({}).strict();
 export const PingOutput = z.object({ pong: z.literal(true), at: z.number() });
 
-export const GetTreeInput = z.object({ depth: z.number().int().positive().optional() }).strict();
+export const GetTreeInput = z
+  .object({
+    depth: z.number().int().positive().optional(),
+    artboardId: z.string().optional(),
+  })
+  .strict();
 export interface ComponentNodeT {
   id: string;
   type: string;
@@ -36,6 +41,7 @@ export const GetScreenshotInput = z
   .object({
     scale: z.union([z.literal(1), z.literal(2)]).optional(),
     format: z.enum(["png", "jpeg"]).optional(),
+    artboardId: z.string().optional(),
   })
   .strict();
 export const GetScreenshotOutput = z.object({
@@ -79,6 +85,38 @@ export const SetVariablesInput = z
   .strict();
 export const SetVariablesOutput = z.object({ variables: z.record(z.string()) });
 
+export const ArtboardData = z.object({
+  id: z.string(),
+  name: z.string(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+export type ArtboardDataT = z.infer<typeof ArtboardData>;
+
+export const CreateArtboardInput = z
+  .object({
+    name: z.string().optional(),
+    width: z.number().positive(),
+    height: z.number().positive(),
+    x: z.number().optional(),
+    y: z.number().optional(),
+  })
+  .strict();
+export const CreateArtboardOutput = z.object({ artboard: ArtboardData });
+
+export const ListArtboardsInput = z.object({}).strict();
+export const ListArtboardsOutput = z.object({ artboards: z.array(ArtboardData) });
+
+export const FindPlacementInput = z
+  .object({
+    width: z.number().positive(),
+    height: z.number().positive(),
+  })
+  .strict();
+export const FindPlacementOutput = z.object({ x: z.number(), y: z.number() });
+
 export const TOOL_SCHEMAS = {
   ping: { input: PingInput, output: PingOutput },
   get_tree: { input: GetTreeInput, output: GetTreeOutput },
@@ -92,6 +130,9 @@ export const TOOL_SCHEMAS = {
   get_jsx: { input: GetJsxInput, output: GetJsxOutput },
   get_variables: { input: GetVariablesInput, output: GetVariablesOutput },
   set_variables: { input: SetVariablesInput, output: SetVariablesOutput },
+  create_artboard: { input: CreateArtboardInput, output: CreateArtboardOutput },
+  list_artboards: { input: ListArtboardsInput, output: ListArtboardsOutput },
+  find_placement: { input: FindPlacementInput, output: FindPlacementOutput },
 } as const;
 
 export type ToolName = keyof typeof TOOL_SCHEMAS;
@@ -120,4 +161,10 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
     "Read CSS custom properties currently applied to the canvas iframe :root. Returns a flat key→value map (e.g. { '--brand-primary': 'oklch(0.55 0.2 260)' }).",
   set_variables:
     "Write CSS custom properties to the canvas iframe :root. Variables are merged into the existing set (existing keys overwritten, others preserved). Persisted to .opencanvas.json under cssVariables and re-applied on reload. Returns the full updated map.",
+  create_artboard:
+    "Create a new artboard (frame) on the spatial canvas. Requires width and height; name defaults to 'Artboard N'; x/y default to a non-overlapping position to the right of existing artboards. Returns the created artboard's id, name, position, and dimensions.",
+  list_artboards:
+    "List all artboards currently on the canvas with their ids, names, positions (x/y world coordinates), and dimensions. Use the returned ids with create_artboard's positioning, or scope get_tree / get_screenshot to a specific frame.",
+  find_placement:
+    "Suggest non-overlapping canvas-world coordinates for an artboard of the given width and height. Returns { x, y } placed to the right of the rightmost existing artboard with an 80px gap. Use this to pick coordinates for create_artboard without colliding.",
 };
