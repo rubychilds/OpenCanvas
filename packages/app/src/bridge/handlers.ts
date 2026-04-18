@@ -165,6 +165,14 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
         const frame = findFrameById(editor, input.artboardId);
         if (!frame) throw new Error(`artboard not found: ${input.artboardId}`);
         frameEl = frameIframe(frame);
+        // Fallback: if the scoped frame happens to be the active one, the
+        // canvas-level accessor is the most-tested code path.
+        if (!frameEl) {
+          const active = (editor.Canvas as unknown as { getFrame?: () => Frame }).getFrame?.();
+          if (active && frameIds(active).includes(input.artboardId)) {
+            frameEl = (editor.Canvas.getFrameEl() as HTMLIFrameElement | null) ?? undefined;
+          }
+        }
         if (!frameEl) throw new Error(`artboard ${input.artboardId} iframe not available`);
       } else {
         frameEl = (editor.Canvas.getFrameEl() as HTMLIFrameElement | null) ?? undefined;
