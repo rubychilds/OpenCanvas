@@ -69,6 +69,26 @@ End-to-end tests live in [`e2e/`](./e2e) and run against a real browser booting 
 - **Small, orthogonal packages** — the bridge package is purely types and has no side effects. The app never imports from `mcp-server` and vice versa; they communicate only through the WS protocol.
 - **Tool handlers are pure** (relative to the GrapesJS editor state) — they take params, call GrapesJS APIs, return a value. Don't stash state between calls.
 
+## Editor-chrome UI conventions (ADR-0001)
+
+The editor chrome — everything outside the GrapesJS iframe — follows [ADR-0001](../Ruby%20Obsidian%20Notes/OpenCanvas-Notes/adr-0001-frontend-ui-stack.md). Summary:
+
+- **Tailwind v4 + shadcn/ui + Radix**: style with Tailwind utilities, compose from `components/ui/`. shadcn components are copied into the repo, not imported as a package — edit them freely.
+- **Tokens in [`styles/tokens.css`](./packages/app/src/styles/tokens.css)**, mirrored into Tailwind's `@theme inline` block in [`globals.css`](./packages/app/src/styles/globals.css). `bg-background`, `text-muted-foreground`, `border-border`, etc. resolve to tokens — prefer those over raw hex.
+- **Two themes, light default.** Token set is duplicated for `[data-theme="dark"]`. Never hardcode a color; use a token. If you need a new token, add it in both themes.
+- **Type scale capped at 14px in the chrome.** Use `text-xs` (11) / `text-sm` (12) / `text-base` (13) / `text-lg` (14). Anything larger belongs to modals, toasts, or onboarding.
+- **Icons via `lucide-react`**: 16px default (`size-4`), 14px in dense controls (`size-3.5`). Stroke weight 1.5 (Lucide default). Avoid filled icons unless conveying state.
+- **Tests anchor on `data-testid`**, not CSS classes. CSS refactors shouldn't break E2E.
+- **When reaching for a new library**: first check [ADR-0001](../Ruby%20Obsidian%20Notes/OpenCanvas-Notes/adr-0001-frontend-ui-stack.md) § "Specialized design-tool pieces". Don't add a second component library — that's an ADR change.
+
+### Adding a shadcn primitive
+
+shadcn components are copied from [ui.shadcn.com](https://ui.shadcn.com) into `packages/app/src/components/ui/`. Adapt the classes to our density (h-6/7/8, text-xs/sm/base) and use `variant: "ghost"` as the default. Import via relative paths, not a package alias.
+
+### Design-tool composites (`components/editor/` convention)
+
+Our composites — `LayerTree`, `BlockPalette`, `StylePanel`, `NumberInput`, `ColorField`, `CommandPalette` — live in `components/` alongside their panel wrappers. They're where the design-tool feel lives. Keep them small and composable; a property row shouldn't know which sector it's rendering in.
+
 ## Pull request process
 
 1. Fork the repo or create a branch from `main`.
