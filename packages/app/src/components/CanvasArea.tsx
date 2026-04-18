@@ -4,6 +4,7 @@ import { Maximize2 } from "lucide-react";
 import { Button } from "./ui/button.js";
 import { ArtboardToolbar } from "./ArtboardToolbar.js";
 import { ArtboardBootstrap } from "./ArtboardBootstrap.js";
+import { Minimap } from "./Minimap.js";
 import { PanZoomWire } from "./PanZoomWire.js";
 
 export function CanvasArea() {
@@ -57,7 +58,10 @@ export function CanvasArea() {
           {zoom}%
         </span>
       </div>
-      <Canvas className="flex-1 min-h-0 relative" />
+      <div className="flex-1 min-h-0 relative">
+        <Canvas className="absolute inset-0" />
+        <Minimap />
+      </div>
       <ArtboardBootstrap />
       <PanZoomWire />
     </div>

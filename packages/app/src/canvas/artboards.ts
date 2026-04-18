@@ -18,6 +18,19 @@ export const ARTBOARD_PRESETS: ArtboardPreset[] = [
 
 export const DEFAULT_ARTBOARD_GAP = 80;
 
+/**
+ * Event name panels subscribe to for artboard mutations. Emitted after every
+ * createArtboard / deleteArtboard / rename. Using a custom event on the
+ * editor's bus is more reliable than Backbone's collection `add`/`remove`
+ * events in this GrapesJS version (they don't consistently fire for
+ * programmatic addFrame).
+ */
+export const ARTBOARDS_CHANGED = "opencanvas:artboards-changed";
+
+function notifyChange(editor: Editor): void {
+  (editor as unknown as { trigger?: (ev: string) => void }).trigger?.(ARTBOARDS_CHANGED);
+}
+
 interface FrameData {
   id: string;
   name: string;
@@ -28,8 +41,10 @@ interface FrameData {
 }
 
 function readFrameData(frame: Frame): FrameData {
+  // GrapesJS Frame extends a Backbone-style model: cid is the stable per-
+  // session id; id is optional (only set if you save the model server-side).
   const id =
-    (frame as unknown as { getId?: () => string }).getId?.() ??
+    (frame as unknown as { cid?: string }).cid ??
     (frame as unknown as { id?: string }).id ??
     "";
   const attrs = (frame as unknown as { attributes?: Record<string, unknown> }).attributes ?? {};
@@ -101,7 +116,41 @@ export function createArtboard(editor: Editor, opts: CreateArtboardOptions): Fra
     components: "",
     styles: "",
   });
+  notifyChange(editor);
   return readFrameData(frame);
+}
+
+/**
+ * Remove an artboard by id. Refuses to remove the last remaining frame so the
+ * canvas never ends up empty. Emits ARTBOARDS_CHANGED on success.
+ */
+export function deleteArtboard(editor: Editor, id: string): boolean {
+  const frames = editor.Canvas.getFrames();
+  if (frames.length <= 1) return false;
+  const frame = (frames as unknown as Array<{ cid?: string; id?: string }>).find(
+    (f) => String(f.cid ?? f.id ?? "") === id,
+  );
+  if (!frame) return false;
+  const col = (editor.Canvas as unknown as { frames?: { remove?: (x: unknown) => void } }).frames;
+  col?.remove?.(frame);
+  notifyChange(editor);
+  return true;
+}
+
+/**
+ * Rename an artboard by id. Emits ARTBOARDS_CHANGED on success.
+ */
+export function renameArtboard(editor: Editor, id: string, name: string): boolean {
+  const frames = editor.Canvas.getFrames();
+  const frame = (frames as unknown as Array<{
+    cid?: string;
+    id?: string;
+    set?: (a: Record<string, unknown>) => void;
+  }>).find((f) => String(f.cid ?? f.id ?? "") === id);
+  if (!frame || typeof frame.set !== "function") return false;
+  frame.set({ name });
+  notifyChange(editor);
+  return true;
 }
 
 /**
@@ -139,5 +188,6 @@ export function ensureDefaultArtboard(editor: Editor): void {
       width: 1440,
       height: 900,
     });
+    notifyChange(editor);
   }
 }
