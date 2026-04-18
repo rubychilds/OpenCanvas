@@ -1,0 +1,123 @@
+# OpenCanvas
+
+**An open-source MCP design canvas that gives AI coding agents eyes.**
+
+OpenCanvas is a local-first, HTML/CSS-native visual canvas that AI coding agents (Claude Code, Cursor, Codex) read and write through the [Model Context Protocol](https://modelcontextprotocol.io). Design and code converge into a single artifact — no translation gap between visual intent and production output.
+
+> **Status:** early v0.1 in active development. Foundations — canvas, MCP server, WebSocket bridge — are working end-to-end. Polish and feature stories from the [roadmap](#roadmap) are in flight.
+
+## Why
+
+AI coding agents currently generate frontend UI **blind**. They produce React components from text prompts alone, with no ability to see a visual design, iterate spatially, or maintain layout relationships. Design engineers spend 2–4 hours a day in prompt → preview → re-prompt cycles getting agents to match their visual intent.
+
+Proprietary tools (Paper.design, Pencil.dev) are solving pieces of this problem, but they lock the design-to-code pipeline into a vendor dependency at exactly the moment the ecosystem is standardizing on an open protocol (MCP). OpenCanvas is the open-source answer: **MIT-licensed, local-first, self-hostable, built on existing open-source foundations** (GrapesJS, the MCP TypeScript SDK, html-to-image).
+
+## How it works
+
+```
+┌───────────────────┐     stdio      ┌─────────────────┐
+│  Claude Code /    │──────────────▶│   MCP Server    │
+│  Cursor / Codex   │     (JSON-RPC) │   (Node.js)     │
+└───────────────────┘                └───────┬─────────┘
+                                             │ WebSocket (127.0.0.1:29170)
+                                             ▼
+┌─────────────────────────────────────────────┐
+│      Browser (Vite + React SPA)             │
+│  ┌────────────┐  ┌───────────────────────┐  │
+│  │ Editor UI  │  │  GrapesJS Canvas      │  │
+│  │ (panels,   │  │  (iframe with         │  │
+│  │  blocks,   │  │   real HTML/CSS       │  │
+│  │  styles)   │  │   + Tailwind v4 CDN)  │  │
+│  └────────────┘  └───────────────────────┘  │
+└─────────────────────────────────────────────┘
+                      │
+              ┌───────┴───────┐
+              │ .opencanvas   │
+              │   .json       │
+              └───────────────┘
+```
+
+Agent ↔ Canvas communication flows stdio → MCP server → WebSocket bridge → browser → GrapesJS API, with responses travelling back the same path. Both human edits and agent edits converge on the **same GrapesJS component model** — one source of truth.
+
+## Quickstart
+
+Requires **Node.js 20+** and **pnpm 9+**.
+
+```bash
+git clone https://github.com/<org>/opencanvas.git
+cd opencanvas
+pnpm install
+pnpm dev
+```
+
+Opens the canvas at http://localhost:3000. The WebSocket bridge listens on `127.0.0.1:29170`. Connection status is visible top-right in the editor shell.
+
+### Connect an AI agent
+
+**Claude Code (user scope):**
+
+```bash
+claude mcp add opencanvas --scope user \
+  -- pnpm --dir "$(pwd)" --filter @opencanvas/mcp-server start
+```
+
+Start a new Claude Code session, then `/mcp` should list `opencanvas` with all v0.1 tools.
+
+**Cursor / VS Code / Codex:** point the MCP config at the `opencanvas-mcp` stdio binary (auto-generation via `npx opencanvas init` is on the roadmap).
+
+## Packages
+
+| Package | Purpose |
+|---------|---------|
+| [`packages/app`](./packages/app) | Vite + React SPA hosting the GrapesJS canvas. Embeds a WebSocket hub (port 29170) that relays messages between the MCP server and the browser. |
+| [`packages/mcp-server`](./packages/mcp-server) | Standalone stdio MCP server. Registers all tools, forwards calls over WebSocket to the canvas. |
+| [`packages/bridge`](./packages/bridge) | Shared Zod schemas for the WS wire protocol and MCP tool I/O. |
+
+## MCP tools (v0.1)
+
+| Tool | Purpose |
+|------|---------|
+| `ping` | Health check — returns `{ pong: true, at: <timestamp> }` when the canvas is connected. |
+| `get_tree` | Recursive JSON component tree. |
+| `get_html` | Clean HTML (optional `componentId` scope). |
+| `get_css` | CSS stylesheet (optional `componentId` scope). |
+| `get_screenshot` | PNG/JPEG base64 screenshot of the canvas iframe. |
+| `get_selection` | Component IDs currently selected in the editor. |
+| `add_components` | Insert raw HTML (Tailwind classes supported). |
+| `update_styles` | Set CSS properties on a component by id. |
+| `delete_nodes` | Remove components by id. |
+
+See [`packages/bridge/src/tools.ts`](./packages/bridge/src/tools.ts) for exact input/output schemas.
+
+## Comparison
+
+| Tool | Canvas format | MCP | License |
+|------|--------------|-----|---------|
+| Paper.design | HTML/CSS + GPU shaders | Bidirectional (21 tools) | Proprietary |
+| Pencil.dev | Vector (native) | Bidirectional (6 tools) | Proprietary |
+| Figma | WASM vector engine | Read-only Dev Mode | Proprietary |
+| Penpot | SVG | Community only | MPL-2.0 |
+| GrapesJS | HTML/CSS iframe | None | BSD-3 |
+| Onlook | Live React DOM | Own agent | Apache-2.0 |
+| Webstudio | DOM (real CSS) | None | AGPL-3.0 |
+| **OpenCanvas** | **HTML/CSS iframe (GrapesJS)** | **Open bidirectional** | **MIT** |
+
+## Roadmap
+
+- **v0.1** (weeks 1–4) — canvas foundation, MCP server, HTML paste import ← *in progress*
+- **v0.2** (weeks 5–8) — multi-artboard spatial canvas, JSX export, design tokens, Figma copy-paste
+- **v0.3** (weeks 9–12) — browser extension for site capture, multi-agent mode, IDE distribution
+
+Detailed stories and acceptance criteria live in the PRD (not checked in).
+
+## Development
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Releasing
+
+Maintainer workflow for publishing releases: see [RELEASING.md](./RELEASING.md).
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

@@ -1,0 +1,27 @@
+{
+  "name": "@opencanvas/mcp-server",
+  "version": "0.1.0-dev",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "opencanvas-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@opencanvas/bridge": "workspace:*",
+    "ws": "^8.20.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

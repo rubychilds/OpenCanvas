@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.turbo/
+*.tsbuildinfo
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# env + logs
+.env
+.env.*
+!.env.example
+*.log
+
+# Claude / local tooling caches
+.claude/cache/

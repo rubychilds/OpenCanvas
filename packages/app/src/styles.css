@@ -1,0 +1,97 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #0f1115;
+  color: #e6e8eb;
+}
+
+.oc-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  grid-template-rows: 44px 1fr;
+  height: 100vh;
+}
+
+.oc-topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: #14171d;
+  border-bottom: 1px solid #222833;
+  font-size: 13px;
+}
+
+.oc-topbar__title {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.oc-topbar__status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8b93a1;
+  font-size: 12px;
+}
+
+.oc-topbar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5a6270;
+  transition: background 0.2s ease;
+}
+
+.oc-topbar__dot--connected {
+  background: #22c55e;
+}
+
+.oc-panel {
+  background: #14171d;
+  border-right: 1px solid #222833;
+  overflow: auto;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.oc-panel--right {
+  border-right: none;
+  border-left: 1px solid #222833;
+}
+
+.oc-panel__title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8b93a1;
+  margin: 0 0 8px;
+}
+
+.oc-canvas {
+  background: #0b0d11;
+  overflow: hidden;
+  position: relative;
+}
+
+.oc-canvas__placeholder {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #5a6270;
+  font-size: 13px;
+}
