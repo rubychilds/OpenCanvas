@@ -24,7 +24,7 @@ export function CanvasArea() {
   const setZoom = (z: number) => editor?.Canvas.setZoom(z);
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-canvas">
       <div className="flex items-center gap-2 px-3 h-9 border-b border-border bg-surface">
         <ArtboardToolbar />
 

@@ -31,6 +31,7 @@
 
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
+  --color-canvas: var(--canvas);
   --color-oc-accent: var(--oc-accent);
   --color-oc-accent-foreground: var(--oc-accent-foreground);
   --color-oc-success: var(--oc-success);
