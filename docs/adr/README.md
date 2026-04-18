@@ -9,6 +9,7 @@ When a decision is genuinely reversed, write a new ADR that supersedes the old o
 | # | Title | Status |
 |---|-------|--------|
 | [0001](./0001-frontend-ui-stack.md) | Frontend UI stack for the editor shell | Accepted (2026-04-18) |
+| [0002](./0002-inspector-information-architecture.md) | Inspector information architecture | Proposed (2026-04-18) |
 
 ## Adding a new ADR
 
