@@ -1,0 +1,109 @@
+/*
+ * OpenCanvas editor-chrome design tokens.
+ *
+ * Ownership: the editor shell only (canvas *content* uses user-authored
+ * tokens — see PRD Story 6.2, orthogonal to this file).
+ *
+ * Scale guardrails (per ADR-0001):
+ *   - Type caps at 14px in the chrome (larger reserved for toasts/modals).
+ *   - Restrained neutral palette, one accent.
+ *   - Both light and dark must ship; light is default.
+ */
+
+:root {
+  /* ── Neutrals (light, Pencil-leaning) ───────────────────────────────── */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  /* Editor-specific accents */
+  --surface: oklch(0.985 0 0);       /* panel backgrounds (lighter than border) */
+  --surface-sunken: oklch(0.965 0 0); /* deeper, eg. tree hover/selected bg */
+  --oc-accent: oklch(0.55 0.2 260);   /* the one blue; used for status + focus */
+  --oc-accent-foreground: oklch(0.985 0 0);
+  --oc-success: oklch(0.58 0.18 145);
+  --oc-warning: oklch(0.72 0.18 75);
+  --oc-danger: oklch(0.58 0.22 25);
+
+  /* ── Radius / density ───────────────────────────────────────────────── */
+  --radius: 4px;
+
+  --size-1: 0.25rem;
+  --size-2: 0.5rem;
+  --size-3: 0.75rem;
+  --size-4: 1rem;
+  --size-5: 1.25rem;
+  --size-6: 1.5rem;
+  --size-8: 2rem;
+
+  /* ── Type scale (capped at 14px for chrome) ─────────────────────────── */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 14px;
+
+  /* ── Editor dimensions ──────────────────────────────────────────────── */
+  --topbar-height: 40px;
+}
+
+[data-theme="dark"] {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+
+  --card: oklch(0.17 0 0);
+  --card-foreground: oklch(0.985 0 0);
+
+  --popover: oklch(0.17 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+
+  --secondary: oklch(0.22 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+
+  --destructive: oklch(0.5 0.2 27);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.25 0 0);
+  --ring: oklch(0.556 0 0);
+
+  --surface: oklch(0.17 0 0);
+  --surface-sunken: oklch(0.2 0 0);
+  --oc-accent: oklch(0.66 0.2 260);
+  --oc-accent-foreground: oklch(0.985 0 0);
+  --oc-success: oklch(0.66 0.17 145);
+  --oc-warning: oklch(0.75 0.18 75);
+  --oc-danger: oklch(0.66 0.22 25);
+}

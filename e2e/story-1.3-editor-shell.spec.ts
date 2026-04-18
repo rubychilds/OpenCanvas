@@ -2,8 +2,8 @@ import { test, expect } from "./fixtures";
 
 test.describe("Story 1.3: editor shell", () => {
   test("renders three-column shell with panels + topbar + zoom toolbar", async ({ freshApp: page }) => {
-    await expect(page.locator(".oc-topbar__title")).toHaveText("OpenCanvas");
-    await expect(page.locator(".oc-topbar__dot")).toBeVisible();
+    await expect(page.locator('[data-testid="oc-topbar-title"]')).toHaveText("OpenCanvas");
+    await expect(page.locator('[data-testid="oc-bridge-dot"]')).toBeVisible();
 
     await expect(page.locator('#oc-left')).toBeVisible();
     await expect(page.locator('#oc-center')).toBeVisible();

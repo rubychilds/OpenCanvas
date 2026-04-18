@@ -12,7 +12,7 @@ test.describe("Story 1.5: save and load", () => {
     });
 
     await page.keyboard.press("Meta+s");
-    await expect(page.locator(".oc-topbar__save")).toHaveText("Saved", { timeout: 5_000 });
+    await expect(page.locator('[data-testid="oc-save-status"]')).toHaveText("Saved", { timeout: 5_000 });
 
     expect(existsSync(projectFilePath())).toBe(true);
     const contents = await readFile(projectFilePath(), "utf8");
@@ -31,7 +31,7 @@ test.describe("Story 1.5: save and load", () => {
     });
 
     await page.keyboard.press("Meta+s");
-    await expect(page.locator(".oc-topbar__save")).toHaveText("Saved", { timeout: 5_000 });
+    await expect(page.locator('[data-testid="oc-save-status"]')).toHaveText("Saved", { timeout: 5_000 });
 
     await page.reload();
     await page.waitForFunction(

@@ -10,6 +10,7 @@ import { BridgeClient } from "./bridge/client.js";
 import { buildHandlers } from "./bridge/handlers.js";
 import { Topbar, type SaveStatus } from "./components/Topbar.js";
 import { Shell } from "./components/Shell.js";
+import { TooltipProvider } from "./components/ui/tooltip.js";
 
 export function App() {
   const [connected, setConnected] = useState(false);
@@ -107,21 +108,23 @@ export function App() {
   }, []);
 
   return (
-    <div className="oc-shell">
-      <Topbar
-        connected={connected}
-        saveStatus={saveStatus}
-        saveError={saveError}
-        onSave={handleSave}
-      />
-      <GjsEditor
-        grapesjs={grapesjs}
-        options={editorOptions}
-        onReady={handleReady}
-        className="oc-editor"
-      >
-        <Shell />
-      </GjsEditor>
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="oc-shell">
+        <Topbar
+          connected={connected}
+          saveStatus={saveStatus}
+          saveError={saveError}
+          onSave={handleSave}
+        />
+        <GjsEditor
+          grapesjs={grapesjs}
+          options={editorOptions}
+          onReady={handleReady}
+          className="oc-editor"
+        >
+          <Shell />
+        </GjsEditor>
+      </div>
+    </TooltipProvider>
   );
 }
