@@ -143,4 +143,55 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
     );
     expect(html).toContain('data-event-paste="ok"');
   });
+
+  test("Figma binary clipboard payload is refused with a CustomEvent + console.warn", async ({
+    freshApp: page,
+  }) => {
+    // Real Figma payload shape: two empty spans carrying the fig-kiwi binary
+    // in HTML comments inside data-* attributes. We don't decode it; we detect
+    // the marker and refuse the import.
+    const figmaHtml =
+      '<span data-metadata="<!--(figmeta)eyJmaWxlS2V5IjoiYWJjIn0=(/figmeta)-->"></span>' +
+      '<span data-buffer="<!--(figma)ZmlnL3RrL2t3aQ==(/figma)-->"></span>';
+
+    const beforeHtml = await page.evaluate(() =>
+      (window as unknown as PasteApi).__opencanvas.getHtml(),
+    );
+
+    // Capture the CustomEvent + console.warn that the handler emits.
+    const result = await page.evaluate((html) => {
+      const events: Array<{ reason: string; message: string }> = [];
+      const warns: string[] = [];
+      const onEvent = (ev: Event) => {
+        const detail = (ev as CustomEvent).detail as { reason: string; message: string };
+        events.push(detail);
+      };
+      window.addEventListener("opencanvas:paste-blocked", onEvent);
+      const originalWarn = console.warn;
+      console.warn = (...args: unknown[]) => {
+        warns.push(args.map(String).join(" "));
+        originalWarn.apply(console, args as []);
+      };
+      try {
+        (window as unknown as { __opencanvas: { paste: (s: string) => unknown } }).__opencanvas.paste(html);
+      } finally {
+        window.removeEventListener("opencanvas:paste-blocked", onEvent);
+        console.warn = originalWarn;
+      }
+      return { events, warns };
+    }, figmaHtml);
+
+    expect(result.events.length).toBe(1);
+    expect(result.events[0]!.reason).toBe("figma-binary");
+    expect(result.events[0]!.message).toMatch(/Figma/);
+    expect(result.warns.some((w) => /Figma/.test(w))).toBe(true);
+
+    // Canvas must be unchanged — the binary payload was NOT added.
+    const afterHtml = await page.evaluate(() =>
+      (window as unknown as PasteApi).__opencanvas.getHtml(),
+    );
+    expect(afterHtml).toBe(beforeHtml);
+    expect(afterHtml).not.toContain("(figma)");
+    expect(afterHtml).not.toContain("data-buffer");
+  });
 });
