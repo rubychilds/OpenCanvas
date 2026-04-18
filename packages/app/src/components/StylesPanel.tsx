@@ -131,6 +131,10 @@ function useSelectedComponent(): Component | null {
     const update = () => setSelected(editor.getSelected() ?? null);
     update();
     editor.on("component:selected component:deselected", update);
+    // When this panel mounts late (e.g. lazy inside the Accordion's Raw CSS
+    // fallback), StylesProvider has already missed the initial custom event.
+    // Re-fire it so sectors land.
+    (editor.Styles as unknown as { __trgCustom?: () => void }).__trgCustom?.();
     return () => {
       editor.off("component:selected component:deselected", update);
     };

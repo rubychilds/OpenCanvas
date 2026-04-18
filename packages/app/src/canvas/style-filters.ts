@@ -8,32 +8,32 @@ import type { Component } from "grapesjs";
  */
 const SECTORS_BY_TAG: Record<string, ReadonlySet<string>> = {
   // Inline text gets typography + decoration only; no layout box model.
-  span: new Set(["Typography", "Background & border"]),
-  a: new Set(["Typography", "Background & border"]),
+  span: new Set(["Typography", "Fill"]),
+  a: new Set(["Typography", "Fill"]),
   strong: new Set(["Typography"]),
   em: new Set(["Typography"]),
   small: new Set(["Typography"]),
-  code: new Set(["Typography", "Background & border"]),
+  code: new Set(["Typography", "Fill"]),
 
   // Block-level text: typography + size/spacing, no flex container controls.
-  p: new Set(["Typography", "Size & spacing", "Background & border"]),
-  h1: new Set(["Typography", "Size & spacing", "Background & border"]),
-  h2: new Set(["Typography", "Size & spacing", "Background & border"]),
-  h3: new Set(["Typography", "Size & spacing", "Background & border"]),
-  h4: new Set(["Typography", "Size & spacing", "Background & border"]),
-  h5: new Set(["Typography", "Size & spacing", "Background & border"]),
-  h6: new Set(["Typography", "Size & spacing", "Background & border"]),
-  label: new Set(["Typography", "Size & spacing", "Background & border"]),
+  p: new Set(["Typography", "Size & spacing", "Fill"]),
+  h1: new Set(["Typography", "Size & spacing", "Fill"]),
+  h2: new Set(["Typography", "Size & spacing", "Fill"]),
+  h3: new Set(["Typography", "Size & spacing", "Fill"]),
+  h4: new Set(["Typography", "Size & spacing", "Fill"]),
+  h5: new Set(["Typography", "Size & spacing", "Fill"]),
+  h6: new Set(["Typography", "Size & spacing", "Fill"]),
+  label: new Set(["Typography", "Size & spacing", "Fill"]),
 
   // Media: sized + decorated, no typography, no flex container.
-  img: new Set(["Size & spacing", "Background & border"]),
-  video: new Set(["Size & spacing", "Background & border"]),
+  img: new Set(["Size & spacing", "Fill"]),
+  video: new Set(["Size & spacing", "Fill"]),
 
   // Form inputs: sized, typed (for the input font), decorated.
-  input: new Set(["Size & spacing", "Typography", "Background & border"]),
-  textarea: new Set(["Size & spacing", "Typography", "Background & border"]),
-  select: new Set(["Size & spacing", "Typography", "Background & border"]),
-  button: new Set(["Size & spacing", "Typography", "Background & border", "Layout"]),
+  input: new Set(["Size & spacing", "Typography", "Fill"]),
+  textarea: new Set(["Size & spacing", "Typography", "Fill"]),
+  select: new Set(["Size & spacing", "Typography", "Fill"]),
+  button: new Set(["Size & spacing", "Typography", "Fill", "Layout"]),
 };
 
 /**

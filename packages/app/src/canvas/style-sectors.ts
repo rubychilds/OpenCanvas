@@ -121,7 +121,9 @@ export const STYLE_MANAGER_CONFIG: StyleManagerConfig = {
       buildProps: ["font-family", "font-size", "font-weight", "line-height", "letter-spacing", "color", "text-align"],
     },
     {
-      name: "Background & border",
+      // Renamed from "Background & border" to match Figma's semantic — Fill
+      // owns every colour-bearing surface (bg, border, shadow).
+      name: "Fill",
       open: false,
       buildProps: [
         "background-color",

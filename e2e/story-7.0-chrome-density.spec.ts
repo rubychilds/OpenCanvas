@@ -8,90 +8,96 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
   );
 }
 
-test.describe("Story 7.0 (Phase D.2): collapsible sectors + icon ToggleGroups + style filtering", () => {
-  test("style manager sectors collapse/expand and persist to localStorage", async ({
+async function selectDiv(page: import("@playwright/test").Page, marker: string): Promise<void> {
+  await page.evaluate((mk) => {
+    const api = (window as unknown as {
+      __opencanvas: { addHtml: (h: string) => unknown; editor: { select: (c: unknown) => void } };
+    }).__opencanvas;
+    const added = api.addHtml(`<div data-testid="${mk}">m</div>`) as Array<unknown>;
+    api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
+  }, marker);
+}
+
+test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
+  test("Position section shows align-items + X/Y + rotation for a selected div", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
-    await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown; editor: { select: (c: unknown) => void } } }).__opencanvas.editor.select(
-        (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
-          `<div data-testid="sector-host">hi</div>`,
-        ) as unknown,
-      ),
-    );
+    await selectDiv(page, "pos-host");
 
-    const layoutTrigger = page.locator('[data-testid="oc-sector-Layout"]');
-    await expect(layoutTrigger).toBeVisible();
-    await expect(layoutTrigger).toHaveAttribute("data-state", "open");
-
-    // Collapse Layout, expand Typography.
-    await layoutTrigger.click();
-    await expect(layoutTrigger).toHaveAttribute("data-state", "closed");
-    const typoTrigger = page.locator('[data-testid="oc-sector-Typography"]');
-    await typoTrigger.click();
-    await expect(typoTrigger).toHaveAttribute("data-state", "open");
-
-    // Persistence: reload and assert the same state came back.
-    await page.reload();
-    await waitForEditor(page);
-    await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown; editor: { select: (c: unknown) => void } } }).__opencanvas.editor.select(
-        (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
-          `<div data-testid="sector-host-2">still</div>`,
-        ) as unknown,
-      ),
-    );
-    await expect(page.locator('[data-testid="oc-sector-Layout"]')).toHaveAttribute("data-state", "closed");
-    await expect(page.locator('[data-testid="oc-sector-Typography"]')).toHaveAttribute("data-state", "open");
+    await expect(page.locator('[data-testid="oc-ins-align-items"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-ins-x"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-ins-y"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-ins-rotate"]')).toBeVisible();
   });
 
-  test("<p> selection filters out the Layout (flex) sector", async ({ freshApp: page }) => {
+  test("Auto Layout toggle reveals direction / gap / justify when on, hides them when off", async ({
+    freshApp: page,
+  }) => {
     await waitForEditor(page);
-    await page.evaluate(() => {
-      const api = (window as unknown as {
-        __opencanvas: { addHtml: (h: string) => unknown; editor: { select: (c: unknown) => void } };
-      }).__opencanvas;
-      const added = api.addHtml(`<p data-testid="p-el">paragraph</p>`) as Array<unknown>;
-      api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
-    });
+    await selectDiv(page, "al-host");
 
-    // Typography still shows
-    await expect(page.locator('[data-testid="oc-sector-Typography"]')).toBeVisible();
-    // Layout should be hidden for <p>
+    // Starts off — direction row is hidden
+    await expect(page.locator('[data-testid="oc-ins-flex-direction"]')).toHaveCount(0);
+
+    await page.locator('[data-testid="oc-ins-autolayout-toggle"]').click();
+    await expect(page.locator('[data-testid="oc-ins-flex-direction"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-ins-gap"]')).toBeVisible();
+    await expect(page.locator('[data-testid="oc-ins-justify"]')).toBeVisible();
+
+    // Toggle off — rows gone again
+    await page.locator('[data-testid="oc-ins-autolayout-toggle"]').click();
+    await expect(page.locator('[data-testid="oc-ins-flex-direction"]')).toHaveCount(0);
+  });
+
+  test("toggling Auto Layout writes display:flex / removes display on the component", async ({
+    freshApp: page,
+  }) => {
+    await waitForEditor(page);
+    await selectDiv(page, "al-write");
+
+    await page.locator('[data-testid="oc-ins-autolayout-toggle"]').click();
+    const display = await page.evaluate(() => {
+      const ed = (window as unknown as {
+        __opencanvas: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
+      }).__opencanvas.editor;
+      return ed.getSelected().getStyle().display ?? "";
+    });
+    expect(display).toBe("flex");
+  });
+
+  test("Clip content toggle writes overflow:hidden to the selected component", async ({
+    freshApp: page,
+  }) => {
+    await waitForEditor(page);
+    await selectDiv(page, "clip-host");
+
+    const clip = page.locator('[data-testid="oc-ins-clip"]');
+    await expect(clip).toBeVisible();
+    await clip.check();
+
+    const overflow = await page.evaluate(() => {
+      const ed = (window as unknown as {
+        __opencanvas: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
+      }).__opencanvas.editor;
+      return ed.getSelected().getStyle().overflow ?? "";
+    });
+    expect(overflow).toBe("hidden");
+  });
+
+  test("Raw CSS fallback hides the old sector panel by default; expand reveals it", async ({
+    freshApp: page,
+  }) => {
+    await waitForEditor(page);
+    await selectDiv(page, "raw-host");
+
+    // Sectors aren't visible yet because the Raw CSS accordion is closed
     await expect(page.locator('[data-testid="oc-sector-Layout"]')).toHaveCount(0);
-  });
 
-  test("flex-direction renders as icon ToggleGroup; click sets the CSS value", async ({
-    freshApp: page,
-  }) => {
-    await waitForEditor(page);
-    await page.evaluate(() => {
-      const api = (window as unknown as {
-        __opencanvas: {
-          addHtml: (h: string) => unknown;
-          editor: { select: (c: unknown) => void };
-        };
-      }).__opencanvas;
-      const added = api.addHtml(
-        `<div data-testid="flex-host"><span>a</span><span>b</span></div>`,
-      ) as Array<{ addStyle: (s: Record<string, string>) => void }>;
-      const container = Array.isArray(added) ? added[0]! : (added as unknown as {
-        addStyle: (s: Record<string, string>) => void;
-      });
-      container.addStyle({ display: "flex" });
-      api.editor.select(container as unknown);
-    });
+    await page.locator('[data-testid="oc-ins-raw-css-trigger"]').click();
+    await expect(page.locator('[data-testid="oc-sector-Layout"]')).toBeVisible();
 
-    // The ToggleGroup for flex-direction renders four items
-    const rowButton = page.locator('[data-testid="oc-style-flex-direction-row"]');
-    await expect(rowButton).toBeVisible();
-    const columnButton = page.locator('[data-testid="oc-style-flex-direction-column"]');
-    await columnButton.click();
-
-    const frame = page.frameLocator('iframe[class*="gjs-frame"]');
-    const container = frame.locator('[data-testid="flex-host"]');
-    const direction = await container.evaluate((el) => window.getComputedStyle(el).flexDirection);
-    expect(direction).toBe("column");
+    // The "Fill" sector (renamed from Background & border) is present
+    await expect(page.locator('[data-testid="oc-sector-Fill"]')).toBeVisible();
   });
 });
