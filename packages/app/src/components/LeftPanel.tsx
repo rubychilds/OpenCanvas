@@ -9,7 +9,7 @@ import { LayersPanel } from "./LayersPanel.js";
  */
 export function LeftPanel() {
   return (
-    <div className="flex flex-col h-full bg-surface border-r border-border overflow-hidden">
+    <div className="flex flex-col h-full bg-background border-r border-border overflow-hidden">
       <LayersPanel />
     </div>
   );

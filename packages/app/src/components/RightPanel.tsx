@@ -8,7 +8,7 @@ import { SemanticInspector } from "./inspector/SemanticInspector.js";
  */
 export function RightPanel() {
   return (
-    <aside className="flex flex-col h-full bg-surface border-l border-border overflow-hidden">
+    <aside className="flex flex-col h-full bg-background border-l border-border overflow-hidden">
       <div className="flex-1 min-h-0 overflow-auto">
         <SemanticInspector />
       </div>
