@@ -44,6 +44,8 @@ export {
   List as Menu,
   Lock,
   LockOpen,
+  LockSimple,
+  LockSimpleOpen,
   Minus,
   Monitor,
   Moon,
