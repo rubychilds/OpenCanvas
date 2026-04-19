@@ -92,11 +92,16 @@ function AlignItemsRow({ component }: { component: Component }) {
         { value: "center", label: "Middle", Icon: AlignCenterVertical },
         { value: "flex-end", label: "Bottom", Icon: AlignEndVertical },
         { value: "stretch", label: "Stretch", Icon: StretchHorizontal },
-      ].map(({ value: v, label, Icon }) => (
+        { value: "baseline", label: "Baseline", Icon: AlignStartVertical, glyph: "B" },
+      ].map(({ value: v, label, Icon, glyph }) => (
         <Tooltip key={v}>
           <TooltipTrigger asChild>
             <ToggleGroupItem value={v} aria-label={label}>
-              <Icon />
+              {glyph ? (
+                <span className="text-[11px] font-semibold">{glyph}</span>
+              ) : (
+                <Icon />
+              )}
             </ToggleGroupItem>
           </TooltipTrigger>
           <TooltipContent>{label}</TooltipContent>

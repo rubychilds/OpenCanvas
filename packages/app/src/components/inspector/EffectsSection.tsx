@@ -106,11 +106,9 @@ export function EffectsSection({ component }: { component: Component }) {
           testIdBase={`oc-ins-shadow-row-${i}`}
         />
       ))}
-      {/* Blur rows always render once the section is expanded — that's the
-          only way a user can reach them from scratch (there's no separate
-          trigger). Expansion is driven by any effect being present OR the
-          `+` action adding a first shadow, so pressing `+` on a blank
-          selection reveals shadow + blur rows together. */}
+      {/* Blur + other filter functions. All render once the section is
+          expanded. Brightness / Contrast / Saturate default to 100%
+          (identity); Grayscale / Hue-rotate default to 0 (identity). */}
       <FieldGroup label="Blur">
         <NumberInput
           value={blur}
@@ -133,8 +131,162 @@ export function EffectsSection({ component }: { component: Component }) {
           data-testid="oc-ins-backdrop-blur"
         />
       </FieldGroup>
+      <FilterPercentRow
+        component={component}
+        filter={filter}
+        fn="brightness"
+        label="Brightness"
+        testId="oc-ins-brightness"
+      />
+      <FilterPercentRow
+        component={component}
+        filter={filter}
+        fn="contrast"
+        label="Contrast"
+        testId="oc-ins-contrast"
+      />
+      <FilterPercentRow
+        component={component}
+        filter={filter}
+        fn="saturate"
+        label="Saturate"
+        testId="oc-ins-saturate"
+      />
+      <FilterPercentRow
+        component={component}
+        filter={filter}
+        fn="grayscale"
+        label="Grayscale"
+        testId="oc-ins-grayscale"
+        identity={0}
+      />
+      <FilterAngleRow
+        component={component}
+        filter={filter}
+        fn="hue-rotate"
+        label="Hue rotate"
+        testId="oc-ins-hue-rotate"
+      />
     </InspectorSection>
   );
+}
+
+/**
+ * Filter function as a percentage (brightness / contrast / saturate /
+ * grayscale). Identity (the "no effect" value) is 100% for brightness-like
+ * functions and 0% for grayscale — both collapse to no-ops and clear the
+ * function from the composite `filter` value on write.
+ */
+function FilterPercentRow({
+  component,
+  filter,
+  fn,
+  label,
+  testId,
+  identity = 100,
+}: {
+  component: Component;
+  filter: string;
+  fn: string;
+  label: string;
+  testId: string;
+  identity?: number;
+}) {
+  const current = parseFilterPercent(filter, fn, identity);
+  return (
+    <FieldGroup label={label}>
+      <NumberInput
+        value={current}
+        onChange={(n) => writeFilterPercent(component, fn, n, identity)}
+        unit="%"
+        label=""
+        min={0}
+        step={1}
+        data-testid={testId}
+      />
+    </FieldGroup>
+  );
+}
+
+/**
+ * Filter function expressed in degrees (hue-rotate). Identity = 0.
+ */
+function FilterAngleRow({
+  component,
+  filter,
+  fn,
+  label,
+  testId,
+}: {
+  component: Component;
+  filter: string;
+  fn: string;
+  label: string;
+  testId: string;
+}) {
+  const current = parseFilterAngle(filter, fn);
+  return (
+    <FieldGroup label={label}>
+      <NumberInput
+        value={current}
+        onChange={(n) => writeFilterAngle(component, fn, n)}
+        unit="°"
+        label=""
+        min={-360}
+        max={360}
+        step={1}
+        data-testid={testId}
+      />
+    </FieldGroup>
+  );
+}
+
+function parseFilterPercent(filter: string, fn: string, identity: number): number {
+  if (!filter) return identity;
+  const re = new RegExp(`${fn}\\(([\\d.]+)(%?)\\)`, "i");
+  const m = re.exec(filter);
+  if (!m) return identity;
+  const raw = parseFloat(m[1]!);
+  // Accept both `0.5` and `50%`.
+  if (m[2] === "%") return Math.round(raw);
+  return Math.round(raw * 100);
+}
+
+function parseFilterAngle(filter: string, fn: string): number {
+  if (!filter) return 0;
+  const re = new RegExp(`${fn}\\((-?[\\d.]+)deg\\)`, "i");
+  const m = re.exec(filter);
+  return m ? Math.round(parseFloat(m[1]!)) : 0;
+}
+
+function writeFilterPercent(
+  component: Component,
+  fn: string,
+  value: number,
+  identity: number,
+): void {
+  const filter = readStyle(component, "filter");
+  // When the user returns to the identity value (100% brightness, 0%
+  // grayscale, etc.) the filter function is a no-op; drop it from the
+  // composite `filter` to keep CSS clean.
+  const stripRe = new RegExp(`${fn}\\([^)]+\\)`, "gi");
+  const base = (filter || "").replace(stripRe, "").replace(/\s+/g, " ").trim();
+  let out: string;
+  if (value === identity) out = base;
+  else out = base ? `${base} ${fn}(${value}%)` : `${fn}(${value}%)`;
+  if (!out) clearStyle(component, "filter");
+  else writeStyle(component, "filter", out);
+}
+
+function writeFilterAngle(component: Component, fn: string, value: number): void {
+  const filter = readStyle(component, "filter");
+  const stripRe = new RegExp(`${fn}\\([^)]+\\)`, "gi");
+  const base = (filter || "").replace(stripRe, "").replace(/\s+/g, " ").trim();
+  let out: string;
+  if (value === 0) out = base;
+  else out = base ? `${base} ${fn}(${value}deg)` : `${fn}(${value}deg)`;
+  if (!out) clearStyle(component, "filter");
+  else writeStyle(component, "filter", out);
 }
 
 /* ───────────────────── Shadow stack helpers ─────────────────────── */

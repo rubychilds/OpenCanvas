@@ -46,7 +46,6 @@ function frameBounds(frames: FrameRect[]): WorldBounds {
 export function Minimap() {
   const editor = useEditorMaybe();
   const [frames, setFrames] = useState<FrameRect[]>([]);
-  const [zoom, setZoom] = useState(100);
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,7 +74,6 @@ export function Minimap() {
           });
         }
         setFrames(list);
-        setZoom(editor.Canvas.getZoom?.() ?? 100);
       } catch (err) {
         console.warn("[opencanvas] minimap refresh failed:", err);
       }
@@ -105,10 +103,13 @@ export function Minimap() {
     y: PADDING + (y - bounds.minY) * scale,
   });
 
+  // Bottom-LEFT placement so the minimap and ZoomControl (bottom-right)
+  // don't stack on top of each other. The minimap's zoom readout was
+  // retired in the same fix — ZoomControl is the canonical zoom display.
   return (
     <div
       ref={hostRef}
-      className="absolute bottom-3 right-3 rounded-md border border-border bg-surface/90 backdrop-blur-sm shadow-sm pointer-events-none"
+      className="absolute bottom-3 left-3 rounded-md border border-border bg-surface/90 backdrop-blur-sm shadow-sm pointer-events-none"
       style={{ width: WIDTH, height: HEIGHT }}
       data-testid="oc-minimap"
     >
@@ -130,12 +131,6 @@ export function Minimap() {
             />
           );
         })}
-      </div>
-      <div
-        className="absolute top-1 left-1 text-[9px] text-muted-foreground tabular-nums pointer-events-none"
-        data-testid="oc-minimap-zoom"
-      >
-        {Math.round(zoom)}%
       </div>
     </div>
   );

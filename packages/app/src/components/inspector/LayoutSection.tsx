@@ -11,6 +11,7 @@ import {
   AlignStartVertical,
   ArrowDown,
   ArrowRight,
+  Columns3,
   LockSimple,
   LockSimpleOpen,
   Minus,
@@ -35,12 +36,19 @@ import { useInspectorContext } from "./useInspectorContext.js";
  */
 export function LayoutSection({ component }: { component: Component }) {
   const display = readStyle(component, "display");
-  const enabled = display === "flex";
+  const isFlex = display === "flex" || display === "inline-flex";
+  const isGrid = display === "grid" || display === "inline-grid";
+  const enabled = isFlex || isGrid;
   const context = useInspectorContext(component);
 
   const toggle = () => {
-    if (enabled) clearStyle(component, "display");
-    else writeStyle(component, "display", "flex");
+    if (enabled) {
+      clearStyle(component, "display");
+      clearStyle(component, "flex-direction");
+      clearStyle(component, "flex-wrap");
+    } else {
+      writeStyle(component, "display", "flex");
+    }
   };
 
   const toggleControl = (
@@ -68,13 +76,17 @@ export function LayoutSection({ component }: { component: Component }) {
     <InspectorSection title="Layout" action={toggleControl}>
       <WHRow
         component={component}
-        selfIsFlex={enabled}
-        parentIsFlex={context.isFlexParent}
+        selfIsFlex={isFlex}
+        parentIsFlex={context.isFlexParent || context.isGridParent}
       />
-      {enabled ? <AutoLayoutRows component={component} /> : null}
+      {enabled ? <DirectionRow component={component} isFlex={isFlex} isGrid={isGrid} /> : null}
+      {isFlex ? <AutoLayoutRows component={component} /> : null}
+      {isGrid ? <GridRows component={component} /> : null}
       <PaddingRow component={component} />
       <MarginRow component={component} />
-      {context.isLayoutChild ? <LayoutItemRows component={component} /> : null}
+      {context.isLayoutChild ? (
+        <LayoutItemRows component={component} parentIsGrid={context.isGridParent} />
+      ) : null}
       <ClipRow component={component} />
     </InspectorSection>
   );
@@ -231,33 +243,58 @@ function parsePx(raw: string): number | null {
 const DIRECTION_OPTIONS = [
   { value: "row", label: "Horizontal", Icon: ArrowRight },
   { value: "column", label: "Vertical", Icon: ArrowDown },
+  { value: "grid", label: "Grid", Icon: Columns3 },
   { value: "free", label: "Free form", Icon: Move },
 ] as const;
 
-const JUSTIFY_OPTIONS = [
-  { value: "flex-start", label: "Start", Icon: AlignHorizontalJustifyStart },
-  { value: "center", label: "Center", Icon: AlignHorizontalJustifyCenter },
-  { value: "flex-end", label: "End", Icon: AlignHorizontalJustifyEnd },
-  { value: "space-between", label: "Space between", Icon: AlignHorizontalSpaceBetween },
-  { value: "space-around", label: "Space around", Icon: AlignHorizontalSpaceAround },
-] as const;
+/**
+ * Direction row lives outside AutoLayoutRows / GridRows so it can switch
+ * between the two layout paradigms. Writing "grid" flips `display: grid`
+ * and clears flex-* properties; picking a flex axis flips back.
+ */
+function DirectionRow({
+  component,
+  isFlex,
+  isGrid,
+}: {
+  component: Component;
+  isFlex: boolean;
+  isGrid: boolean;
+}) {
+  const rawFlexDirection = readStyle(component, "flex-direction") || "row";
+  const reversed = rawFlexDirection.endsWith("-reverse");
+  const baseAxis = reversed
+    ? rawFlexDirection.replace("-reverse", "")
+    : rawFlexDirection;
+  const direction = isGrid ? "grid" : isFlex ? baseAxis : "free";
+  const wrap = readStyle(component, "flex-wrap") || "nowrap";
 
-function AutoLayoutRows({ component }: { component: Component }) {
-  const direction = readStyle(component, "flex-direction") || "row";
-  const gap = readStyle(component, "gap");
-  const justify = readStyle(component, "justify-content");
+  const setDirection = (v: string) => {
+    if (v === "free") {
+      clearStyle(component, "display");
+      clearStyle(component, "flex-direction");
+      clearStyle(component, "flex-wrap");
+      return;
+    }
+    if (v === "grid") {
+      writeStyle(component, "display", "grid");
+      clearStyle(component, "flex-direction");
+      clearStyle(component, "flex-wrap");
+      return;
+    }
+    // flex row or column
+    writeStyle(component, "display", "flex");
+    const next = reversed ? `${v}-reverse` : v;
+    writeStyle(component, "flex-direction", next);
+  };
 
   return (
-    <>
-      <FieldGroup label="Direction">
+    <FieldGroup label="Direction">
+      <div className="flex items-center gap-2">
         <ToggleGroup
           type="single"
-          value={direction === "free" ? "" : direction}
-          onValueChange={(v) => {
-            if (!v) return;
-            if (v === "free") clearStyle(component, "flex-direction");
-            else writeStyle(component, "flex-direction", v);
-          }}
+          value={direction}
+          onValueChange={(v) => v && setDirection(v)}
           data-testid="oc-ins-flex-direction"
         >
           {DIRECTION_OPTIONS.map(({ value: val, label, Icon }) => (
@@ -271,7 +308,56 @@ function AutoLayoutRows({ component }: { component: Component }) {
             </Tooltip>
           ))}
         </ToggleGroup>
-      </FieldGroup>
+        {isFlex ? (
+          <>
+            <label className="flex items-center gap-1 cursor-pointer text-[11px] text-muted-foreground">
+              <input
+                type="checkbox"
+                className="accent-oc-accent"
+                checked={reversed}
+                onChange={(e) => {
+                  const next = e.target.checked ? `${baseAxis}-reverse` : baseAxis;
+                  writeStyle(component, "flex-direction", next);
+                }}
+                data-testid="oc-ins-flex-reverse"
+              />
+              Reverse
+            </label>
+            <label className="flex items-center gap-1 cursor-pointer text-[11px] text-muted-foreground">
+              <input
+                type="checkbox"
+                className="accent-oc-accent"
+                checked={wrap !== "nowrap"}
+                onChange={(e) => {
+                  if (e.target.checked) writeStyle(component, "flex-wrap", "wrap");
+                  else clearStyle(component, "flex-wrap");
+                }}
+                data-testid="oc-ins-flex-wrap"
+              />
+              Wrap
+            </label>
+          </>
+        ) : null}
+      </div>
+    </FieldGroup>
+  );
+}
+
+const JUSTIFY_OPTIONS = [
+  { value: "flex-start", label: "Start", Icon: AlignHorizontalJustifyStart },
+  { value: "center", label: "Center", Icon: AlignHorizontalJustifyCenter },
+  { value: "flex-end", label: "End", Icon: AlignHorizontalJustifyEnd },
+  { value: "space-between", label: "Space between", Icon: AlignHorizontalSpaceBetween },
+  { value: "space-around", label: "Space around", Icon: AlignHorizontalSpaceAround },
+  { value: "space-evenly", label: "Space evenly", Icon: AlignHorizontalSpaceAround },
+] as const;
+
+function AutoLayoutRows({ component }: { component: Component }) {
+  const gap = readStyle(component, "gap");
+  const justify = readStyle(component, "justify-content");
+
+  return (
+    <>
       <FieldGroup label="Gap">
         <NumberInput
           value={gap}
@@ -306,6 +392,90 @@ function AutoLayoutRows({ component }: { component: Component }) {
   );
 }
 
+/* ───────────────── Grid (grid parent) ─────────────────────── */
+
+/**
+ * Minimum-viable grid controls — free-form text inputs for
+ * `grid-template-columns` / `grid-template-rows` plus separate row and
+ * column gaps. Matches CSS semantics directly so power users can type
+ * `repeat(3, 1fr) 2fr` or `100px 1fr`. A full track editor (per-track
+ * type + value UI like Penpot) is a follow-up; this stays within CSS
+ * vocabulary and keeps grid reachable without Raw CSS.
+ */
+function GridRows({ component }: { component: Component }) {
+  const columns = readStyle(component, "grid-template-columns");
+  const rows = readStyle(component, "grid-template-rows");
+  const rowGap = readStyle(component, "row-gap") || readStyle(component, "gap");
+  const colGap =
+    readStyle(component, "column-gap") || readStyle(component, "gap");
+
+  const writeTracks = (prop: "grid-template-columns" | "grid-template-rows") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = e.target.value.trim();
+      if (!v) clearStyle(component, prop);
+      else writeStyle(component, prop, v);
+    };
+
+  return (
+    <>
+      <FieldGroup label="Columns">
+        <input
+          type="text"
+          value={columns}
+          onChange={writeTracks("grid-template-columns")}
+          placeholder="1fr 1fr 1fr"
+          className={cn(
+            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
+          )}
+          data-testid="oc-ins-grid-cols"
+          aria-label="Grid columns"
+        />
+      </FieldGroup>
+      <FieldGroup label="Rows">
+        <input
+          type="text"
+          value={rows}
+          onChange={writeTracks("grid-template-rows")}
+          placeholder="auto"
+          className={cn(
+            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
+          )}
+          data-testid="oc-ins-grid-rows"
+          aria-label="Grid rows"
+        />
+      </FieldGroup>
+      <div className="grid grid-cols-2 gap-1">
+        <NumberInput
+          value={parsePx(colGap) ?? 0}
+          onChange={(n) => {
+            if (n <= 0) clearStyle(component, "column-gap");
+            else writeStyle(component, "column-gap", `${n}px`);
+          }}
+          unit="px"
+          label="↔"
+          min={0}
+          step={1}
+          data-testid="oc-ins-grid-col-gap"
+        />
+        <NumberInput
+          value={parsePx(rowGap) ?? 0}
+          onChange={(n) => {
+            if (n <= 0) clearStyle(component, "row-gap");
+            else writeStyle(component, "row-gap", `${n}px`);
+          }}
+          unit="px"
+          label="↕"
+          min={0}
+          step={1}
+          data-testid="oc-ins-grid-row-gap"
+        />
+      </div>
+    </>
+  );
+}
+
 /* ───────────────── Layout Item (flex child) ─────────────────── */
 
 const ALIGN_SELF_OPTIONS = [
@@ -315,7 +485,18 @@ const ALIGN_SELF_OPTIONS = [
   { value: "stretch", label: "Stretch", Icon: StretchHorizontal },
 ] as const;
 
-function LayoutItemRows({ component }: { component: Component }) {
+function LayoutItemRows({
+  component,
+  parentIsGrid,
+}: {
+  component: Component;
+  parentIsGrid: boolean;
+}) {
+  if (parentIsGrid) return <GridItemRows component={component} />;
+  return <FlexItemRows component={component} />;
+}
+
+function FlexItemRows({ component }: { component: Component }) {
   const alignSelf = readStyle(component, "align-self");
   const flexGrow = readStyle(component, "flex-grow");
   const flexShrink = readStyle(component, "flex-shrink");
@@ -377,6 +558,53 @@ function LayoutItemRows({ component }: { component: Component }) {
           label="B"
           step={1}
           data-testid="oc-ins-flex-basis"
+        />
+      </FieldGroup>
+    </>
+  );
+}
+
+/**
+ * Grid-item controls. Accepts grid-column / grid-row as free-form CSS
+ * strings — typical syntax is `1 / 3` for "span from line 1 to 3" or
+ * `span 2` for "span 2 tracks." Full structured (start + end + span)
+ * inputs are a follow-up.
+ */
+function GridItemRows({ component }: { component: Component }) {
+  const column = readStyle(component, "grid-column");
+  const row = readStyle(component, "grid-row");
+  const writeTrack = (prop: "grid-column" | "grid-row") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = e.target.value.trim();
+      if (!v) clearStyle(component, prop);
+      else writeStyle(component, prop, v);
+    };
+  const inputClass = cn(
+    "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
+    "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
+  );
+  return (
+    <>
+      <FieldGroup label="Column">
+        <input
+          type="text"
+          value={column}
+          onChange={writeTrack("grid-column")}
+          placeholder="auto"
+          className={inputClass}
+          data-testid="oc-ins-grid-column"
+          aria-label="Grid column"
+        />
+      </FieldGroup>
+      <FieldGroup label="Row">
+        <input
+          type="text"
+          value={row}
+          onChange={writeTrack("grid-row")}
+          placeholder="auto"
+          className={inputClass}
+          data-testid="oc-ins-grid-row"
+          aria-label="Grid row"
         />
       </FieldGroup>
     </>

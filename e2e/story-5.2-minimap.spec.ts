@@ -17,13 +17,16 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
 }
 
 test.describe("Story 5.2: minimap", () => {
-  test("minimap renders with one frame rectangle and a zoom readout", async ({
+  test("minimap renders with one frame rectangle", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
     await expect(page.locator('[data-testid="oc-minimap"]')).toBeVisible();
     await expect(page.locator('[data-testid^="oc-minimap-frame-"]')).toHaveCount(1);
-    await expect(page.locator('[data-testid="oc-minimap-zoom"]')).toHaveText(/\d+%/);
+    // The minimap's zoom readout was retired — ZoomControl (bottom-right)
+    // is the canonical display, and the minimap now sits at bottom-left
+    // so the two don't overlap.
+    await expect(page.locator('[data-testid="oc-minimap-zoom"]')).toHaveCount(0);
   });
 
   test("adding an artboard shows up as a new rect in the minimap", async ({
@@ -34,15 +37,5 @@ test.describe("Story 5.2: minimap", () => {
     // ARTBOARDS_CHANGED, which the Minimap subscribes to for refresh.
     await page.locator('[data-testid="oc-insert-frame"]').click();
     await expect(page.locator('[data-testid^="oc-minimap-frame-"]')).toHaveCount(2);
-  });
-
-  test("minimap zoom readout follows Canvas.setZoom", async ({ freshApp: page }) => {
-    await waitForEditor(page);
-    await page.evaluate(() => {
-      (window as unknown as { __opencanvas: { editor: { Canvas: { setZoom(n: number): unknown } } } }).__opencanvas.editor.Canvas.setZoom(
-        175,
-      );
-    });
-    await expect(page.locator('[data-testid="oc-minimap-zoom"]')).toHaveText("175%");
   });
 });
