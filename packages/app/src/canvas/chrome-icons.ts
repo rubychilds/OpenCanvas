@@ -78,7 +78,10 @@ export {
   TextHSix as Heading6,
   TextHThree as Heading3,
   TextHTwo as Heading2,
+  TextStrikethrough,
   TextT as Type,
+  TextTSlash,
+  TextUnderline,
   Textbox as TextCursor,
   Trash as Trash2,
   VideoCamera as Video,
@@ -87,4 +90,11 @@ export {
 
 export type { Icon as LucideIcon } from "@phosphor-icons/react";
 
-export { PlusOutline, SearchOutline } from "./custom-icons.js";
+export {
+  PlusOutline,
+  SearchOutline,
+  StrokeDashed,
+  StrokeDotted,
+  StrokeDouble,
+  StrokeSolid,
+} from "./custom-icons.js";

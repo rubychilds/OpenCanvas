@@ -1,14 +1,16 @@
-import type { ReactNode } from "react";
 import type { Component } from "grapesjs";
 import {
   TextAlignCenter,
   TextAlignJustify,
   TextAlignLeft,
   TextAlignRight,
+  TextStrikethrough,
+  TextTSlash,
+  TextUnderline,
 } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.js";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.js";
@@ -66,12 +68,18 @@ const TEXT_ALIGN_OPTIONS = [
   { value: "justify", label: "Justify", Icon: TextAlignJustify },
 ] as const;
 
-const TEXT_TRANSFORM_OPTIONS = ["none", "uppercase", "lowercase", "capitalize"] as const;
-const TEXT_DECORATION_OPTIONS = ["none", "underline", "line-through", "overline"] as const;
+const TEXT_TRANSFORM_OPTIONS = [
+  { value: "none", label: "None", glyph: "–" },
+  { value: "capitalize", label: "Capitalize", glyph: "Aa" },
+  { value: "lowercase", label: "Lowercase", glyph: "aa" },
+  { value: "uppercase", label: "Uppercase", glyph: "AA" },
+] as const;
 
-function RowLabel({ children }: { children: ReactNode }) {
-  return <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">{children}</span>;
-}
+const TEXT_DECORATION_OPTIONS = [
+  { value: "none", label: "None", Icon: TextTSlash },
+  { value: "underline", label: "Underline", Icon: TextUnderline },
+  { value: "line-through", label: "Strikethrough", Icon: TextStrikethrough },
+] as const;
 
 export function TypographySection({ component }: { component: Component }) {
   const fontFamily = readStyle(component, "font-family");
@@ -85,8 +93,10 @@ export function TypographySection({ component }: { component: Component }) {
 
   return (
     <InspectorSection title="Typography">
-      <div className="flex items-center gap-2">
-        <RowLabel>Font</RowLabel>
+      {/* Font family + weight live on one row — Font label dropped, the two
+          selects are self-evident (weight is 3-digit numeric, family is a
+          name). Family takes the extra width; weight stays compact at ~72px. */}
+      <div className="flex items-center gap-1">
         <select
           value={matchPreset(fontFamily)}
           onChange={(e) => {
@@ -95,10 +105,11 @@ export function TypographySection({ component }: { component: Component }) {
             else writeStyle(component, "font-family", v);
           }}
           className={cn(
-            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
+            "h-7 flex-1 min-w-0 rounded-md bg-chip px-2 text-sm text-foreground",
             "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-font-family"
+          aria-label="Font family"
         >
           <option value="">Inherit</option>
           {FONT_FAMILY_PRESETS.map((p) => (
@@ -110,10 +121,6 @@ export function TypographySection({ component }: { component: Component }) {
             <option value={fontFamily}>{fontFamily}</option>
           ) : null}
         </select>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <RowLabel>Weight</RowLabel>
         <select
           value={fontWeight}
           onChange={(e) => {
@@ -122,10 +129,11 @@ export function TypographySection({ component }: { component: Component }) {
             else writeStyle(component, "font-weight", v);
           }}
           className={cn(
-            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
+            "h-7 w-16 shrink-0 rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
             "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-font-weight"
+          aria-label="Font weight"
         >
           {WEIGHT_OPTIONS.map((w) => (
             <option key={w} value={w}>
@@ -135,16 +143,18 @@ export function TypographySection({ component }: { component: Component }) {
         </select>
       </div>
 
+      {/* Size stands alone; LH + LS ride together on the next row. */}
+      <NumberInput
+        value={fontSize}
+        onChange={(n) => writeStyle(component, "font-size", `${n}px`)}
+        unit="px"
+        label="S"
+        min={1}
+        step={1}
+        data-testid="oc-ins-font-size"
+      />
+
       <div className="grid grid-cols-2 gap-1">
-        <NumberInput
-          value={fontSize}
-          onChange={(n) => writeStyle(component, "font-size", `${n}px`)}
-          unit="px"
-          label="S"
-          min={1}
-          step={1}
-          data-testid="oc-ins-font-size"
-        />
         <NumberInput
           value={lineHeight}
           onChange={(n) => writeStyle(component, "line-height", String(n))}
@@ -153,10 +163,6 @@ export function TypographySection({ component }: { component: Component }) {
           step={0.1}
           data-testid="oc-ins-line-height"
         />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <RowLabel>Spacing</RowLabel>
         <NumberInput
           value={letterSpacing}
           onChange={(n) => {
@@ -167,12 +173,10 @@ export function TypographySection({ component }: { component: Component }) {
           label="LS"
           step={0.5}
           data-testid="oc-ins-letter-spacing"
-          className="flex-1"
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <RowLabel>Align</RowLabel>
+      <FieldGroup label="Align">
         <ToggleGroup
           type="single"
           value={textAlign}
@@ -193,54 +197,53 @@ export function TypographySection({ component }: { component: Component }) {
             </Tooltip>
           ))}
         </ToggleGroup>
-      </div>
+      </FieldGroup>
 
-      <div className="grid grid-cols-2 gap-1">
-        <label className="flex items-center gap-1">
-          <span className="text-[11px] text-muted-foreground">Case</span>
-          <select
-            value={textTransform}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "none") clearStyle(component, "text-transform");
-              else writeStyle(component, "text-transform", v);
-            }}
-            className={cn(
-              "h-7 flex-1 rounded-md bg-chip px-1 text-xs text-foreground",
-              "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
-            )}
-            data-testid="oc-ins-text-transform"
-          >
-            {TEXT_TRANSFORM_OPTIONS.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1">
-          <span className="text-[11px] text-muted-foreground">Deco</span>
-          <select
-            value={textDecoration}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "none") clearStyle(component, "text-decoration");
-              else writeStyle(component, "text-decoration", v);
-            }}
-            className={cn(
-              "h-7 flex-1 rounded-md bg-chip px-1 text-xs text-foreground",
-              "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
-            )}
-            data-testid="oc-ins-text-decoration"
-          >
-            {TEXT_DECORATION_OPTIONS.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <FieldGroup label="Case">
+        <ToggleGroup
+          type="single"
+          value={textTransform}
+          onValueChange={(v) => {
+            if (!v || v === "none") clearStyle(component, "text-transform");
+            else writeStyle(component, "text-transform", v);
+          }}
+          data-testid="oc-ins-text-transform"
+        >
+          {TEXT_TRANSFORM_OPTIONS.map(({ value, label, glyph }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
+
+      <FieldGroup label="Deco">
+        <ToggleGroup
+          type="single"
+          value={textDecoration}
+          onValueChange={(v) => {
+            if (!v || v === "none") clearStyle(component, "text-decoration");
+            else writeStyle(component, "text-decoration", v);
+          }}
+          data-testid="oc-ins-text-decoration"
+        >
+          {TEXT_DECORATION_OPTIONS.map(({ value, label, Icon }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
     </InspectorSection>
   );
 }

@@ -70,7 +70,8 @@ test.describe("D.6: Typography section + Exports section", () => {
     await lh.blur();
     expect(await readSelectedStyle(page, "line-height")).toBe("1.4");
 
-    await page.locator('[data-testid="oc-ins-text-transform"]').selectOption("uppercase");
+    // text-transform is now a visual ToggleGroup — aria-label is the stable selector.
+    await page.locator('[data-testid="oc-ins-text-transform"] [aria-label="Uppercase"]').click();
     expect(await readSelectedStyle(page, "text-transform")).toBe("uppercase");
   });
 

@@ -120,7 +120,8 @@ base.describe("D.5: Fill as a stack + Stroke + Shadow (per ADR-0003)", () => {
     await width.fill("2");
     await width.blur();
 
-    await page.locator('[data-testid="oc-ins-stroke-style"]').selectOption("dashed");
+    // Stroke style is now a visual ToggleGroup — aria-label is the stable selector.
+    await page.locator('[data-testid="oc-ins-stroke-style"] [aria-label="Dashed"]').click();
 
     const border = await readSelectedStyle(page, "border");
     expect(border).toContain("2px");

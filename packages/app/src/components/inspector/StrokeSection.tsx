@@ -1,13 +1,28 @@
+import type { ComponentType, SVGProps } from "react";
 import type { Component } from "grapesjs";
-import { cn } from "../../lib/utils.js";
+import {
+  StrokeDashed,
+  StrokeDotted,
+  StrokeDouble,
+  StrokeSolid,
+} from "../../canvas/chrome-icons.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.js";
+import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.js";
 import { ColorField } from "./controls/ColorField.js";
 import { formatColor, parseColor } from "./controls/color-utils.js";
 
 const STYLES = ["solid", "dashed", "dotted", "double"] as const;
 type StrokeStyle = (typeof STYLES)[number];
+
+const STYLE_OPTIONS: ReadonlyArray<{ value: StrokeStyle; label: string; Icon: ComponentType<SVGProps<SVGSVGElement>> }> = [
+  { value: "solid", label: "Solid", Icon: StrokeSolid },
+  { value: "dashed", label: "Dashed", Icon: StrokeDashed },
+  { value: "dotted", label: "Dotted", Icon: StrokeDotted },
+  { value: "double", label: "Double", Icon: StrokeDouble },
+];
 
 function parseWidth(input: string): number {
   if (!input) return 0;
@@ -125,26 +140,28 @@ export function StrokeSection({ component }: { component: Component }) {
           />
         </div>
       </div>
-      <label className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Style</span>
-        <select
+      <FieldGroup label="Style">
+        <ToggleGroup
+          type="single"
           value={style}
-          onChange={(e) =>
-            writeAll(width || 1, e.target.value as StrokeStyle, color.hex, color.opacity)
-          }
-          className={cn(
-            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
-            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
-          )}
+          onValueChange={(v) => {
+            if (!v) return;
+            writeAll(width || 1, v as StrokeStyle, color.hex, color.opacity);
+          }}
           data-testid="oc-ins-stroke-style"
         >
-          {STYLES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
+          {STYLE_OPTIONS.map(({ value, label, Icon }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
           ))}
-        </select>
-      </label>
+        </ToggleGroup>
+      </FieldGroup>
     </InspectorSection>
   );
 }
