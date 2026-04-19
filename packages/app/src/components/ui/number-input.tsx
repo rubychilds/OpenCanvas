@@ -121,8 +121,9 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     return (
       <div
         className={cn(
-          "flex items-center h-7 rounded-md border border-border bg-background",
-          "focus-within:border-oc-accent focus-within:ring-1 focus-within:ring-ring",
+          // Penpot-shape chip: grey fill, no border, ring-on-focus.
+          "flex items-center h-7 rounded-md bg-chip",
+          "focus-within:ring-1 focus-within:ring-oc-accent",
           className,
         )}
       >
@@ -132,9 +133,9 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           aria-label="Drag to scrub value"
           onPointerDown={onScrubberPointerDown}
           className={cn(
-            "flex items-center justify-center w-6 h-full",
-            "text-xs text-muted-foreground select-none cursor-ew-resize",
-            "hover:text-foreground hover:bg-surface-sunken rounded-l-md",
+            "flex items-center justify-center min-w-5 h-full px-1.5",
+            "text-[11px] text-muted-foreground select-none cursor-ew-resize",
+            "hover:text-foreground rounded-l-md",
           )}
           data-testid={testId ? `${testId}-scrub` : undefined}
         >
@@ -149,14 +150,14 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           onBlur={() => commitFromText(draft)}
           onKeyDown={onKeyDown}
           className={cn(
-            "flex-1 min-w-0 bg-transparent px-2 h-full text-sm tabular-nums",
+            "flex-1 min-w-0 bg-transparent px-0.5 h-full text-sm tabular-nums text-foreground",
             "focus:outline-none",
           )}
           data-testid={testId}
           {...rest}
         />
         {unit ? (
-          <span className="pr-2 text-xs text-muted-foreground select-none">{unit}</span>
+          <span className="pr-2 text-[11px] text-muted-foreground select-none">{unit}</span>
         ) : null}
       </div>
     );

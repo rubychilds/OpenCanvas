@@ -43,6 +43,7 @@
   /* Editor-specific accents */
   --surface: oklch(0.985 0 0);       /* panel backgrounds (lighter than border) */
   --surface-sunken: oklch(0.965 0 0); /* deeper, eg. tree hover/selected bg */
+  --chip: oklch(0.945 0 0);           /* Penpot-style grey input chip (inputs + selects + pills) */
   --canvas: oklch(0.955 0 0);         /* the void behind artboards — off-white so artboards pop */
   --oc-accent: oklch(0.55 0.2 260);   /* the one blue; used for status + focus */
   --oc-accent-foreground: oklch(0.985 0 0);
@@ -106,6 +107,7 @@
 
   --surface: oklch(0.17 0 0);
   --surface-sunken: oklch(0.2 0 0);
+  --chip: oklch(0.23 0 0);        /* lighter than sunken so inputs still read as affordances */
   --canvas: oklch(0.125 0 0);     /* darker than surface so artboards pop */
   --oc-accent: oklch(0.66 0.2 260);
   --oc-accent-foreground: oklch(0.985 0 0);
