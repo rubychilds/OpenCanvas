@@ -1,9 +1,9 @@
 import { useEditorMaybe } from "@grapesjs/react";
 import {
+  FrameCorners,
   Image as ImageIcon,
   MousePointer,
   MousePointerClick,
-  Square,
   Type,
   type LucideIcon,
 } from "../canvas/chrome-icons.js";
@@ -31,7 +31,7 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   { id: "select", label: "Select", shortcut: "V", Icon: MousePointer, action: { kind: "select" }, disabled: true },
-  { id: "frame", label: "Frame", shortcut: "F", Icon: Square, action: { kind: "frame" } },
+  { id: "frame", label: "Frame", shortcut: "F", Icon: FrameCorners, action: { kind: "frame" } },
   { id: "text", label: "Text", shortcut: "T", Icon: Type, action: { kind: "text" } },
   { id: "image", label: "Image", shortcut: "I", Icon: ImageIcon, action: { kind: "image" } },
   { id: "button", label: "Button", shortcut: "B", Icon: MousePointerClick, action: { kind: "button" } },
