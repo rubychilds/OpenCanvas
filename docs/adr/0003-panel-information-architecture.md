@@ -171,7 +171,7 @@ Phase D.3 through D.6 shipped the full section catalogue except **Effects**. Sec
 | 6 | **Stroke** | ✅ Shipped | `09fc6cf` + `e5716b1` (D.5) | Colour + width + style + compound `border` shorthand round-trip. |
 | 7 | **Shadow** | ✅ Shipped | `80ca8fa` (D.5) | Ordered `box-shadow` list with offset/blur/spread/colour/inset per row. Hide toggle excludes a row from compiled output. Multi-entry joins with comma. |
 | 8 | **Typography** | ✅ Shipped (tag-gated) | `15cf4c9` (D.6) | `isTypographyTarget(component)` gates visibility to text-bearing tags (h1–h6 / p / span / a / strong / em / small / code / label / button / li / blockquote). Controls: font-family preset select, weight 100–900, size + line-height paired row, letter-spacing, align ToggleGroup (TextAlign Left/Center/Right/Justify), case + decoration pair. |
-| 9 | **Effects** | ❌ Pending | — | Blur / backdrop-filter / filter entries not yet shipped. Reachable today via Raw CSS accordion. Owning phase to be decided (D.7 or dropped to v0.3 follow-up). |
+| 9 | **Effects** | ✅ Shipped | `e9fa5aa` (D.7) | Two rows: Blur (`filter: blur(Npx)`) and Bg blur (`backdrop-filter: blur(Npx)`). Parser preserves other filter functions in compound strings (`brightness(…) contrast(…) blur(Npx)` round-trips). Other filter functions (saturate / grayscale / drop-shadow / hue-rotate) remain reachable through Raw CSS until demand appears. |
 | 10 | **Exports** | ✅ Shipped | `15cf4c9` (D.6) | Tailwind/Inline mode toggle, scoped JSX preview, Copy JSX / Copy HTML / Copy CSS buttons with "Copied" flash. Preview reuses `htmlToJsx` + `mergeStylesIntoHtml` from the `get_jsx` MCP tool — one codepath for both surfaces. |
 
 **Shared controls catalogue delivered alongside the sections:**
@@ -192,16 +192,15 @@ Phase D.3 through D.6 shipped the full section catalogue except **Effects**. Sec
 
 **Chrome** (D.4d.1 `2a592e5`, D.4d.2 `b6e6fa5`): both side panels render on a white `bg-background`; all icons route through `packages/app/src/canvas/chrome-icons.ts` using Lucide-style names but backed by Phosphor (filled, via IconContext.Provider). The late-night `7a9f808` commit routes three flex-distribution icons through Lucide as a fallback — see [ADR-0001 Phase D addendum](./0001-frontend-ui-stack.md#addendum--2026-04-18-late-phase-d-reality--icon-stack-amendment) for the mixed-stack rationale.
 
-**Test coverage:** 27 Playwright specs across `e2e/story-d4-*`, `story-d4b-*`, `story-d5-*`, `story-d6-*`. Full D-series suite runs in ≈50s; all pass post-merge on main as of `7a9f808`.
+**Test coverage:** 30 Playwright specs across `e2e/story-d4-*`, `story-d4b-*`, `story-d5-*`, `story-d6-*`, `story-d7-*`. Full D-series suite runs in ≈55s; all pass on main as of `e9fa5aa`.
 
 **Remaining work under this ADR:**
 
-- **Effects section** — the only unshipped section from the decision list. Adding it keeps the catalogue whole and retires the last Raw CSS-only path for filter effects.
 - **Grid support in Auto Layout** — currently flex-only; grid containers fall back to Raw CSS. Partially addressed by `useInspectorContext.isGridParent`, which already signals the state but doesn't yet drive a dedicated UI.
-- **Applied tokens display per section** — Penpot threads design tokens through every section (Fill / Stroke / Typography display the token name when a variable is bound). Depends on Story 6.2's design-tokens UI panel shipping first.
+- **Applied tokens display per section** — Penpot threads design tokens through every section (Fill / Stroke / Typography display the token name when a variable is bound). The Variables editor UI landed in Story 6.2 (`477070e`); wiring token-aware readbacks into each section is a follow-up.
 - **`<AlignmentPad>` + `<SizeField>`** — deferred from ADR-0002. Reopens when a second call site appears for either control.
 
-Everything the ADR committed to as first-pass scope has shipped except Effects. The three-phase plan (D.4 / D.5 / D.6) held, with the addition of the D.4b Measures upgrade once the original D.4 shape proved too thin.
+Every section from the decision list has shipped. The three-phase plan (D.4 / D.5 / D.6) held, with the addition of D.4b (Measures upgrade) and D.7 (Effects closer) as necessary follow-ups once the original shapes proved too thin.
 
 ---
 
