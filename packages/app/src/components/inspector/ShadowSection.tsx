@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { Component } from "grapesjs";
-import { Eye, EyeOff, Plus, Trash2 } from "../../canvas/chrome-icons.js";
+import { Eye, EyeOff, PlusOutline, Trash2 } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { InspectorSection } from "./InspectorSection.js";
@@ -254,33 +254,29 @@ export function ShadowSection({ component }: { component: Component }) {
       aria-label="Add shadow"
       data-testid="oc-ins-shadow-add"
     >
-      <Plus className="size-3.5" />
+      <PlusOutline className="size-3.5" />
     </button>
   );
 
   return (
     <InspectorSection title="Shadow" action={action}>
-      {localStack.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground py-1">No shadow. + Add one.</p>
-      ) : (
-        localStack.map((entry, i) => (
-          <ShadowRow
-            key={entry.id}
-            entry={entry}
-            onChange={(next) => {
-              const copy = localStack.slice();
-              copy[i] = next;
-              commit(copy);
-            }}
-            onRemove={() => {
-              const copy = localStack.slice();
-              copy.splice(i, 1);
-              commit(copy);
-            }}
-            testIdBase={`oc-ins-shadow-row-${i}`}
-          />
-        ))
-      )}
+      {localStack.map((entry, i) => (
+        <ShadowRow
+          key={entry.id}
+          entry={entry}
+          onChange={(next) => {
+            const copy = localStack.slice();
+            copy[i] = next;
+            commit(copy);
+          }}
+          onRemove={() => {
+            const copy = localStack.slice();
+            copy.splice(i, 1);
+            commit(copy);
+          }}
+          testIdBase={`oc-ins-shadow-row-${i}`}
+        />
+      ))}
     </InspectorSection>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useEditorMaybe } from "@grapesjs/react";
-import { ChevronDown, Minus, Plus } from "../canvas/chrome-icons.js";
+import { ChevronDown, Minus, PlusOutline } from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
 import {
   DropdownMenu,
@@ -103,7 +103,7 @@ export function ZoomControl() {
         aria-label="Zoom in"
         data-testid="oc-zoom-in"
       >
-        <Plus className="size-3.5" />
+        <PlusOutline className="size-3.5" />
       </button>
     </div>
   );
