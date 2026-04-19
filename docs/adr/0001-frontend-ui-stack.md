@@ -189,4 +189,44 @@ Nothing originally accepted has been rejected. Nothing new has been added. The d
 
 ---
 
+## Addendum — 2026-04-18 (late): Phase D reality + icon-stack amendment
+
+Phase D (D.3 through D.6) surfaced two facts that amend this ADR's Decision table. Both are recorded here rather than in a new ADR because neither is load-bearing enough to require a separate accept cycle, but both contradict the plain reading of the original decisions.
+
+### 1. Icon library: Phosphor filled + Lucide fallback (not Lucide alone)
+
+The Decision table commits to **Lucide React** with "stroke weight 1.5, no filled icons unless indicating state." In practice, a design review during Phase D confirmed that Lucide's outline-only style reads as "SaaS dashboard" (the exact risk the ADR flagged). Per user direction in commit `b6e6fa5` (D.4d.2), the editor swapped to **Phosphor Icons** with `weight="fill"` applied globally via `IconContext.Provider` at the App root.
+
+Subsequent review of the flex-layout icons (`AlignHorizontalSpaceBetween`, `AlignHorizontalSpaceAround`, `StretchHorizontal`) found that Phosphor ships no clean analog for these — the substitutions routed through `TextAlignJustify` / `TextAlignCenter` / `ArrowsHorizontal` read as semantic mismatches. Commit `7a9f808` re-introduced `lucide-react` as a secondary source for exactly those three icons, giving a mixed-stack system.
+
+**Final icon strategy:**
+- **Single point of import:** `packages/app/src/canvas/chrome-icons.ts`. Call sites throughout the app import Lucide-style names from this wrapper and never touch either library directly.
+- **Primary source:** `@phosphor-icons/react` 2.1.10 with `weight="fill"` applied via IconContext.Provider at the App root.
+- **Fallback source:** `lucide-react` 1.8.0 for the three flex-distribution icons that Phosphor has no analog for. Outline-only; acceptable because they are structural markers, not ornamental glyphs.
+- **Icon naming:** always Lucide-style (`AlignLeft`, `ChevronDown`, `StretchHorizontal`, etc.) regardless of source library. The wrapper does the translation.
+
+This mixed approach keeps the wrapper the only seam in the codebase — call sites remain library-agnostic, and swapping the primary source again in the future (Heroicons, custom SVG sprite, etc.) is a one-file change.
+
+### 2. Control catalogue: deferred pieces shipped earlier than planned
+
+The addendum above deferred `react-colorful` to Phase C (Epic 6 design tokens UI). It actually shipped in **Phase D.5** (`61e6c1c` / `09fc6cf` / `80ca8fa`) as part of the shared `<ColorField>` control used by FillSection / StrokeSection / ShadowSection. Reason: the Penpot-shape reframing in [ADR-0003](./0003-panel-information-architecture.md) made multi-layer fills a first-class concern, and those need a picker.
+
+The other deferrals (`react-arborist`, `sonner`, `cmdk`, `@floating-ui/react`, `react-hotkeys-hook`) remain deferred on the original schedule. `react-arborist` is still not present — the naive recursive `LayersPanel` continues to handle v0.2 canvas sizes. The Risk table's benchmark commitment remains valid and triggers when arborist is installed.
+
+### 3. Additional dependencies landing in Phase D (not in the original table)
+
+| Package | Landed in | Justification |
+|---------|-----------|---------------|
+| `@phosphor-icons/react` | D.4d.2 | Filled iconography per design review. |
+| `@radix-ui/react-accordion` | D.3d | Raw CSS fallback accordion + Story 7.3 readability. |
+| `@radix-ui/react-toggle-group` | D.4 | Icon ToggleGroups for alignment rows per Story 7.0 AC. |
+| `@radix-ui/react-dropdown-menu` | D.3 era | Topbar overflow menu. |
+| `@radix-ui/react-popover` | D.5 | ColorField picker surface. |
+
+All are Radix primitives or Phosphor's own package — consistent with the ADR's "prefer Radix for everything headless" direction.
+
+**Status transition:** This addendum keeps the ADR at **Accepted**. Nothing originally accepted is rejected; the decision table's "Icons: Lucide React" row is amended to the mixed-stack strategy above. If the primary-source question reopens (e.g., custom SVG sprite like Penpot uses), that warrants a new ADR.
+
+---
+
 *End of ADR-0001.*

@@ -157,4 +157,52 @@ packages/app/src/components/inspector/
 
 ---
 
+## Addendum — 2026-04-18 (late): Implementation status
+
+Phase D.3 through D.6 shipped the full section catalogue except **Effects**. Section-by-section status:
+
+| # | Section | Status | Commit(s) | Notes |
+|---|---------|--------|-----------|-------|
+| 1 | **Layer** | ✅ Shipped | `269df21` (D.4) | Visibility (Eye / EyeOff writing `display: none`), lock (`data-oc-locked="true"` attribute, not CSS), opacity NumberInput writing fractional CSS opacity, blend-mode select. |
+| 2 | **Measures** | ✅ Shipped | `a2e2753` / `f6b5336` (D.4b) | W/H with aspect-lock toggle, X/Y, custom `<RotationDial>` SVG drag control with 15° Shift-snap, per-corner border-radius with expand/collapse. Replaced the earlier lightweight "Position" section. |
+| 3 | **Auto Layout** (Layout Container) | ✅ Shipped | D.3d baseline + D.4 wiring | Direction (row/column/free) ToggleGroup, gap NumberInput, justify-content ToggleGroup. Grid support pending — currently flex-only; grid containers fall back to Raw CSS. |
+| 4 | **Layout Item** | ✅ Shipped (contextual) | `269df21` (D.4) | Renders only when `useInspectorContext` reports `isLayoutChild`. Controls: align-self, flex-grow, flex-shrink, flex-basis. Gated via the same hook across the ADR. |
+| 5 | **Fill (as a stack)** | ✅ Shipped | `61e6c1c` (D.5) | Multi-layer `FillSection`: single layer compiles to `background-color`; multi-layer compiles to comma-separated `linear-gradient()` in `background-image`. Per-layer opacity, drag-to-reorder, hide toggle. Reads back a pre-existing 3-layer stack correctly (round-trip verified). |
+| 6 | **Stroke** | ✅ Shipped | `09fc6cf` + `e5716b1` (D.5) | Colour + width + style + compound `border` shorthand round-trip. |
+| 7 | **Shadow** | ✅ Shipped | `80ca8fa` (D.5) | Ordered `box-shadow` list with offset/blur/spread/colour/inset per row. Hide toggle excludes a row from compiled output. Multi-entry joins with comma. |
+| 8 | **Typography** | ✅ Shipped (tag-gated) | `15cf4c9` (D.6) | `isTypographyTarget(component)` gates visibility to text-bearing tags (h1–h6 / p / span / a / strong / em / small / code / label / button / li / blockquote). Controls: font-family preset select, weight 100–900, size + line-height paired row, letter-spacing, align ToggleGroup (TextAlign Left/Center/Right/Justify), case + decoration pair. |
+| 9 | **Effects** | ❌ Pending | — | Blur / backdrop-filter / filter entries not yet shipped. Reachable today via Raw CSS accordion. Owning phase to be decided (D.7 or dropped to v0.3 follow-up). |
+| 10 | **Exports** | ✅ Shipped | `15cf4c9` (D.6) | Tailwind/Inline mode toggle, scoped JSX preview, Copy JSX / Copy HTML / Copy CSS buttons with "Copied" flash. Preview reuses `htmlToJsx` + `mergeStylesIntoHtml` from the `get_jsx` MCP tool — one codepath for both surfaces. |
+
+**Shared controls catalogue delivered alongside the sections:**
+
+| Control | Lives at | Used by |
+|---------|----------|---------|
+| `<InspectorSection>` | `components/inspector/InspectorSection.tsx` | Every section (20px title row, 8px padding). |
+| `<NumberInput>` | `components/ui/number-input.tsx` (ADR-0001 Phase A) | Every section with a numeric property. |
+| `<RotationDial>` | `components/inspector/controls/RotationDial.tsx` | Measures section. |
+| `<ColorField>` | `components/inspector/controls/ColorField.tsx` | Fill / Stroke / Shadow. |
+| `color-utils.ts` | `components/inspector/controls/color-utils.ts` | Fill / Stroke / Shadow. |
+| `useInspectorContext` | `components/inspector/useInspectorContext.ts` | SemanticInspector + contextual sections. |
+| `isTypographyTarget` | Exported from `TypographySection.tsx` itself | SemanticInspector. |
+
+**Left panel shape** (D.3e commit `8c18c04`): single-view Layers panel (no tabs), Frames section collapsible at top with rename/delete, 28px layer rows with Eye/EyeOff + Lock/LockOpen affordances (fade-in on hover, stick visible when toggled on), double-click rename writing `custom-name` attribute, selected row highlights with `bg-oc-accent/15`. Matches the decision above to retire the Layers/Artboards/Blocks tab switcher.
+
+**Right panel shape** (D.4c commit `d59e5e1`): single-view Inspector (no tabs), conditional on selection — right panel is entirely hidden when nothing is selected, keeping the canvas area maximized for exploration.
+
+**Chrome** (D.4d.1 `2a592e5`, D.4d.2 `b6e6fa5`): both side panels render on a white `bg-background`; all icons route through `packages/app/src/canvas/chrome-icons.ts` using Lucide-style names but backed by Phosphor (filled, via IconContext.Provider). The late-night `7a9f808` commit routes three flex-distribution icons through Lucide as a fallback — see [ADR-0001 Phase D addendum](./0001-frontend-ui-stack.md#addendum--2026-04-18-late-phase-d-reality--icon-stack-amendment) for the mixed-stack rationale.
+
+**Test coverage:** 27 Playwright specs across `e2e/story-d4-*`, `story-d4b-*`, `story-d5-*`, `story-d6-*`. Full D-series suite runs in ≈50s; all pass post-merge on main as of `7a9f808`.
+
+**Remaining work under this ADR:**
+
+- **Effects section** — the only unshipped section from the decision list. Adding it keeps the catalogue whole and retires the last Raw CSS-only path for filter effects.
+- **Grid support in Auto Layout** — currently flex-only; grid containers fall back to Raw CSS. Partially addressed by `useInspectorContext.isGridParent`, which already signals the state but doesn't yet drive a dedicated UI.
+- **Applied tokens display per section** — Penpot threads design tokens through every section (Fill / Stroke / Typography display the token name when a variable is bound). Depends on Story 6.2's design-tokens UI panel shipping first.
+- **`<AlignmentPad>` + `<SizeField>`** — deferred from ADR-0002. Reopens when a second call site appears for either control.
+
+Everything the ADR committed to as first-pass scope has shipped except Effects. The three-phase plan (D.4 / D.5 / D.6) held, with the addition of the D.4b Measures upgrade once the original D.4 shape proved too thin.
+
+---
+
 *End of ADR-0003.*

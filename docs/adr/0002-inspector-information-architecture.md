@@ -1,9 +1,26 @@
 ADR-0002: Inspector information architecture
 
-**Status:** Proposed
+**Status:** **Superseded by [ADR-0003](./0003-panel-information-architecture.md)** (2026-04-18)
 **Date:** April 18, 2026
 **Owner:** Architecture
-**Related:** [ADR-0001](./0001-frontend-ui-stack.md), PRD §7.1 Story 1.6 (Flex controls), PRD §8.3 Epic 7 (Editor polish)
+**Related:** [ADR-0001](./0001-frontend-ui-stack.md), [ADR-0003](./0003-panel-information-architecture.md), PRD §7.1 Story 1.6 (Flex controls), PRD §8.3 Epic 7 / Story 7.3
+
+---
+
+## Supersession note — 2026-04-18
+
+This ADR was accepted in spirit but never ratified before a Penpot reference survey (logged as [ADR-0003](./0003-panel-information-architecture.md)) reframed the inspector shape. The section **names** and **phase plan** below were superseded by ADR-0003; the core **principles** (semantic layer over GrapesJS, `Property.upValue` writes, collapsible Raw CSS escape hatch, selection-gated visibility) all carried forward intact.
+
+**What ADR-0003 changed, in summary:**
+- Renamed the catalogue: Alignment / Auto Layout / Dimensions / Appearance / Fill / Stroke / Effects / Context → **Layer · Measures · Auto Layout · Layout Item · Fill · Stroke · Shadow · Typography · Effects · Exports** (per Penpot's shape catalogue).
+- Replaced `applicablePropertiesFor(component)` with `useInspectorContext(component)` returning `{ isFlexParent, isGridParent, isLayoutChild, isLayoutChildAbsolute }` — contextual gating based on parent-type, not just tag.
+- Moved lock/visibility/opacity affordances into a dedicated top-level **Layer** section rather than scattering them across Appearance / Context.
+- Split flex container controls (Auto Layout) from flex child controls (Layout Item) into two sections, as Penpot does — the original ADR implicitly rolled these together.
+- Dropped `<AlignmentPad>` (3×3 grid writing both axes) and `<SizeField>` (Fixed/Fill/Hug toggle) as dedicated controls in the first pass. Both remain open for follow-up; the current implementation uses two separate ToggleGroups and raw NumberInputs respectively.
+
+**What this ADR still documents correctly:** the layer-over-StylesProvider data flow, the rejected-alternatives rationale, the escape-hatch requirement, and the state-fork prohibition. ADR-0003 does not restate these — it builds on them.
+
+Kept below verbatim as the historical record.
 
 ---
 
