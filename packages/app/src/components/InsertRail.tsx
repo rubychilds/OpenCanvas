@@ -1,67 +1,57 @@
 import { useEditorMaybe } from "@grapesjs/react";
 import {
+  Circle,
   FrameCorners,
   Image as ImageIcon,
   MousePointer,
-  MousePointerClick,
+  Square,
   Type,
   type LucideIcon,
 } from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
-import { createArtboard } from "../canvas/artboards.js";
-
-type Action =
-  | { kind: "select" }
-  | { kind: "frame" }
-  | { kind: "text" }
-  | { kind: "image" }
-  | { kind: "button" };
+import { createPrimitive, type PrimitiveType } from "../canvas/primitives.js";
 
 interface Tool {
   id: string;
   label: string;
   shortcut?: string;
   Icon: LucideIcon;
-  action: Action;
-  /** Disabled tools render muted and don't fire. Used for Select which has no
-   *  alternate-tool state yet. */
+  /** The primitive concept this tool inserts. `null` for the placeholder
+   *  Select tool, which has no insertion behaviour yet. */
+  primitive: PrimitiveType | null;
   disabled?: boolean;
 }
 
+/**
+ * Tool order matches Penpot's left-rail vocabulary (per ADR-0005 §5):
+ * Select · Frame · Rectangle · Ellipse · Text · Image. Button has been
+ * retired from the rail — it's a compound, not a primitive in either
+ * Figma or Penpot, and ships via the BlocksPanel / future Components
+ * library instead.
+ */
 const TOOLS: Tool[] = [
-  { id: "select", label: "Select", shortcut: "V", Icon: MousePointer, action: { kind: "select" }, disabled: true },
-  { id: "frame", label: "Frame", shortcut: "F", Icon: FrameCorners, action: { kind: "frame" } },
-  { id: "text", label: "Text", shortcut: "T", Icon: Type, action: { kind: "text" } },
-  { id: "image", label: "Image", shortcut: "I", Icon: ImageIcon, action: { kind: "image" } },
-  { id: "button", label: "Button", shortcut: "B", Icon: MousePointerClick, action: { kind: "button" } },
+  {
+    id: "select",
+    label: "Select",
+    shortcut: "V",
+    Icon: MousePointer,
+    primitive: null,
+    disabled: true,
+  },
+  { id: "frame", label: "Frame", shortcut: "F", Icon: FrameCorners, primitive: "frame" },
+  { id: "rectangle", label: "Rectangle", shortcut: "R", Icon: Square, primitive: "rectangle" },
+  { id: "ellipse", label: "Ellipse", shortcut: "O", Icon: Circle, primitive: "ellipse" },
+  { id: "text", label: "Text", shortcut: "T", Icon: Type, primitive: "text" },
+  { id: "image", label: "Image", shortcut: "I", Icon: ImageIcon, primitive: "image" },
 ];
-
-const BUTTON_HTML = `<button class="px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700">Button</button>`;
-const TEXT_HTML = `<p class="text-base leading-relaxed">Text</p>`;
-const IMAGE_HTML = `<img src="" alt="" class="max-w-full h-auto" />`;
 
 export function InsertRail() {
   const editor = useEditorMaybe();
 
-  const dispatch = (action: Action) => {
-    if (!editor) return;
-    switch (action.kind) {
-      case "select":
-        return;
-      case "frame":
-        createArtboard(editor, { name: "Frame", width: 1440, height: 900 });
-        return;
-      case "text":
-        editor.addComponents(TEXT_HTML);
-        return;
-      case "image":
-        editor.addComponents(IMAGE_HTML);
-        return;
-      case "button":
-        editor.addComponents(BUTTON_HTML);
-        return;
-    }
+  const dispatch = (tool: Tool) => {
+    if (!editor || !tool.primitive) return;
+    createPrimitive(editor, tool.primitive);
   };
 
   return (
@@ -84,7 +74,7 @@ export function InsertRail() {
                 "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 tool.disabled && "opacity-40 cursor-not-allowed",
               )}
-              onClick={() => dispatch(tool.action)}
+              onClick={() => dispatch(tool)}
               disabled={tool.disabled}
               aria-label={tool.label}
               data-testid={`oc-insert-${tool.id}`}
