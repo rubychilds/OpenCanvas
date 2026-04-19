@@ -55,15 +55,24 @@ export function ColorField({
     else setDraft(hex.replace(/^#/, ""));
   };
 
+  // Penpot-shape chip: swatch + hex sit in a single grey container with no
+  // borders. When `showHex` is false (Shadow rows), only the swatch renders.
   return (
-    <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
+    <div
+      className={cn(
+        showHex
+          ? "flex items-center gap-2 min-w-0 h-7 rounded-md bg-chip pl-1 pr-2 focus-within:ring-1 focus-within:ring-oc-accent"
+          : "flex items-center min-w-0",
+        className,
+      )}
+    >
       <Popover.Root>
         <Popover.Trigger asChild>
           <button
             type="button"
             aria-label="Open colour picker"
             className={cn(
-              "h-5 w-5 shrink-0 rounded-sm border border-border",
+              "h-5 w-5 shrink-0 rounded-sm",
               "focus:outline-none focus:ring-1 focus:ring-oc-accent",
             )}
             style={{ background: `${CHECKERBOARD}` }}
@@ -96,9 +105,9 @@ export function ColorField({
                 }
               }}
               className={cn(
-                "mt-2 h-6 w-full rounded-sm border border-border bg-background px-1.5",
-                "font-mono text-[11px] uppercase",
-                "focus:border-oc-accent focus:outline-none",
+                "mt-2 h-7 w-full rounded-md bg-chip px-2",
+                "font-mono text-[11px] uppercase text-foreground",
+                "focus:outline-none focus:ring-1 focus:ring-oc-accent",
               )}
               aria-label="Hex colour"
               data-testid={testId ? `${testId}-popover-hex` : undefined}
@@ -119,9 +128,9 @@ export function ColorField({
             }
           }}
           className={cn(
-            "h-6 min-w-0 flex-1 rounded-sm border border-border bg-background px-1.5",
-            "font-mono text-[11px] uppercase",
-            "focus:border-oc-accent focus:outline-none",
+            "h-full min-w-0 flex-1 bg-transparent",
+            "font-mono text-[11px] uppercase text-foreground",
+            "focus:outline-none",
           )}
           aria-label="Hex colour"
           data-testid={testId ? `${testId}-hex` : undefined}

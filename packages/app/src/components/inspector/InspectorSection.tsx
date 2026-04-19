@@ -19,11 +19,11 @@ export interface InspectorSectionProps {
 export function InspectorSection({ title, action, children, className }: InspectorSectionProps) {
   return (
     <section className={cn("flex flex-col border-b border-border last:border-b-0", className)}>
-      <header className="flex items-center justify-between h-(--section-title-height) px-(--panel-padding)">
-        <h3 className="text-xs uppercase tracking-wider text-muted-foreground">{title}</h3>
+      <header className="flex items-center justify-between h-7 px-(--panel-padding) pt-1">
+        <h3 className="text-[13px] font-semibold text-foreground leading-none">{title}</h3>
         {action}
       </header>
-      <div className="flex flex-col gap-1 px-(--panel-padding) pb-2">{children}</div>
+      <div className="flex flex-col gap-1.5 px-(--panel-padding) pt-1 pb-2.5">{children}</div>
     </section>
   );
 }
