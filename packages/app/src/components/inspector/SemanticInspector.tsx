@@ -38,6 +38,9 @@ import { StylesPanel } from "../StylesPanel.js";
 import { InspectorSection } from "./InspectorSection.js";
 import { LayerSection } from "./LayerSection.js";
 import { LayoutItemSection } from "./LayoutItemSection.js";
+import { FillSection } from "./FillSection.js";
+import { StrokeSection } from "./StrokeSection.js";
+import { ShadowSection } from "./ShadowSection.js";
 import { useInspectorContext } from "./useInspectorContext.js";
 
 /** Sections the inspector offers (per ADR-0002 direction). */
@@ -351,6 +354,9 @@ export function SemanticInspector() {
       {context.isLayoutChild ? <LayoutItemSection component={selected} /> : null}
       <AutoLayoutSection component={selected} />
       <FrameSection component={selected} />
+      <FillSection component={selected} />
+      <StrokeSection component={selected} />
+      <ShadowSection component={selected} />
       <Accordion type="single" collapsible className="border-t border-border">
         <AccordionItem value="raw-css" className="border-b-0">
           <AccordionTrigger data-testid="oc-ins-raw-css-trigger">Raw CSS</AccordionTrigger>
