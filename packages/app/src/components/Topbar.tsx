@@ -1,4 +1,4 @@
-import { Moon, Save as SaveIcon, Sun } from "lucide-react";
+import { Moon, Save as SaveIcon, Sun } from "../canvas/chrome-icons.js";
 import { Button } from "./ui/button.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
 import { cn } from "../lib/utils.js";

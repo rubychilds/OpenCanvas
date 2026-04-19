@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useEditorMaybe } from "@grapesjs/react";
-import { ChevronDown, Minus, Plus } from "lucide-react";
+import { ChevronDown, Minus, Plus } from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
 import {
   DropdownMenu,

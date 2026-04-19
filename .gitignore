@@ -37,3 +37,4 @@ playwright-report/
 # Local research clones — external repos pulled in for reading, not vendored.
 # Keep their own .git intact and out of our tree.
 penpot/
+opencanvas-docs/

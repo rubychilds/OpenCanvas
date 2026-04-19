@@ -4,7 +4,7 @@ import {
   AlignEndVertical,
   AlignStartVertical,
   StretchHorizontal,
-} from "lucide-react";
+} from "../../canvas/chrome-icons.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";

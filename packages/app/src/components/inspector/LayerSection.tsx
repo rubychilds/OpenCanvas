@@ -1,5 +1,5 @@
 import type { Component } from "grapesjs";
-import { Eye, EyeOff, Lock, LockOpen } from "lucide-react";
+import { Eye, EyeOff, Lock, LockOpen } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { InspectorSection } from "./InspectorSection.js";

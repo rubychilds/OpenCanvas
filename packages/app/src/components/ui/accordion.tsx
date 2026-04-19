@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 
 export const Accordion = AccordionPrimitive.Root;

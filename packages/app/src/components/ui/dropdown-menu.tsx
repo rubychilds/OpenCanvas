@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { Check } from "lucide-react";
+import { Check } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 
 export const DropdownMenu = DropdownMenuPrimitive.Root;

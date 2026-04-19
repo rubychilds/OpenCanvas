@@ -12,7 +12,7 @@ import {
   Smartphone,
   Tablet,
   Trash2,
-} from "lucide-react";
+} from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
 import { Button } from "./ui/button.js";
 import { iconForTag } from "../canvas/icons.js";

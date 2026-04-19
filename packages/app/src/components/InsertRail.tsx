@@ -6,7 +6,7 @@ import {
   Square,
   Type,
   type LucideIcon,
-} from "lucide-react";
+} from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
 import { createArtboard } from "../canvas/artboards.js";

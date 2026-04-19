@@ -10,7 +10,7 @@ import {
   Heading4,
   Heading5,
   Heading6,
-  Image as ImageIcon,
+  Image,
   LayoutDashboard,
   Link as LinkIcon,
   Menu,
@@ -21,11 +21,11 @@ import {
   Rows3,
   Square,
   Tags,
-  Text as TextIcon,
+  TextIcon,
   TextCursor,
   Video,
   type LucideIcon,
-} from "lucide-react";
+} from "./chrome-icons.js";
 
 /** Lucide icon keyed by BlockDefinition.id — used in the block palette tiles. */
 export const BLOCK_ICONS: Record<string, LucideIcon> = {
@@ -56,7 +56,7 @@ export const BLOCK_ICONS: Record<string, LucideIcon> = {
   button: MousePointerClick,
   label: Tags,
   // media
-  img: ImageIcon,
+  img: Image,
   video: Video,
 };
 
@@ -82,8 +82,8 @@ const TAG_ICONS: Record<string, LucideIcon> = {
   select: ChevronDown,
   button: MousePointerClick,
   label: Tags,
-  img: ImageIcon,
-  image: ImageIcon,
+  img: Image,
+  image: Image,
   video: Video,
 };
 

@@ -13,7 +13,7 @@ import {
   ArrowUp,
   StretchHorizontal,
   type LucideIcon,
-} from "lucide-react";
+} from "../canvas/chrome-icons.js";
 
 export interface IconOption {
   value: string;

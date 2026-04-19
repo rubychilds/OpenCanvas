@@ -16,7 +16,7 @@ import {
   Move,
   StretchHorizontal,
   Unplug,
-} from "lucide-react";
+} from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.js";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.js";
