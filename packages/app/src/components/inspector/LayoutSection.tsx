@@ -1,0 +1,630 @@
+import { useRef, useState } from "react";
+import type { Component } from "grapesjs";
+import {
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalSpaceAround,
+  AlignHorizontalSpaceBetween,
+  AlignStartVertical,
+  ArrowDown,
+  ArrowRight,
+  LockSimple,
+  LockSimpleOpen,
+  Minus,
+  Move,
+  PlusOutline,
+  Square,
+  StretchHorizontal,
+} from "../../canvas/chrome-icons.js";
+import { cn } from "../../lib/utils.js";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.js";
+import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.js";
+import { NumberInput } from "../ui/number-input.js";
+import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
+import { SizeField, type SizeMode } from "./controls/SizeField.js";
+import { useInspectorContext } from "./useInspectorContext.js";
+
+/**
+ * Layout — auto-layout (flex) parent controls + dimensions (W/H) + child-side
+ * layout item controls + clip content. Replaces the earlier AutoLayout,
+ * LayoutItem, Frame, and MeasuresSection's W/H rows.
+ */
+export function LayoutSection({ component }: { component: Component }) {
+  const display = readStyle(component, "display");
+  const enabled = display === "flex";
+  const context = useInspectorContext(component);
+
+  const toggle = () => {
+    if (enabled) clearStyle(component, "display");
+    else writeStyle(component, "display", "flex");
+  };
+
+  const toggleControl = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={toggle}
+          className={cn(
+            "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
+            "text-muted-foreground hover:text-foreground hover:bg-background",
+          )}
+          aria-pressed={enabled}
+          aria-label={enabled ? "Remove auto layout" : "Add auto layout"}
+          data-testid="oc-ins-autolayout-toggle"
+        >
+          {enabled ? <Minus className="size-3.5" /> : <PlusOutline className="size-3.5" />}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{enabled ? "Remove auto layout" : "Add auto layout"}</TooltipContent>
+    </Tooltip>
+  );
+
+  return (
+    <InspectorSection title="Layout" action={toggleControl}>
+      <WHRow
+        component={component}
+        selfIsFlex={enabled}
+        parentIsFlex={context.isFlexParent}
+      />
+      {enabled ? <AutoLayoutRows component={component} /> : null}
+      <PaddingRow component={component} />
+      <MarginRow component={component} />
+      {context.isLayoutChild ? <LayoutItemRows component={component} /> : null}
+      <ClipRow component={component} />
+    </InspectorSection>
+  );
+}
+
+/* ─────────────────────────────── W/H ─────────────────────────────── */
+
+function readSizeMode(value: string): SizeMode {
+  const trimmed = value.trim();
+  if (!trimmed) return "hug";
+  if (trimmed === "auto" || trimmed === "max-content" || trimmed === "fit-content")
+    return "hug";
+  if (trimmed === "100%" || trimmed === "stretch") return "fill";
+  return "fixed";
+}
+
+/**
+ * When the derived mode isn't valid for the current element+parent context
+ * (e.g. `width: ""` reads as Hug, but Hug requires an auto-layout container),
+ * snap to the first available mode. Prevents a dropdown from reporting a
+ * disabled mode as selected.
+ */
+function resolveMode(value: string, available: SizeMode[]): SizeMode {
+  const derived = readSizeMode(value);
+  if (available.includes(derived)) return derived;
+  return available[0] ?? "fixed";
+}
+
+function writeSize(
+  component: Component,
+  prop: "width" | "height",
+  mode: SizeMode,
+  fallback: number,
+): void {
+  if (mode === "fixed") {
+    writeStyle(component, prop, `${fallback || 100}px`);
+  } else if (mode === "hug") {
+    clearStyle(component, prop);
+  } else {
+    writeStyle(component, prop, "100%");
+  }
+}
+
+function WHRow({
+  component,
+  selfIsFlex,
+  parentIsFlex,
+}: {
+  component: Component;
+  selfIsFlex: boolean;
+  parentIsFlex: boolean;
+}) {
+  const width = readStyle(component, "width");
+  const height = readStyle(component, "height");
+  const widthNum = parsePx(width);
+  const heightNum = parsePx(height);
+
+  // Availability rules mirror Figma: Hug only when *this* element lays out
+  // its own content (auto-layout container); Fill only when the *parent*
+  // does (so "stretch to fill parent" is meaningful).
+  const widthModes: SizeMode[] = [
+    "fixed",
+    ...(selfIsFlex ? (["hug"] as const) : []),
+    ...(parentIsFlex ? (["fill"] as const) : []),
+  ];
+  const heightModes = widthModes;
+
+  const widthMode = resolveMode(width, widthModes);
+  const heightMode = resolveMode(height, heightModes);
+
+  // Aspect-lock state is React-local — not persisted. Captures the W:H ratio
+  // at lock-engage time. Only meaningful when both axes are Fixed.
+  const [locked, setLocked] = useState(false);
+  const ratioRef = useRef<number | null>(null);
+
+  const toggleLock = () => {
+    if (!locked) {
+      ratioRef.current = widthNum && heightNum ? widthNum / heightNum : 1;
+    } else {
+      ratioRef.current = null;
+    }
+    setLocked((prev) => !prev);
+  };
+
+  const onWFixed = (n: number) => {
+    writeStyle(component, "width", `${n}px`);
+    if (locked && ratioRef.current && ratioRef.current > 0 && heightMode === "fixed") {
+      writeStyle(component, "height", `${Math.round(n / ratioRef.current)}px`);
+    }
+  };
+  const onHFixed = (n: number) => {
+    writeStyle(component, "height", `${n}px`);
+    if (locked && ratioRef.current && ratioRef.current > 0 && widthMode === "fixed") {
+      writeStyle(component, "width", `${Math.round(n * ratioRef.current)}px`);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+      <SizeField
+        axis="W"
+        value={width}
+        mode={widthMode}
+        availableModes={widthModes}
+        onModeChange={(m) => writeSize(component, "width", m, widthNum ?? 0)}
+        onFixedChange={onWFixed}
+        data-testid="oc-ins-width"
+      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={toggleLock}
+            aria-label={locked ? "Unlink width and height" : "Link width and height"}
+            aria-pressed={locked}
+            className={cn(
+              "flex items-center justify-center w-6 h-6 rounded-sm transition-colors",
+              "hover:bg-background",
+              locked ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+            data-testid="oc-ins-aspect-lock"
+          >
+            {locked ? (
+              <LockSimple className="size-3.5" />
+            ) : (
+              <LockSimpleOpen className="size-3.5" />
+            )}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{locked ? "Aspect ratio locked" : "Lock aspect ratio"}</TooltipContent>
+      </Tooltip>
+      <SizeField
+        axis="H"
+        value={height}
+        mode={heightMode}
+        availableModes={heightModes}
+        onModeChange={(m) => writeSize(component, "height", m, heightNum ?? 0)}
+        onFixedChange={onHFixed}
+        data-testid="oc-ins-height"
+      />
+    </div>
+  );
+}
+
+function parsePx(raw: string): number | null {
+  const m = /^(-?\d*\.?\d+)/.exec(raw.trim());
+  if (!m) return null;
+  const n = parseFloat(m[1]!);
+  return Number.isFinite(n) ? n : null;
+}
+
+/* ───────────────────── Auto Layout (flex parent) ───────────────────── */
+
+const DIRECTION_OPTIONS = [
+  { value: "row", label: "Horizontal", Icon: ArrowRight },
+  { value: "column", label: "Vertical", Icon: ArrowDown },
+  { value: "free", label: "Free form", Icon: Move },
+] as const;
+
+const JUSTIFY_OPTIONS = [
+  { value: "flex-start", label: "Start", Icon: AlignHorizontalJustifyStart },
+  { value: "center", label: "Center", Icon: AlignHorizontalJustifyCenter },
+  { value: "flex-end", label: "End", Icon: AlignHorizontalJustifyEnd },
+  { value: "space-between", label: "Space between", Icon: AlignHorizontalSpaceBetween },
+  { value: "space-around", label: "Space around", Icon: AlignHorizontalSpaceAround },
+] as const;
+
+function AutoLayoutRows({ component }: { component: Component }) {
+  const direction = readStyle(component, "flex-direction") || "row";
+  const gap = readStyle(component, "gap");
+  const justify = readStyle(component, "justify-content");
+
+  return (
+    <>
+      <FieldGroup label="Direction">
+        <ToggleGroup
+          type="single"
+          value={direction === "free" ? "" : direction}
+          onValueChange={(v) => {
+            if (!v) return;
+            if (v === "free") clearStyle(component, "flex-direction");
+            else writeStyle(component, "flex-direction", v);
+          }}
+          data-testid="oc-ins-flex-direction"
+        >
+          {DIRECTION_OPTIONS.map(({ value: val, label, Icon }) => (
+            <Tooltip key={val}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={val} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
+      <FieldGroup label="Gap">
+        <NumberInput
+          value={gap}
+          onChange={(n) => writeStyle(component, "gap", `${n}px`)}
+          unit="px"
+          label="↔"
+          min={0}
+          step={1}
+          data-testid="oc-ins-gap"
+        />
+      </FieldGroup>
+      <FieldGroup label="Justify">
+        <ToggleGroup
+          type="single"
+          value={justify}
+          onValueChange={(v) => v && writeStyle(component, "justify-content", v)}
+          data-testid="oc-ins-justify"
+        >
+          {JUSTIFY_OPTIONS.map(({ value: val, label, Icon }) => (
+            <Tooltip key={val}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={val} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
+    </>
+  );
+}
+
+/* ───────────────── Layout Item (flex child) ─────────────────── */
+
+const ALIGN_SELF_OPTIONS = [
+  { value: "flex-start", label: "Start", Icon: AlignStartVertical },
+  { value: "center", label: "Center", Icon: AlignCenterVertical },
+  { value: "flex-end", label: "End", Icon: AlignEndVertical },
+  { value: "stretch", label: "Stretch", Icon: StretchHorizontal },
+] as const;
+
+function LayoutItemRows({ component }: { component: Component }) {
+  const alignSelf = readStyle(component, "align-self");
+  const flexGrow = readStyle(component, "flex-grow");
+  const flexShrink = readStyle(component, "flex-shrink");
+  const flexBasis = readStyle(component, "flex-basis");
+
+  return (
+    <>
+      <FieldGroup label="Align self">
+        <ToggleGroup
+          type="single"
+          value={alignSelf}
+          onValueChange={(v) => {
+            if (!v) clearStyle(component, "align-self");
+            else writeStyle(component, "align-self", v);
+          }}
+          data-testid="oc-ins-align-self"
+        >
+          {ALIGN_SELF_OPTIONS.map(({ value, label, Icon }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
+      <div className="grid grid-cols-2 gap-1">
+        <NumberInput
+          value={flexGrow}
+          onChange={(n) => {
+            if (n === 0) clearStyle(component, "flex-grow");
+            else writeStyle(component, "flex-grow", String(n));
+          }}
+          min={0}
+          step={1}
+          label="G"
+          data-testid="oc-ins-flex-grow"
+        />
+        <NumberInput
+          value={flexShrink}
+          onChange={(n) => {
+            if (n === 1) clearStyle(component, "flex-shrink");
+            else writeStyle(component, "flex-shrink", String(n));
+          }}
+          min={0}
+          step={1}
+          label="S"
+          data-testid="oc-ins-flex-shrink"
+        />
+      </div>
+      <FieldGroup label="Basis">
+        <NumberInput
+          value={flexBasis}
+          onChange={(n) => writeStyle(component, "flex-basis", `${n}px`)}
+          unit="px"
+          label="B"
+          step={1}
+          data-testid="oc-ins-flex-basis"
+        />
+      </FieldGroup>
+    </>
+  );
+}
+
+/* ───────────────────── Padding / Margin (SpacingRow) ─────────────────────── */
+
+function parseSpacingPx(raw: string, allowNegative: boolean): number {
+  const m = /^(-?\d*\.?\d+)/.exec(raw.trim());
+  if (!m) return 0;
+  const n = parseFloat(m[1]!);
+  if (!Number.isFinite(n)) return 0;
+  return allowNegative ? n : Math.max(0, n);
+}
+
+/**
+ * Shared Padding / Margin four-side + V/H toggle row. Padding rejects negative
+ * values (Figma parity); Margin accepts them (needed for overlap / pull-up
+ * layouts).
+ */
+function SpacingRow({
+  component,
+  prop,
+  label,
+  allowNegative,
+  testIdPrefix,
+}: {
+  component: Component;
+  prop: "padding" | "margin";
+  label: string;
+  allowNegative: boolean;
+  testIdPrefix: string;
+}) {
+  const [perSide, setPerSide] = useState(false);
+
+  const pt = parseSpacingPx(readStyle(component, `${prop}-top`), allowNegative);
+  const pr = parseSpacingPx(readStyle(component, `${prop}-right`), allowNegative);
+  const pb = parseSpacingPx(readStyle(component, `${prop}-bottom`), allowNegative);
+  const pl = parseSpacingPx(readStyle(component, `${prop}-left`), allowNegative);
+
+  const v = pt === pb ? pt : pt;
+  const h = pl === pr ? pl : pl;
+
+  const setUnified = (nextV: number, nextH: number) => {
+    const write = (side: string, n: number) => {
+      if (!allowNegative && n <= 0) clearStyle(component, `${prop}-${side}`);
+      else if (allowNegative && n === 0) clearStyle(component, `${prop}-${side}`);
+      else writeStyle(component, `${prop}-${side}`, `${n}px`);
+    };
+    write("top", nextV);
+    write("bottom", nextV);
+    write("left", nextH);
+    write("right", nextH);
+    clearStyle(component, prop);
+  };
+
+  const setSide = (side: "top" | "right" | "bottom" | "left") => (n: number) => {
+    if (!allowNegative && n <= 0) clearStyle(component, `${prop}-${side}`);
+    else if (allowNegative && n === 0) clearStyle(component, `${prop}-${side}`);
+    else writeStyle(component, `${prop}-${side}`, `${n}px`);
+    clearStyle(component, prop);
+  };
+
+  const minValue = allowNegative ? -Infinity : 0;
+
+  return (
+    <FieldGroup label={label}>
+      <div className="flex items-center gap-1">
+        {perSide ? (
+          <span className="flex-1 text-[11px] text-muted-foreground">Per side</span>
+        ) : (
+          <div className="grid grid-cols-2 gap-1 flex-1">
+            <NumberInput
+              value={v}
+              onChange={(n) => setUnified(n, h)}
+              unit="px"
+              label="V"
+              min={minValue}
+              step={1}
+              data-testid={`${testIdPrefix}-v`}
+            />
+            <NumberInput
+              value={h}
+              onChange={(n) => setUnified(v, n)}
+              unit="px"
+              label="H"
+              min={minValue}
+              step={1}
+              data-testid={`${testIdPrefix}-h`}
+            />
+          </div>
+        )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setPerSide((v) => !v)}
+              aria-label={perSide ? `Unified ${prop}` : `Per-side ${prop}`}
+              aria-pressed={perSide}
+              className={cn(
+                "flex items-center justify-center w-6 h-6 rounded-sm transition-colors",
+                "hover:bg-background",
+                perSide ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+              data-testid={`${testIdPrefix}-mode`}
+            >
+              <Square className="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {perSide ? `Switch to V/H ${prop}` : `Switch to per-side ${prop}`}
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      {perSide ? (
+        <div className="grid grid-cols-2 gap-1">
+          <NumberInput
+            value={pt}
+            onChange={setSide("top")}
+            unit="px"
+            label="T"
+            min={minValue}
+            step={1}
+            data-testid={`${testIdPrefix}-top`}
+          />
+          <NumberInput
+            value={pr}
+            onChange={setSide("right")}
+            unit="px"
+            label="R"
+            min={minValue}
+            step={1}
+            data-testid={`${testIdPrefix}-right`}
+          />
+          <NumberInput
+            value={pb}
+            onChange={setSide("bottom")}
+            unit="px"
+            label="B"
+            min={minValue}
+            step={1}
+            data-testid={`${testIdPrefix}-bottom`}
+          />
+          <NumberInput
+            value={pl}
+            onChange={setSide("left")}
+            unit="px"
+            label="L"
+            min={minValue}
+            step={1}
+            data-testid={`${testIdPrefix}-left`}
+          />
+        </div>
+      ) : null}
+    </FieldGroup>
+  );
+}
+
+function PaddingRow({ component }: { component: Component }) {
+  return (
+    <SpacingRow
+      component={component}
+      prop="padding"
+      label="Padding"
+      allowNegative={false}
+      testIdPrefix="oc-ins-padding"
+    />
+  );
+}
+
+function MarginRow({ component }: { component: Component }) {
+  return (
+    <SpacingRow
+      component={component}
+      prop="margin"
+      label="Margin"
+      allowNegative={true}
+      testIdPrefix="oc-ins-margin"
+    />
+  );
+}
+
+/* ───────────────────── Overflow (Clip) ────────────────────────── */
+
+const OVERFLOW_OPTIONS = ["visible", "hidden", "scroll", "auto"] as const;
+
+/**
+ * Overflow controls both axes. Reads the `overflow` shorthand first; if it's
+ * set and both axes agree, the dropdowns lock to it. If the longhands
+ * disagree (or only one is set), both dropdowns reflect the longhand values
+ * individually. Writes go to the longhand whenever a single axis changes,
+ * clearing the shorthand to avoid conflict.
+ */
+function ClipRow({ component }: { component: Component }) {
+  const shorthand = readStyle(component, "overflow");
+  const ox = readStyle(component, "overflow-x") || shorthand || "visible";
+  const oy = readStyle(component, "overflow-y") || shorthand || "visible";
+
+  const setAxis = (axis: "x" | "y") => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value;
+    // Bring the other axis up to the shorthand value if shorthand was the
+    // source — otherwise the side we don't touch silently changes.
+    const other = axis === "x" ? oy : ox;
+    const otherProp = axis === "x" ? "overflow-y" : "overflow-x";
+    const thisProp = axis === "x" ? "overflow-x" : "overflow-y";
+    clearStyle(component, "overflow");
+    if (other !== "visible") writeStyle(component, otherProp, other);
+    if (v === "visible") clearStyle(component, thisProp);
+    else writeStyle(component, thisProp, v);
+  };
+
+  return (
+    <FieldGroup label="Overflow">
+      <div className="grid grid-cols-2 gap-1">
+        <select
+          value={ox}
+          onChange={setAxis("x")}
+          className={cn(
+            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
+          )}
+          data-testid="oc-ins-overflow-x"
+          aria-label="Overflow X"
+        >
+          {OVERFLOW_OPTIONS.map((v) => (
+            <option key={v} value={v}>
+              X · {v}
+            </option>
+          ))}
+        </select>
+        <select
+          value={oy}
+          onChange={setAxis("y")}
+          className={cn(
+            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
+          )}
+          data-testid="oc-ins-overflow-y"
+          aria-label="Overflow Y"
+        >
+          {OVERFLOW_OPTIONS.map((v) => (
+            <option key={v} value={v}>
+              Y · {v}
+            </option>
+          ))}
+        </select>
+      </div>
+    </FieldGroup>
+  );
+}

@@ -37,6 +37,9 @@ test.describe("D.7: Effects section (per ADR-0003 #9)", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="blur-host">x</div>`);
 
+    // Effects section is collapsed by default — expand via the + toggle.
+    await page.locator('[data-testid="oc-ins-effects-toggle"]').click();
+
     const input = page.locator('[data-testid="oc-ins-blur"]');
     await input.click();
     await input.fill("8");
@@ -54,6 +57,9 @@ test.describe("D.7: Effects section (per ADR-0003 #9)", () => {
   }) => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="bg-blur-host">x</div>`);
+
+    // Effects section is collapsed by default — expand before editing.
+    await page.locator('[data-testid="oc-ins-effects-toggle"]').click();
 
     const bgBlur = page.locator('[data-testid="oc-ins-backdrop-blur"]');
     await bgBlur.click();

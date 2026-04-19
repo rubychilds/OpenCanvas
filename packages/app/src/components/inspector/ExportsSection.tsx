@@ -59,7 +59,7 @@ export function ExportsSection({ component }: { component: Component }) {
   const label = (key: CopyTarget, base: string) => (copied === key ? "Copied" : base);
 
   return (
-    <InspectorSection title="Exports">
+    <InspectorSection title="Exports" collapsible defaultOpen={false}>
       <FieldGroup label="JSX">
         <ToggleGroup
           type="single"

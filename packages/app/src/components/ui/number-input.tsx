@@ -116,7 +116,12 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       scrubber.addEventListener("pointerup", up);
     };
 
+    // Scrubber is the little prefix glyph on the left of the chip (e.g. "W",
+    // "X", "B"). When the caller passes `label=""` explicitly, the scrubber
+    // renders nothing and takes zero width — used where the unit alone is
+    // enough (e.g. Fill opacity: the trailing "%" is the full signal).
     const scrubberLabel = label ?? (unit ? unit[0]?.toUpperCase() : "·");
+    const showScrubber = scrubberLabel !== "";
 
     return (
       <div
@@ -131,20 +136,22 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           className,
         )}
       >
-        <span
-          role="button"
-          tabIndex={-1}
-          aria-label="Drag to scrub value"
-          onPointerDown={onScrubberPointerDown}
-          className={cn(
-            "flex items-center justify-center min-w-5 h-full px-1.5",
-            "text-[11px] text-muted-foreground select-none cursor-ew-resize",
-            "hover:text-foreground rounded-l-md",
-          )}
-          data-testid={testId ? `${testId}-scrub` : undefined}
-        >
-          {scrubberLabel}
-        </span>
+        {showScrubber ? (
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-label="Drag to scrub value"
+            onPointerDown={onScrubberPointerDown}
+            className={cn(
+              "flex items-center justify-center min-w-5 h-full px-1.5",
+              "text-[11px] text-muted-foreground select-none cursor-ew-resize",
+              "hover:text-foreground rounded-l-md",
+            )}
+            data-testid={testId ? `${testId}-scrub` : undefined}
+          >
+            {scrubberLabel}
+          </span>
+        ) : null}
         <input
           ref={ref}
           type="text"

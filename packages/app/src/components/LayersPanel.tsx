@@ -5,7 +5,7 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
-  EyeOff,
+  EyeClosed,
   FrameCorners,
   IconContext,
   Lock,
@@ -288,7 +288,7 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
           className={cn(
             "flex items-center justify-center h-5 w-5 rounded-sm transition-opacity",
             hidden ? "opacity-100 text-foreground" : "opacity-0 group-hover:opacity-100 text-muted-foreground",
-            "hover:bg-surface-sunken hover:text-foreground",
+            "hover:bg-background hover:text-foreground",
           )}
           aria-label={hidden ? "Show layer" : "Hide layer"}
           onClick={() => {
@@ -298,14 +298,14 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
           }}
           data-testid={`oc-layer-visibility-${component.getId()}`}
         >
-          {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          {hidden ? <EyeClosed className="size-4" /> : <Eye className="size-4" />}
         </button>
         <button
           type="button"
           className={cn(
             "flex items-center justify-center h-5 w-5 rounded-sm transition-opacity",
             locked ? "opacity-100 text-foreground" : "opacity-0 group-hover:opacity-100 text-muted-foreground",
-            "hover:bg-surface-sunken hover:text-foreground",
+            "hover:bg-background hover:text-foreground",
           )}
           aria-label={locked ? "Unlock layer" : "Lock layer"}
           onClick={() => {
@@ -478,7 +478,7 @@ function FrameLayerRow({ frame, editor, selected }: FrameLayerRowProps) {
                 hidden
                   ? "opacity-100 text-foreground"
                   : "opacity-0 group-hover:opacity-100 text-muted-foreground",
-                "hover:bg-surface-sunken hover:text-foreground",
+                "hover:bg-background hover:text-foreground",
               )}
               aria-label={hidden ? "Show frame" : "Hide frame"}
               onClick={() => {
@@ -488,7 +488,7 @@ function FrameLayerRow({ frame, editor, selected }: FrameLayerRowProps) {
               }}
               data-testid={`oc-frame-visibility-${id}`}
             >
-              {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              {hidden ? <EyeClosed className="size-4" /> : <Eye className="size-4" />}
             </button>
             <button
               type="button"
@@ -497,7 +497,7 @@ function FrameLayerRow({ frame, editor, selected }: FrameLayerRowProps) {
                 locked
                   ? "opacity-100 text-foreground"
                   : "opacity-0 group-hover:opacity-100 text-muted-foreground",
-                "hover:bg-surface-sunken hover:text-foreground",
+                "hover:bg-background hover:text-foreground",
               )}
               aria-label={locked ? "Unlock frame" : "Lock frame"}
               onClick={() => {
@@ -617,7 +617,7 @@ export function LayersPanel() {
                   onClick={addFrame}
                   className={cn(
                     "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
-                    "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+                    "text-muted-foreground hover:text-foreground hover:bg-background",
                     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                   )}
                   aria-label="Add frame"

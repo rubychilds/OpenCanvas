@@ -142,7 +142,11 @@ export function TypographySection({ component }: { component: Component }) {
     readStyle(component, "font-size") || readComputedStyle(component, "font-size");
   const lineHeight = readStyle(component, "line-height");
   const letterSpacing = readStyle(component, "letter-spacing");
-  const textAlign = readStyle(component, "text-align");
+  // No explicit text-align → the browser default is "left" (for LTR locales,
+  // which is what OpenCanvas targets today). Surface that in the inspector
+  // so the Left toggle shows as selected rather than the whole group sitting
+  // in a "no selection" state.
+  const textAlign = readStyle(component, "text-align") || "left";
   const caseValue = readCaseValue(component);
   const textDecoration = readStyle(component, "text-decoration") || "none";
 
@@ -271,7 +275,7 @@ export function TypographySection({ component }: { component: Component }) {
             <TooltipTrigger asChild>
               <ToggleGroupItem value={value} aria-label={label}>
                 {Icon ? (
-                  <Icon className="size-3.5" />
+                  <Icon />
                 ) : (
                   <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
                 )}
@@ -296,7 +300,7 @@ export function TypographySection({ component }: { component: Component }) {
             <TooltipTrigger asChild>
               <ToggleGroupItem value={value} aria-label={label}>
                 {Icon ? (
-                  <Icon className="size-3.5" />
+                  <Icon />
                 ) : (
                   <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
                 )}

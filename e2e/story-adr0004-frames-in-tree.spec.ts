@@ -175,14 +175,32 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     expect(String(name)).toBe("Renamed Frame");
   });
 
-  test("delete affordance is enabled for the sole frame — last one can go", async ({
+  test("Delete key removes the selected frame (the sole auto-frame too)", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
-    // Fresh canvas has one auto-frame. Its trash is enabled (the prior
-    // guard that refused to delete the last remaining frame has been removed).
-    const [onlyId] = await frameIds(page);
-    const trash = page.locator(`[data-testid="oc-frame-delete-${onlyId}"]`);
-    await expect(trash).toBeEnabled();
+    // Fresh canvas has one auto-frame; the trash icon was retired in favour
+    // of the Delete keybinding. Select the frame's wrapper and press Delete —
+    // afterwards, the frame list is empty.
+    const before = await frameIds(page);
+    expect(before.length).toBeGreaterThanOrEqual(1);
+    await page.evaluate(() => {
+      const ed = (window as unknown as {
+        __opencanvas: {
+          editor: {
+            Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> };
+            select: (c: unknown) => void;
+          };
+        };
+      }).__opencanvas.editor;
+      const wrapper = ed.Canvas.getFrames()[0]!.get("component");
+      ed.select(wrapper);
+    });
+    await page.keyboard.press("Delete");
+    await expect
+      .poll(() => frameIds(page).then((ids) => ids.length), {
+        timeout: 3_000,
+      })
+      .toBe(before.length - 1);
   });
 });

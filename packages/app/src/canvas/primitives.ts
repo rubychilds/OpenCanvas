@@ -122,7 +122,17 @@ export function createPrimitive(
   }
 
   const html = PRIMITIVE_HTML[type];
-  const added = editor.addComponents(html) as unknown;
+  // Per ADR-0006 §4 (canvas model): primitives insert at the Page root — the
+  // first Frame on the canvas, which we treat as "the page." Previously
+  // `editor.addComponents` targeted the active frame's wrapper, so creating
+  // a text inside a just-selected Frame would nest it there; users report
+  // that as a bug because the mental model is "text on the canvas, not in
+  // a frame." Dragging into a specific Frame after-the-fact is how users
+  // opt in to framed placement.
+  const pageRoot = getPageRootWrapper(editor);
+  const added = pageRoot
+    ? ((pageRoot as unknown as { append?: (h: string) => unknown }).append?.(html) as unknown)
+    : (editor.addComponents(html) as unknown);
   const list = Array.isArray(added) ? added : [added];
   const created = (list[0] as Component | undefined) ?? null;
   const name = options.name ?? nextNameInScope(editor, type, created ?? undefined);
@@ -130,6 +140,19 @@ export function createPrimitive(
     (created as unknown as { set?: (k: string, v: unknown) => void }).set?.("custom-name", name);
   }
   return { type, component: created, name };
+}
+
+/**
+ * Page-root wrapper lookup — the first frame's wrapper Component. Per
+ * ADR-0006 the first frame on the canvas is semantically "the page"; loose
+ * primitives attach there instead of the currently-active frame.
+ */
+function getPageRootWrapper(editor: Editor): Component | null {
+  const frames = editor.Canvas.getFrames?.() ?? [];
+  if (frames.length === 0) return null;
+  const first = frames[0] as unknown as { get?: (k: string) => unknown };
+  const wrapper = first.get?.("component");
+  return (wrapper as Component | undefined) ?? null;
 }
 
 /**

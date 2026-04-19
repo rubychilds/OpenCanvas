@@ -66,23 +66,27 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
     expect(display).toBe("flex");
   });
 
-  test("Clip content toggle writes overflow:hidden to the selected component", async ({
+  test("Overflow X dropdown writes overflow-x:hidden to the selected component", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
     await selectDiv(page, "clip-host");
 
-    const clip = page.locator('[data-testid="oc-ins-clip"]');
-    await expect(clip).toBeVisible();
-    await clip.check();
+    // Clip toggle retired in the Phase-2 gap-closer pass; replaced by
+    // overflow-x / overflow-y dropdowns that write CSS longhands.
+    const overflowX = page.locator('[data-testid="oc-ins-overflow-x"]');
+    await expect(overflowX).toBeVisible();
+    await overflowX.selectOption("hidden");
 
-    const overflow = await page.evaluate(() => {
+    const css = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
+        __opencanvas: {
+          editor: { getSelected: () => { getStyle: () => Record<string, string> } };
+        };
       }).__opencanvas.editor;
-      return ed.getSelected().getStyle().overflow ?? "";
+      return ed.getSelected().getStyle();
     });
-    expect(overflow).toBe("hidden");
+    expect(css["overflow-x"]).toBe("hidden");
   });
 
   test("Raw CSS fallback hides the old sector panel by default; expand reveals it", async ({

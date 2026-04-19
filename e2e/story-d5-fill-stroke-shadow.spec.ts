@@ -135,7 +135,7 @@ base.describe("D.5: Fill as a stack + Stroke + Shadow (per ADR-0003)", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="shadow-host">h</div>`);
 
-    await page.locator('[data-testid="oc-ins-shadow-add"]').click();
+    await page.locator('[data-testid="oc-ins-effects-toggle"]').click();
 
     // Tweak X / Y / Blur on the first row to known values.
     const x0 = page.locator('[data-testid="oc-ins-shadow-row-0-x"]');
@@ -155,7 +155,7 @@ base.describe("D.5: Fill as a stack + Stroke + Shadow (per ADR-0003)", () => {
     expect(bs).toContain("4px 6px 12px");
 
     // Add a second shadow — it lands on top (row 0), previous shadow drops to row 1.
-    await page.locator('[data-testid="oc-ins-shadow-add"]').click();
+    await page.locator('[data-testid="oc-ins-effects-toggle"]').click();
     const x1 = page.locator('[data-testid="oc-ins-shadow-row-0-x"]');
     await x1.click();
     await x1.fill("10");
@@ -173,8 +173,8 @@ base.describe("D.5: Fill as a stack + Stroke + Shadow (per ADR-0003)", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="shadow-hide">h</div>`);
 
-    await page.locator('[data-testid="oc-ins-shadow-add"]').click();
-    await page.locator('[data-testid="oc-ins-shadow-add"]').click();
+    await page.locator('[data-testid="oc-ins-effects-toggle"]').click();
+    await page.locator('[data-testid="oc-ins-effects-toggle"]').click();
     // Hide the top row
     await page.locator('[data-testid="oc-ins-shadow-row-0-visibility"]').click();
 

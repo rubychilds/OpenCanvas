@@ -70,7 +70,7 @@ export function InsertRail() {
               type="button"
               className={cn(
                 "flex items-center justify-center h-8 w-8 rounded-sm transition-colors",
-                "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+                "text-muted-foreground hover:text-foreground hover:bg-background",
                 "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 tool.disabled && "opacity-40 cursor-not-allowed",
               )}

@@ -30,23 +30,12 @@ async function readSelectedStyle(
   }, key);
 }
 
-test.describe("D.4: Layer section + contextual Layout Item (per ADR-0003)", () => {
-  test("Layer section: visibility toggle writes display:none and back", async ({
-    freshApp: page,
-  }) => {
-    await waitForEditor(page);
-    await addAndSelect(page, `<div data-testid="vis-host">v</div>`);
+test.describe("D.4: Appearance + contextual Layout Item (post-Layer-retirement)", () => {
+  // Visibility + lock affordances live on the Layers panel rows now (not the
+  // inspector). Opacity + blend-mode moved to AppearanceSection but kept
+  // their `oc-ins-layer-*` testids.
 
-    const btn = page.locator('[data-testid="oc-ins-layer-visibility"]');
-    await expect(btn).toBeVisible();
-    await btn.click();
-    expect(await readSelectedStyle(page, "display")).toBe("none");
-
-    await btn.click();
-    expect(await readSelectedStyle(page, "display")).toBe("");
-  });
-
-  test("Layer section: opacity input writes the fractional CSS opacity", async ({
+  test("Appearance: opacity input writes the fractional CSS opacity", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
@@ -61,28 +50,12 @@ test.describe("D.4: Layer section + contextual Layout Item (per ADR-0003)", () =
     expect(await readSelectedStyle(page, "opacity")).toBe("0.5");
   });
 
-  test("Layer section: blend-mode select writes mix-blend-mode", async ({ freshApp: page }) => {
+  test("Appearance: blend-mode select writes mix-blend-mode", async ({ freshApp: page }) => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="bm-host">b</div>`);
 
     await page.locator('[data-testid="oc-ins-layer-blend-mode"]').selectOption("multiply");
     expect(await readSelectedStyle(page, "mix-blend-mode")).toBe("multiply");
-  });
-
-  test("Layer section: lock toggle sets data-oc-locked attribute", async ({
-    freshApp: page,
-  }) => {
-    await waitForEditor(page);
-    await addAndSelect(page, `<div data-testid="lock-host">l</div>`);
-
-    await page.locator('[data-testid="oc-ins-layer-lock"]').click();
-    const locked = await page.evaluate(() => {
-      const ed = (window as unknown as {
-        __opencanvas: { editor: { getSelected: () => { getAttributes: () => Record<string, string> } } };
-      }).__opencanvas.editor;
-      return ed.getSelected().getAttributes()["data-oc-locked"];
-    });
-    expect(locked).toBe("true");
   });
 
   test("Layout Item section: hidden when parent is not a flex/grid container", async ({

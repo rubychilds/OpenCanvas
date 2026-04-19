@@ -58,6 +58,33 @@ test.describe("D.6: Typography section + Exports section", () => {
     expect(await readSelectedStyle(page, "text-align")).toBe("center");
   });
 
+  test("Typography: align/case/deco toggles reflect unset state as Left / None / None", async ({
+    freshApp: page,
+  }) => {
+    await waitForEditor(page);
+    await addAndSelect(page, `<p data-testid="unset-host">hello</p>`);
+
+    // `aria-checked` (not `data-state`) is the selection truth — our items
+    // are wrapped in a `<TooltipTrigger asChild>` whose open/closed data-state
+    // overwrites the ToggleGroup one.
+    //
+    // With no explicit text-align set, the Left toggle reads as selected —
+    // that's the LTR browser default. (Previously the group showed no
+    // selection at all, which was the bug the user flagged.)
+    const left = page.locator('[data-testid="oc-ins-text-align"] [aria-label="Left"]');
+    await expect(left).toHaveAttribute("aria-checked", "true");
+
+    // No text-transform / font-variant-caps set → Case "None" is selected.
+    const caseNone = page
+      .locator('[data-testid="oc-ins-text-transform"] [aria-label="None"]');
+    await expect(caseNone).toHaveAttribute("aria-checked", "true");
+
+    // No text-decoration set → Deco "None" is selected.
+    const decoNone = page
+      .locator('[data-testid="oc-ins-text-decoration"] [aria-label="None"]');
+    await expect(decoNone).toHaveAttribute("aria-checked", "true");
+  });
+
   test("Typography: visible for h2 and writes line-height + text-transform", async ({
     freshApp: page,
   }) => {
@@ -83,6 +110,9 @@ test.describe("D.6: Typography section + Exports section", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="exp-host" style="color: red">hi</div>`);
 
+    // Exports section is collapsed by default — expand via its title toggle.
+    await page.getByRole("button", { name: "Exports" }).click();
+
     const preview = page.locator('[data-testid="oc-ins-exports-preview"]');
     await expect(preview).toContainText("export default function Component");
     await expect(preview).toContainText("<div");
@@ -97,6 +127,9 @@ test.describe("D.6: Typography section + Exports section", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await waitForEditor(page);
     await addAndSelect(page, `<span data-testid="copy-host">copyme</span>`);
+
+    // Exports section is collapsed by default — expand first.
+    await page.getByRole("button", { name: "Exports" }).click();
 
     await page.locator('[data-testid="oc-ins-exports-copy-html"]').click();
     const clip = await page.evaluate(() => navigator.clipboard.readText());

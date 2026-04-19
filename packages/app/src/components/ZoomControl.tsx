@@ -61,7 +61,7 @@ export function ZoomControl() {
     >
       <button
         type="button"
-        className="flex items-center justify-center h-full w-7 rounded-l-md hover:bg-surface-sunken transition-colors"
+        className="flex items-center justify-center h-full w-7 rounded-l-md text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
         onClick={() => step(-1)}
         aria-label="Zoom out"
         data-testid="oc-zoom-out"
@@ -98,7 +98,7 @@ export function ZoomControl() {
       </DropdownMenu>
       <button
         type="button"
-        className="flex items-center justify-center h-full w-7 rounded-r-md hover:bg-surface-sunken transition-colors"
+        className="flex items-center justify-center h-full w-7 rounded-r-md text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
         onClick={() => step(1)}
         aria-label="Zoom in"
         data-testid="oc-zoom-in"

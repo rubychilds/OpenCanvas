@@ -1,12 +1,13 @@
 import * as React from "react";
 import type { Component } from "grapesjs";
-import { Eye, EyeOff, PlusOutline, Trash2 } from "../../canvas/chrome-icons.js";
+import { Eye, EyeClosed, Minus, PlusOutline } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";
 import { ColorField } from "./controls/ColorField.js";
 import { formatColor, parseColor, splitTopLevel } from "./controls/color-utils.js";
+import { isTypographyTarget } from "./TypographySection.js";
 
 interface FillLayer {
   id: string;
@@ -82,7 +83,10 @@ function FillRow({
   testIdBase: string;
 }) {
   return (
-    <div className="flex items-center gap-1" data-testid={testIdBase}>
+    // -mr-5 extends the row 20px past the content wrapper's right edge so
+    // the minus button lands in the same column as the section-header `+`.
+    // Eye sits immediately left of minus, consistent with Effects rows.
+    <div className="flex items-center gap-1 -mr-5" data-testid={testIdBase}>
       <ColorField
         value={layer.hex}
         onChange={(hex) => onChange({ ...layer, hex })}
@@ -97,34 +101,34 @@ function FillRow({
           max={100}
           step={1}
           unit="%"
-          label="%"
+          label=""
           data-testid={`${testIdBase}-opacity`}
         />
       </div>
       <button
         type="button"
         className={cn(
-          "flex items-center justify-center h-6 w-6 rounded-sm shrink-0",
-          "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+          "flex items-center justify-center h-5 w-5 rounded-sm shrink-0",
+          "text-muted-foreground hover:text-foreground hover:bg-background",
           layer.hidden && "text-foreground",
         )}
         onClick={() => onChange({ ...layer, hidden: !layer.hidden })}
         aria-label={layer.hidden ? "Show fill" : "Hide fill"}
         data-testid={`${testIdBase}-visibility`}
       >
-        {layer.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+        {layer.hidden ? <EyeClosed className="size-3.5" /> : <Eye className="size-3.5" />}
       </button>
       <button
         type="button"
         className={cn(
-          "flex items-center justify-center h-6 w-6 rounded-sm shrink-0",
-          "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+          "flex items-center justify-center h-5 w-5 rounded-sm shrink-0",
+          "text-muted-foreground hover:text-foreground hover:bg-background",
         )}
         onClick={onRemove}
         aria-label="Remove fill"
         data-testid={`${testIdBase}-remove`}
       >
-        <Trash2 className="size-3.5" />
+        <Minus className="size-3.5" />
       </button>
     </div>
   );
@@ -136,13 +140,28 @@ function FillRow({
  * per-layer via `rgba()`. Hidden layers are excluded from the compiled CSS but
  * retained in the local stack so the user can toggle them back on.
  *
+ * For *text* components, Fill drives the CSS `color` property instead of the
+ * background stack — that's the intuitive mental model for "what colour is
+ * this text?". Single-layer only in text mode (gradients on text are rare
+ * and require background-clip workarounds we don't model).
+ *
  * Limitation: only our own output shape round-trips. Angled or multi-stop
  * gradients set via Raw CSS collapse to the Raw CSS note.
  */
 export function FillSection({ component }: { component: Component }) {
+  const isText = isTypographyTarget(component);
+
   const bgImage = readStyle(component, "background-image");
   const bgColor = readStyle(component, "background-color");
-  const parsed = React.useMemo(() => parseStack(bgImage, bgColor), [bgImage, bgColor, component]);
+  const textColor = readStyle(component, "color");
+  const parsed = React.useMemo(() => {
+    if (isText) {
+      if (!textColor) return [];
+      const c = parseColor(textColor);
+      return [newLayer(c.hex, c.opacity)];
+    }
+    return parseStack(bgImage, bgColor);
+  }, [isText, textColor, bgImage, bgColor, component]);
 
   // Local stack state mirrors the component's style but keeps hidden layers
   // across edits that would otherwise be invisible to a reader that only saw
@@ -159,16 +178,18 @@ export function FillSection({ component }: { component: Component }) {
       return;
     }
     if (parsed === null) return;
-    const compiled = compileStack(localStack);
-    if (compiled.bgColor !== (bgColor || "") || compiled.bgImage !== (bgImage || "")) {
-      // External CSS change (e.g. via Raw CSS edit) — adopt it.
-      const externalMatches = parsedEquals(parsed, localStack);
-      if (!externalMatches) setLocalStack(parsed);
-    }
-  }, [parsed, bgColor, bgImage, component, localStack]);
+    const externalMatches = parsedEquals(parsed, localStack);
+    if (!externalMatches) setLocalStack(parsed);
+  }, [parsed, component, localStack]);
 
   const commit = (next: FillLayer[]) => {
     setLocalStack(next);
+    if (isText) {
+      const visible = next.find((l) => !l.hidden);
+      if (!visible) clearStyle(component, "color");
+      else writeStyle(component, "color", formatColor(visible.hex, visible.opacity));
+      return;
+    }
     const { bgColor: bc, bgImage: bi } = compileStack(next);
     if (bc) writeStyle(component, "background-color", bc);
     else clearStyle(component, "background-color");
@@ -193,20 +214,23 @@ export function FillSection({ component }: { component: Component }) {
     commit([seed, ...localStack]);
   };
 
-  const action = (
+  // Text components can only hold one fill (their `color`); hide the add
+  // button once that one layer is present.
+  const canAdd = !isText || localStack.length === 0;
+  const action = canAdd ? (
     <button
       type="button"
       onClick={addLayer}
       className={cn(
         "inline-flex items-center justify-center h-5 w-5 rounded-sm",
-        "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+        "text-muted-foreground hover:text-foreground hover:bg-background",
       )}
       aria-label="Add fill"
       data-testid="oc-ins-fill-add"
     >
       <PlusOutline className="size-3.5" />
     </button>
-  );
+  ) : null;
 
   return (
     <InspectorSection title="Fill" action={action}>
