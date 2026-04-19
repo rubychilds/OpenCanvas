@@ -1,204 +1,83 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LayersProvider, useEditorMaybe } from "@grapesjs/react";
-import type { Component, Editor } from "grapesjs";
+import { useEditorMaybe } from "@grapesjs/react";
+import type { Component, Editor, Frame } from "grapesjs";
 import {
   ChevronDown,
   ChevronRight,
   Eye,
   EyeOff,
+  FrameCorners,
   Lock,
   LockOpen,
-  Monitor,
-  Smartphone,
-  Tablet,
+  PlusOutline,
   Trash2,
 } from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
 import { Button } from "./ui/button.js";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
 import { iconForTag } from "../canvas/icons.js";
 import {
   ARTBOARDS_CHANGED,
+  createArtboard,
   deleteArtboard,
   renameArtboard,
 } from "../canvas/artboards.js";
 
 /* ─────────────────────────────── helpers ─────────────────────────────── */
 
-type Mutable = {
-  get?: (k: string) => unknown;
-  set?: (attrs: Record<string, unknown>) => void;
-};
-
-function readAttr(obj: unknown, key: string): unknown {
-  const g = (obj as Mutable).get;
-  return typeof g === "function" ? g.call(obj, key) : undefined;
-}
-
-function cidOf(obj: unknown): string {
+function frameId(frame: Frame): string {
   return String(
-    (obj as { cid?: string }).cid ??
-      (obj as { id?: string }).id ??
+    (frame as unknown as { getId?: () => string }).getId?.() ??
+      (frame as unknown as { cid?: string }).cid ??
+      (frame as unknown as { id?: string }).id ??
       "",
   );
 }
 
-function deviceIcon(width: number) {
-  if (width <= 420) return <Smartphone className="size-3.5 text-muted-foreground" aria-hidden />;
-  if (width <= 820) return <Tablet className="size-3.5 text-muted-foreground" aria-hidden />;
-  return <Monitor className="size-3.5 text-muted-foreground" aria-hidden />;
+function frameAttr(frame: Frame, key: string): unknown {
+  const get = (frame as unknown as { get?: (k: string) => unknown }).get;
+  if (typeof get === "function") return get.call(frame, key);
+  return (frame as unknown as { attributes?: Record<string, unknown> }).attributes?.[key];
 }
 
-/* ─────────────────────────────── frames section (top) ────────────────── */
-
-interface FrameRow {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
+function frameWrapper(frame: Frame): Component | undefined {
+  const c = (frame as unknown as { get: (k: string) => unknown }).get?.("component");
+  return c as Component | undefined;
 }
 
-function readFrames(frames: unknown[]): FrameRow[] {
-  const out: FrameRow[] = [];
-  for (const f of frames) {
-    if (!f) continue;
-    out.push({
-      id: cidOf(f),
-      name: String(readAttr(f, "name") ?? "Untitled"),
-      width: Number(readAttr(f, "width") ?? 0) || 0,
-      height: Number(readAttr(f, "height") ?? 0) || 0,
-    });
-  }
-  return out;
-}
-
-function FramesSection() {
-  const editor = useEditorMaybe();
-  const editorRef = useRef(editor);
-  editorRef.current = editor;
-
-  const [rows, setRows] = useState<FrameRow[]>([]);
-  const [expanded, setExpanded] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
-
+function useFrames(editor: Editor | undefined): Frame[] {
+  const [frames, setFrames] = useState<Frame[]>([]);
   useEffect(() => {
     if (!editor) return;
     const refresh = () => {
       try {
-        const raw = editor.Canvas.getFrames?.() as unknown;
-        const arr = Array.isArray(raw) ? raw.filter(Boolean) : [];
-        setRows(readFrames(arr));
+        const list = editor.Canvas.getFrames?.();
+        setFrames(Array.isArray(list) ? list.filter(Boolean) : []);
       } catch {
         // ignore
       }
     };
+    refresh();
     editor.on("load", refresh);
+    // ARTBOARDS_CHANGED fires from artboards.ts helpers (createArtboard /
+    // deleteArtboard / renameArtboard). canvas:frame:load + canvas:frame:unload
+    // catch raw `editor.Canvas.addFrame` calls (e.g. from MCP tools or tests
+    // that bypass the helpers).
     editor.on(ARTBOARDS_CHANGED, refresh);
+    editor.on("canvas:frame:load", refresh);
+    editor.on("canvas:frame:unload", refresh);
+    // Bootstrap: GrapesJS may add the initial frame after this hook mounts.
     const t = setTimeout(refresh, 100);
     return () => {
       clearTimeout(t);
       editor.off("load", refresh);
       editor.off(ARTBOARDS_CHANGED, refresh);
+      editor.off("canvas:frame:load", refresh);
+      editor.off("canvas:frame:unload", refresh);
     };
   }, [editor]);
-
-  if (rows.length === 0) return null;
-
-  const startRename = (row: FrameRow) => {
-    setEditingId(row.id);
-    setDraft(row.name);
-  };
-
-  const commit = () => {
-    const ed = editorRef.current;
-    if (!ed || !editingId) return;
-    const next = draft.trim() || "Untitled";
-    const id = editingId;
-    setEditingId(null);
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, name: next } : r)));
-    renameArtboard(ed, id, next);
-  };
-
-  const remove = (row: FrameRow) => {
-    const ed = editorRef.current;
-    if (!ed) return;
-    if (deleteArtboard(ed, row.id)) {
-      setRows((prev) => prev.filter((r) => r.id !== row.id));
-    }
-  };
-
-  return (
-    <section className="border-b border-border">
-      <button
-        type="button"
-        className="flex items-center gap-1 w-full h-(--section-title-height) px-(--panel-padding) text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
-        onClick={() => setExpanded((v) => !v)}
-        data-testid="oc-frames-section-toggle"
-      >
-        {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-        Frames
-      </button>
-      {expanded && (
-        <div className="flex flex-col">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className="group flex items-center gap-1.5 h-7 pl-3 pr-1 hover:bg-surface-sunken"
-              data-testid={`oc-frame-row-${row.id}`}
-            >
-              {deviceIcon(row.width)}
-              {editingId === row.id ? (
-                <input
-                  autoFocus
-                  type="text"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onBlur={commit}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      commit();
-                    }
-                    if (e.key === "Escape") {
-                      e.preventDefault();
-                      setEditingId(null);
-                    }
-                  }}
-                  className="flex-1 min-w-0 bg-transparent text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm px-1"
-                  data-testid={`oc-frame-rename-input-${row.id}`}
-                />
-              ) : (
-                <button
-                  type="button"
-                  onDoubleClick={() => startRename(row)}
-                  className="flex-1 min-w-0 text-left text-sm text-foreground truncate"
-                  title={`${row.name} — ${row.width}×${row.height}`}
-                  data-testid={`oc-frame-name-${row.id}`}
-                >
-                  {row.name}
-                </button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => remove(row)}
-                aria-label="Delete frame"
-                disabled={rows.length <= 1}
-                title={rows.length <= 1 ? "Cannot delete the last frame" : "Delete frame"}
-                data-testid={`oc-frame-delete-${row.id}`}
-              >
-                <Trash2 />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+  return frames;
 }
-
-/* ─────────────────────────────── layer tree rows ─────────────────────── */
 
 function readStyle(component: Component, key: string): string {
   const v = (component as unknown as { getStyle?: () => Record<string, unknown> }).getStyle?.()?.[key];
@@ -240,6 +119,8 @@ function setLocked(component: Component, locked: boolean): void {
   set.call(component, next);
 }
 
+/* ─────────────────────────────── layer row (regular components) ─────── */
+
 interface LayerRowProps {
   component: Component;
   depth: number;
@@ -248,7 +129,9 @@ interface LayerRowProps {
 }
 
 function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
-  const [, force] = useState(0);
+  // `tick` (the value, not the setter) is the dep that re-derives `children`
+  // when GrapesJS mutates the components collection in place.
+  const [tick, force] = useState(0);
   const tag = (component.get("tagName") as string | undefined) ?? "";
   const label = component.getName?.() ?? tag ?? "node";
   const Icon = iconForTag(tag);
@@ -258,10 +141,7 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
 
   const children = useMemo(
     () => (component.components() as unknown as { toArray: () => Component[] }).toArray(),
-    // Re-derive when the `force` counter ticks — GrapesJS mutates the children
-    // collection in place, so we need a subscription signal.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [component, force],
+    [component, tick],
   );
 
   const [expanded, setExpanded] = useState(true);
@@ -270,13 +150,17 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
 
   useEffect(() => {
     if (!editor) return;
-    const onUpdate = (c: Component | null) => {
-      if (!c) return;
-      if (c === component) force((n) => n + 1);
-    };
-    editor.on("component:update", onUpdate);
+    // Force-tick on any add / remove / update — additions and removals don't
+    // reliably fire `component:update` on the parent (Backbone fires `add`
+    // on the parent's collection instead), so subscribe to all three.
+    const onAny = () => force((n) => n + 1);
+    editor.on("component:add", onAny);
+    editor.on("component:remove", onAny);
+    editor.on("component:update", onAny);
     return () => {
-      editor.off("component:update", onUpdate);
+      editor.off("component:add", onAny);
+      editor.off("component:remove", onAny);
+      editor.off("component:update", onAny);
     };
   }, [editor, component]);
 
@@ -409,11 +293,243 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
   );
 }
 
+/* ─────────────────────────────── frame layer row (top-level) ────────── */
+
+interface FrameLayerRowProps {
+  frame: Frame;
+  editor: Editor | undefined;
+  selected: Component | null;
+  /** Disables the delete affordance when this is the only frame on the canvas. */
+  canDelete: boolean;
+}
+
+/**
+ * A frame is a top-level node in the layer tree (per ADR-0004). The row uses
+ * the FrameCorners icon and exposes a frame-specific delete affordance, but
+ * otherwise behaves like any LayerRow — clicking selects the frame's wrapper
+ * Component, double-click renames the frame, and the wrapper's children
+ * recurse below using the existing LayerRow.
+ */
+function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProps) {
+  // `tick` (the value, not the setter) is the dep that re-derives the
+  // wrapper's children list when GrapesJS mutates it in place.
+  const [tick, force] = useState(0);
+  const id = frameId(frame);
+  const wrapper = frameWrapper(frame);
+  const name = String(frameAttr(frame, "name") ?? "Frame");
+  const isSelected = wrapper && selected?.getId() === wrapper.getId();
+  const hidden = wrapper ? readStyle(wrapper, "display") === "none" : false;
+  const locked = wrapper ? isLocked(wrapper) : false;
+
+  const children = useMemo(
+    () => {
+      if (!wrapper) return [];
+      return (wrapper.components() as unknown as { toArray: () => Component[] }).toArray();
+    },
+    [wrapper, tick],
+  );
+
+  const [expanded, setExpanded] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+
+  useEffect(() => {
+    if (!editor) return;
+    const onAny = () => force((n) => n + 1);
+    // GrapesJS / Backbone events: subscribe individually (space-separated
+    // strings aren't reliably supported on the editor bus).
+    editor.on("component:add", onAny);
+    editor.on("component:remove", onAny);
+    editor.on("component:update", onAny);
+    editor.on(ARTBOARDS_CHANGED, onAny);
+    return () => {
+      editor.off("component:add", onAny);
+      editor.off("component:remove", onAny);
+      editor.off("component:update", onAny);
+      editor.off(ARTBOARDS_CHANGED, onAny);
+    };
+  }, [editor]);
+
+  const commitRename = () => {
+    if (!editor) return;
+    const next = draft.trim() || "Untitled";
+    setEditing(false);
+    renameArtboard(editor, id, next);
+  };
+
+  const remove = () => {
+    if (!editor || !canDelete) return;
+    deleteArtboard(editor, id);
+  };
+
+  const hasChildren = children.length > 0;
+
+  return (
+    <div data-testid={`oc-frame-row-${id}`}>
+      <div
+        className={cn(
+          "group flex items-center gap-1 h-7 pr-1 transition-colors relative",
+          isSelected && "bg-oc-accent/15",
+          !isSelected && "hover:bg-surface-sunken",
+        )}
+        style={{ paddingLeft: 4 }}
+        data-selected={isSelected ? "true" : "false"}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground"
+            aria-label={expanded ? "Collapse frame" : "Expand frame"}
+          >
+            {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+          </button>
+        ) : (
+          <span className="h-4 w-4" />
+        )}
+
+        <FrameCorners
+          className="size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+          aria-hidden
+        />
+
+        {editing ? (
+          <input
+            autoFocus
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitRename();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setEditing(false);
+                setDraft(name);
+              }
+            }}
+            className="flex-1 min-w-0 bg-transparent text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded-sm px-1"
+            data-testid={`oc-frame-rename-input-${id}`}
+          />
+        ) : (
+          <button
+            type="button"
+            className={cn(
+              "flex-1 min-w-0 text-left text-sm truncate font-medium",
+              hidden && "opacity-50",
+              locked && "italic",
+            )}
+            onClick={() => wrapper && editor?.select(wrapper)}
+            onDoubleClick={() => {
+              setDraft(name);
+              setEditing(true);
+            }}
+            data-testid={`oc-frame-name-${id}`}
+            title={name}
+          >
+            {name}
+          </button>
+        )}
+
+        {wrapper && (
+          <>
+            <button
+              type="button"
+              className={cn(
+                "flex items-center justify-center h-5 w-5 rounded-sm transition-opacity",
+                hidden
+                  ? "opacity-100 text-foreground"
+                  : "opacity-0 group-hover:opacity-100 text-muted-foreground",
+                "hover:bg-surface-sunken hover:text-foreground",
+              )}
+              aria-label={hidden ? "Show frame" : "Hide frame"}
+              onClick={() => {
+                if (hidden) clearStyle(wrapper, "display");
+                else writeStyle(wrapper, "display", "none");
+                force((n) => n + 1);
+              }}
+              data-testid={`oc-frame-visibility-${id}`}
+            >
+              {hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "flex items-center justify-center h-5 w-5 rounded-sm transition-opacity",
+                locked
+                  ? "opacity-100 text-foreground"
+                  : "opacity-0 group-hover:opacity-100 text-muted-foreground",
+                "hover:bg-surface-sunken hover:text-foreground",
+              )}
+              aria-label={locked ? "Unlock frame" : "Lock frame"}
+              onClick={() => {
+                setLocked(wrapper, !locked);
+                force((n) => n + 1);
+              }}
+              data-testid={`oc-frame-lock-${id}`}
+            >
+              {locked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+            </button>
+          </>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "h-5 w-5 transition-opacity",
+            canDelete
+              ? "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+              : "opacity-0 group-hover:opacity-30 text-muted-foreground cursor-not-allowed",
+          )}
+          onClick={remove}
+          aria-label="Delete frame"
+          disabled={!canDelete}
+          title={canDelete ? "Delete frame" : "Cannot delete the last frame"}
+          data-testid={`oc-frame-delete-${id}`}
+        >
+          <Trash2 />
+        </Button>
+      </div>
+
+      {expanded &&
+        children.map((child) => (
+          <LayerRow
+            key={child.getId()}
+            component={child}
+            depth={1}
+            editor={editor}
+            selected={selected}
+          />
+        ))}
+    </div>
+  );
+}
+
 /* ─────────────────────────────── panel root ──────────────────────────── */
 
 export function LayersPanel() {
   const editor = useEditorMaybe();
   const [selected, setSelected] = useState<Component | null>(null);
+  const frames = useFrames(editor);
+
+  // `force` re-renders when GrapesJS mutates the canvas (component add/remove
+  // anywhere). The individual rows have their own per-component subscriptions;
+  // this just keeps the top-level map of frames + their root children fresh.
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const onChange = () => force((n) => n + 1);
+    editor.on("component:add", onChange);
+    editor.on("component:remove", onChange);
+    return () => {
+      editor.off("component:add", onChange);
+      editor.off("component:remove", onChange);
+    };
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -425,35 +541,55 @@ export function LayersPanel() {
     };
   }, [editor]);
 
+  const addFrame = () => {
+    if (!editor) return;
+    createArtboard(editor, { name: "Frame", width: 1440, height: 900 });
+  };
+
   return (
     <div className="flex flex-col min-h-0 h-full overflow-auto">
-      <FramesSection />
       <section>
-        <div className="h-(--section-title-height) px-(--panel-padding) flex items-center text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
-          Layers
+        {/* Penpot's `title-bar*` shape: tight uppercase title left, ghost
+            icon-button right. Uses the outlined Plus rather than Phosphor's
+            fill-weight glyph to match Penpot's `add.svg` stroke treatment. */}
+        <div className="h-(--section-title-height) pl-(--panel-padding) pr-1 flex items-center justify-between border-b border-border">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground">
+            Layers
+          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={addFrame}
+                className={cn(
+                  "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
+                  "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                )}
+                aria-label="Add frame"
+                data-testid="oc-layers-add-frame"
+              >
+                <PlusOutline className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Add frame</TooltipContent>
+          </Tooltip>
         </div>
-        <LayersProvider>
-          {({ root }) => {
-            if (!root) return <div className="p-2 text-xs text-muted-foreground">No layers</div>;
-            const children = (root.components() as unknown as { toArray: () => Component[] }).toArray();
-            if (children.length === 0) {
-              return <div className="p-2 text-xs text-muted-foreground">Empty canvas</div>;
-            }
-            return (
-              <div className="flex flex-col">
-                {children.map((c) => (
-                  <LayerRow
-                    key={c.getId()}
-                    component={c}
-                    depth={0}
-                    editor={editor ?? undefined}
-                    selected={selected}
-                  />
-                ))}
-              </div>
-            );
-          }}
-        </LayersProvider>
+        {frames.length === 0 ? (
+          <div className="p-2 text-xs text-muted-foreground">No frames</div>
+        ) : (
+          <div className="flex flex-col">
+            {frames.map((frame) => (
+              <FrameLayerRow
+                key={frameId(frame)}
+                frame={frame}
+                editor={editor ?? undefined}
+                selected={selected}
+                canDelete={frames.length > 1}
+              />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

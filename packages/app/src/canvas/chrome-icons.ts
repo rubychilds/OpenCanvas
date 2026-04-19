@@ -86,3 +86,5 @@ export {
 } from "@phosphor-icons/react";
 
 export type { Icon as LucideIcon } from "@phosphor-icons/react";
+
+export { PlusOutline, SearchOutline } from "./custom-icons.js";
