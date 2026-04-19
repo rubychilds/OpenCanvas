@@ -1,7 +1,7 @@
 # ADR-0005: HTML primitives ↔ design-tool shape concepts
 
-**Status:** Proposed
-**Date:** April 18, 2026
+**Status:** Accepted
+**Date:** April 18, 2026 (Proposed); accepted April 19, 2026 after implementation in `df7e87b`, `a357bd3`, `f6b7541`, `8d02b6e`
 **Owner:** Architecture
 **Related:** [ADR-0001](./0001-frontend-ui-stack.md) (UI stack), [ADR-0003](./0003-panel-information-architecture.md) (panel IA), [ADR-0004](./0004-frames-in-layer-tree.md) (frames in layer tree); PRD §5.1 (HTML/CSS-native canvas)
 
@@ -161,6 +161,41 @@ PRD update: log the ADR under "v0.2 Phase E: primitives mapping," and update the
 - **What to do when a user pastes a `<p>` from v0 — does it pick up `data-oc-shape="text"` automatically?** Probably yes (heuristic on text-only single-element paste), but adds magic. Leave it out for v0.2 and revisit if users complain.
 - **Should `createPrimitive` take a `target` (parent) param** the way `add_components` does? Useful for "create rectangle inside the selected frame" flows; out of scope for the first cut.
 - **Naming counter: is per-frame the right scope, or per-page?** Pages don't exist yet (v0.3+, per ADR-0003). Per-frame is the right scope today; revisit when Pages lands.
+
+---
+
+## Addendum (2026-04-19) — implementation notes
+
+Shipped in four commits: `df7e87b` (primitives module), `a357bd3`
+(LayersPanel learns primitives), `f6b7541` (InsertRail rewrite), and
+`8d02b6e` (E2E spec). Three notes worth recording:
+
+- **Per-frame counter scope was chosen as "the wrapper containing the
+  reference component."** When a fresh primitive is inserted, the
+  counter walks the parent of the just-created component — so multi-
+  frame scenes count per-frame naturally without us having to look up
+  which frame the user's currently focused on. For frames themselves
+  the counter falls back to `editor.Canvas.getFrames().length + 1`.
+  Both verified by spec.
+- **`derivePrimitiveLabel` precedence is custom-name → text-content →
+  PRIMITIVE_LABEL → tagName fallback.** Earlier spec runs surfaced that
+  custom-name was winning over text-content for fresh inserts (because
+  `createPrimitive` sets `custom-name` to "Text 1") — that's actually
+  correct behaviour for newly-named layers; the content path kicks in
+  when the user clears the custom name. The spec exercises both paths.
+- **`primitiveTypeOf`'s tagName-fallback (img → image, p / h1-h6 / span
+  / a / label / button → text) is what makes pasted HTML "just work"**
+  in the Layers tree without requiring users to manually add
+  `data-oc-shape`. Without this, every paste from v0 / Bolt would show
+  as the default `Box` icon. The fallback is explicit so the load-
+  bearing precedence (attribute first, tagName second) stays visible.
+
+Layer-icon binding and `data-oc-shape` attribute also picked up by the
+existing `iconForPrimitive` map in `packages/app/src/canvas/icons.ts`.
+The `data-oc-*` namespace continues to be ours per ADR-0003.
+
+E2E coverage: `e2e/story-adr0005-primitives.spec.ts` (8 specs, all
+green; full suite 142 / 143).
 
 ---
 

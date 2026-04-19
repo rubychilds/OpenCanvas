@@ -12,7 +12,7 @@ When a decision is genuinely reversed, write a new ADR that supersedes the old o
 | [0002](./0002-inspector-information-architecture.md) | Inspector information architecture | Proposed (2026-04-18) |
 | [0003](./0003-panel-information-architecture.md) | Panel information architecture — Penpot as the reference shape | Accepted (2026-04-18); §"Left panel" item 2 superseded by [ADR-0004](./0004-frames-in-layer-tree.md) |
 | [0004](./0004-frames-in-layer-tree.md) | Frames as top-level nodes inside the layer tree | Accepted (2026-04-18) |
-| [0005](./0005-html-primitives-mapping.md) | HTML primitives ↔ design-tool shape concepts | Proposed (2026-04-18) |
+| [0005](./0005-html-primitives-mapping.md) | HTML primitives ↔ design-tool shape concepts | Accepted (2026-04-19) |
 
 ## Adding a new ADR
 
