@@ -29,7 +29,10 @@ import { ExportsSection } from "./ExportsSection.js";
 import { InspectorSection } from "./InspectorSection.js";
 import { LayerSection } from "./LayerSection.js";
 import { LayoutItemSection } from "./LayoutItemSection.js";
+import { FillSection } from "./FillSection.js";
 import { MeasuresSection } from "./MeasuresSection.js";
+import { ShadowSection } from "./ShadowSection.js";
+import { StrokeSection } from "./StrokeSection.js";
 import { TypographySection, isTypographyTarget } from "./TypographySection.js";
 import { useInspectorContext } from "./useInspectorContext.js";
 
@@ -248,6 +251,9 @@ export function SemanticInspector() {
       {context.isLayoutChild ? <LayoutItemSection component={selected} /> : null}
       <AutoLayoutSection component={selected} />
       <FrameSection component={selected} />
+      <FillSection component={selected} />
+      <StrokeSection component={selected} />
+      <ShadowSection component={selected} />
       {isTypographyTarget(selected) ? <TypographySection component={selected} /> : null}
       <ExportsSection component={selected} />
       <Accordion type="single" collapsible className="border-t border-border">
