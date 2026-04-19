@@ -15,13 +15,18 @@ import {
 import { cn } from "../lib/utils.js";
 import { Button } from "./ui/button.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
-import { iconForTag } from "../canvas/icons.js";
+import { iconForPrimitive, iconForTag } from "../canvas/icons.js";
 import {
   ARTBOARDS_CHANGED,
   createArtboard,
   deleteArtboard,
   renameArtboard,
 } from "../canvas/artboards.js";
+import {
+  PRIMITIVE_LABEL,
+  primitiveTypeOf,
+  textContentOf,
+} from "../canvas/primitives.js";
 
 /* ─────────────────────────────── helpers ─────────────────────────────── */
 
@@ -119,6 +124,35 @@ function setLocked(component: Component, locked: boolean): void {
   set.call(component, next);
 }
 
+/**
+ * Derive the row label per ADR-0005. Order of precedence:
+ *   1. Custom user-set name (existing behaviour, set via double-click rename)
+ *   2. For text-bearing primitives, the trimmed content (truncated to 24 char)
+ *   3. The primitive concept name ("Rectangle" / "Ellipse" / "Image" / …)
+ *   4. tagName fallback for unmapped components
+ */
+const TEXT_LABEL_LIMIT = 24;
+function derivePrimitiveLabel(
+  component: Component,
+  primitive: ReturnType<typeof primitiveTypeOf>,
+  tag: string,
+): string {
+  const custom = (component as unknown as { get: (k: string) => unknown }).get?.("custom-name");
+  if (typeof custom === "string" && custom.trim()) return custom.trim();
+
+  if (primitive === "text") {
+    const content = textContentOf(component);
+    if (content) {
+      return content.length > TEXT_LABEL_LIMIT ? `${content.slice(0, TEXT_LABEL_LIMIT)}…` : content;
+    }
+    return PRIMITIVE_LABEL.text;
+  }
+
+  if (primitive) return PRIMITIVE_LABEL[primitive];
+
+  return component.getName?.() ?? tag ?? "node";
+}
+
 /* ─────────────────────────────── layer row (regular components) ─────── */
 
 interface LayerRowProps {
@@ -133,14 +167,20 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
   // when GrapesJS mutates the components collection in place.
   const [tick, force] = useState(0);
   const tag = (component.get("tagName") as string | undefined) ?? "";
-  const label = component.getName?.() ?? tag ?? "node";
-  const Icon = iconForTag(tag);
+  const primitive = primitiveTypeOf(component);
+  const label = derivePrimitiveLabel(component, primitive, tag);
+  const Icon = primitive ? iconForPrimitive(primitive) : iconForTag(tag);
   const isSelected = selected?.getId() === component.getId();
   const hidden = readStyle(component, "display") === "none";
   const locked = isLocked(component);
 
   const children = useMemo(
-    () => (component.components() as unknown as { toArray: () => Component[] }).toArray(),
+    () =>
+      (component.components() as unknown as { toArray: () => Component[] })
+        .toArray()
+        // Per ADR-0005: textnode children are an HTML-storage artifact, not a
+        // user-facing concept. Their content lives in the parent's row label.
+        .filter((c) => (c.get("type") as string | undefined) !== "textnode"),
     [component, tick],
   );
 
@@ -324,7 +364,10 @@ function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProp
   const children = useMemo(
     () => {
       if (!wrapper) return [];
-      return (wrapper.components() as unknown as { toArray: () => Component[] }).toArray();
+      return (wrapper.components() as unknown as { toArray: () => Component[] })
+        .toArray()
+        // Per ADR-0005 — textnode children are HTML-storage artifacts.
+        .filter((c) => (c.get("type") as string | undefined) !== "textnode");
     },
     [wrapper, tick],
   );

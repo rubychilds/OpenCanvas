@@ -65,6 +65,7 @@ export {
   Rows as Rows3,
   ShareNetwork as PanelBottom,
   Square,
+  SquaresFour,
   SquaresFour as PanelTop,
   Sun,
   Tag as Tags,
