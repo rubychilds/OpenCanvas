@@ -137,6 +137,161 @@ export function deleteArtboard(editor: Editor, id: string): boolean {
   return true;
 }
 
+/** Pixel threshold inside which an artboard edge snaps to another artboard's edge. */
+export const SNAP_THRESHOLD = 8;
+
+/**
+ * Given a prospective (x, y) for `movingId`, return the nearest snap-adjusted
+ * position where the moving artboard's left/right/top/bottom edges align with
+ * any other artboard's left/right/top/bottom edges within SNAP_THRESHOLD.
+ *
+ * Returns `{ x, y, snappedX, snappedY }` — the snapped coordinates plus
+ * booleans indicating whether each axis was actually snapped (so callers can
+ * draw an alignment guide if desired). When nothing is in range, returns the
+ * input unchanged with both snap flags false.
+ */
+export function findSnapOffset(
+  editor: Editor,
+  movingId: string,
+  x: number,
+  y: number,
+  threshold: number = SNAP_THRESHOLD,
+): { x: number; y: number; snappedX: boolean; snappedY: boolean } {
+  const others = listArtboards(editor).filter((f) => f.id !== movingId);
+  const moving = listArtboards(editor).find((f) => f.id === movingId);
+  if (!moving) return { x, y, snappedX: false, snappedY: false };
+
+  const movingLeft = x;
+  const movingRight = x + moving.width;
+  const movingTop = y;
+  const movingBottom = y + moving.height;
+
+  let bestDx = Infinity;
+  let snapDx = 0;
+  for (const other of others) {
+    for (const otherEdge of [other.x, other.x + other.width]) {
+      for (const movingEdge of [movingLeft, movingRight]) {
+        const delta = otherEdge - movingEdge;
+        if (Math.abs(delta) < Math.abs(bestDx) && Math.abs(delta) <= threshold) {
+          bestDx = delta;
+          snapDx = delta;
+        }
+      }
+    }
+  }
+
+  let bestDy = Infinity;
+  let snapDy = 0;
+  for (const other of others) {
+    for (const otherEdge of [other.y, other.y + other.height]) {
+      for (const movingEdge of [movingTop, movingBottom]) {
+        const delta = otherEdge - movingEdge;
+        if (Math.abs(delta) < Math.abs(bestDy) && Math.abs(delta) <= threshold) {
+          bestDy = delta;
+          snapDy = delta;
+        }
+      }
+    }
+  }
+
+  return {
+    x: snapDx !== 0 ? x + snapDx : x,
+    y: snapDy !== 0 ? y + snapDy : y,
+    snappedX: snapDx !== 0,
+    snappedY: snapDy !== 0,
+  };
+}
+
+/**
+ * Move an artboard to an absolute canvas-world position. Applies snap-to-edge
+ * alignment with sibling frames when `snap` is true (default). Emits
+ * ARTBOARDS_CHANGED on success.
+ */
+export function moveArtboard(
+  editor: Editor,
+  id: string,
+  x: number,
+  y: number,
+  snap: boolean = true,
+): { x: number; y: number; snappedX: boolean; snappedY: boolean } | false {
+  const frames = editor.Canvas.getFrames();
+  const frame = (frames as unknown as Array<{
+    cid?: string;
+    id?: string;
+    set?: (a: Record<string, unknown>) => void;
+  }>).find((f) => String(f.cid ?? f.id ?? "") === id);
+  if (!frame || typeof frame.set !== "function") return false;
+
+  const final = snap
+    ? findSnapOffset(editor, id, x, y)
+    : { x, y, snappedX: false, snappedY: false };
+  frame.set({ x: final.x, y: final.y });
+  notifyChange(editor);
+  return final;
+}
+
+/**
+ * Resize an artboard by id. Width is required; height is optional and left
+ * untouched when omitted (Story 7.2 breakpoint toolbar only cares about the
+ * horizontal axis — it's what controls Tailwind's `md:` / `lg:` prefixes).
+ * Emits ARTBOARDS_CHANGED on success.
+ */
+export function resizeArtboard(
+  editor: Editor,
+  id: string,
+  width: number,
+  height?: number,
+): boolean {
+  const frames = editor.Canvas.getFrames();
+  const frame = (frames as unknown as Array<{
+    cid?: string;
+    id?: string;
+    set?: (a: Record<string, unknown>) => void;
+  }>).find((f) => String(f.cid ?? f.id ?? "") === id);
+  if (!frame || typeof frame.set !== "function") return false;
+  const attrs: Record<string, unknown> = { width };
+  if (typeof height === "number") attrs.height = height;
+  frame.set(attrs);
+  notifyChange(editor);
+  return true;
+}
+
+/**
+ * Return the "active" artboard — the one whose wrapper is an ancestor of the
+ * currently-selected component. Falls back to the first frame when nothing
+ * is selected or the selected component's frame can't be resolved. Returns
+ * null only when the canvas has zero frames (which `ensureDefaultArtboard`
+ * prevents).
+ */
+export function getActiveArtboardId(editor: Editor): string | null {
+  const frames = editor.Canvas.getFrames();
+  if (frames.length === 0) return null;
+  const frameId = (f: unknown): string =>
+    String(
+      (f as { cid?: string; id?: string }).cid ??
+        (f as { cid?: string; id?: string }).id ??
+        "",
+    );
+
+  const selected = (editor as unknown as { getSelected?: () => unknown }).getSelected?.();
+  if (selected) {
+    // Climb to the top-level component (the frame's wrapper root).
+    let node = selected as { parent?: () => unknown } | undefined;
+    let root: unknown = node;
+    while (node && typeof node.parent === "function") {
+      const p = node.parent();
+      if (!p) break;
+      root = p;
+      node = p as typeof node;
+    }
+    for (const frame of frames) {
+      const wrapper = (frame as unknown as { get?: (k: string) => unknown }).get?.("component");
+      if (wrapper && wrapper === root) return frameId(frame);
+    }
+  }
+  return frameId(frames[0]);
+}
+
 /**
  * Rename an artboard by id. Emits ARTBOARDS_CHANGED on success.
  */
