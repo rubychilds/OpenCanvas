@@ -115,8 +115,8 @@ export function LayerSection({ component }: { component: Component }) {
             else writeStyle(component, "mix-blend-mode", e.target.value);
           }}
           className={cn(
-            "h-(--row-height) flex-1 rounded-md border border-border bg-background px-2 text-sm",
-            "focus:border-oc-accent focus:outline-none",
+            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-layer-blend-mode"
         >
