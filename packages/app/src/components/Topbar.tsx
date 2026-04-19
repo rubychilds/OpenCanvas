@@ -1,6 +1,8 @@
+import type { Editor } from "grapesjs";
 import { Moon, Save as SaveIcon, Sun } from "../canvas/chrome-icons.js";
 import { Button } from "./ui/button.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
+import { VariablesPopover } from "./VariablesPopover.js";
 import { cn } from "../lib/utils.js";
 import { useTheme } from "../hooks/useTheme.js";
 
@@ -11,6 +13,7 @@ export interface TopbarProps {
   saveStatus: SaveStatus;
   saveError: string | null;
   onSave: () => void;
+  editor: Editor | null;
 }
 
 function saveLabel(status: SaveStatus, err: string | null): string {
@@ -20,7 +23,7 @@ function saveLabel(status: SaveStatus, err: string | null): string {
   return "Idle";
 }
 
-export function Topbar({ connected, saveStatus, saveError, onSave }: TopbarProps) {
+export function Topbar({ connected, saveStatus, saveError, onSave, editor }: TopbarProps) {
   const { theme, toggle } = useTheme();
   const saveClass = {
     idle: "text-muted-foreground",
@@ -64,6 +67,9 @@ export function Topbar({ connected, saveStatus, saveError, onSave }: TopbarProps
       >
         {saveLabel(saveStatus, saveError)}
       </span>
+
+      <div className="mx-2 h-4 w-px bg-border" />
+      <VariablesPopover editor={editor} />
 
       <div className="ml-auto flex items-center gap-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="oc-bridge-status">

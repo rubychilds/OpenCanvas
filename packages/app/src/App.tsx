@@ -24,6 +24,7 @@ export function App() {
   const [connected, setConnected] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [editor, setEditor] = useState<Editor | null>(null);
 
   const editorRef = useRef<Editor | null>(null);
   const disposersRef = useRef<Array<() => void>>([]);
@@ -46,6 +47,7 @@ export function App() {
     if (initializedRef.current) return;
     initializedRef.current = true;
     editorRef.current = editor;
+    setEditor(editor);
 
     // Reset the module-scoped variables store so a Vite HMR reload doesn't
     // carry stale entries forward into the rehydration step below.
@@ -155,6 +157,7 @@ export function App() {
             saveStatus={saveStatus}
             saveError={saveError}
             onSave={handleSave}
+            editor={editor}
           />
           <GjsEditor
             grapesjs={grapesjs}

@@ -58,6 +58,17 @@ export function loadVariables(editor: Editor, vars: Record<string, string>): voi
 }
 
 /**
+ * Remove a single variable from the in-memory store and the iframe :root.
+ * Returns the updated map.
+ */
+export function deleteVariable(editor: Editor, key: string): Record<string, string> {
+  store.delete(key);
+  const doc = editor.Canvas.getDocument();
+  doc?.documentElement?.style.removeProperty(key);
+  return getVariables();
+}
+
+/**
  * Test/reset hook — clears the in-memory store. Does not touch the iframe.
  * Useful when the page reloads and the module-scoped Map would otherwise
  * survive a Vite HMR boundary in dev.
