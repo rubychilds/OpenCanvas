@@ -89,19 +89,30 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
     expect(css["overflow-x"]).toBe("hidden");
   });
 
-  test("Raw CSS fallback hides the old sector panel by default; expand reveals it", async ({
+  test("Raw CSS fallback is hidden by default and only renders when orphan properties exist", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
     await selectDiv(page, "raw-host");
 
-    // Sectors aren't visible yet because the Raw CSS accordion is closed
-    await expect(page.locator('[data-testid="oc-sector-Layout"]')).toHaveCount(0);
+    // Nothing orphan is set — a plain div's properties all belong to the
+    // semantic inspector sections. Raw CSS accordion should not render.
+    await expect(page.locator('[data-testid="oc-ins-raw-css-trigger"]')).toHaveCount(0);
 
+    // Set a non-semantic property (transition isn't owned by any section)
+    // and the Raw CSS section reappears under the label "Other CSS".
+    await page.evaluate(() => {
+      const ed = (window as unknown as {
+        __opencanvas: {
+          editor: { getSelected: () => { addStyle: (s: Record<string, string>) => void } };
+        };
+      }).__opencanvas.editor;
+      ed.getSelected().addStyle({ transition: "all 200ms ease" });
+    });
+
+    await expect(page.locator('[data-testid="oc-ins-raw-css-trigger"]')).toBeVisible();
     await page.locator('[data-testid="oc-ins-raw-css-trigger"]').click();
+    // One of the legacy sector headers appears once expanded.
     await expect(page.locator('[data-testid="oc-sector-Layout"]')).toBeVisible();
-
-    // The "Fill" sector (renamed from Background & border) is present
-    await expect(page.locator('[data-testid="oc-sector-Fill"]')).toBeVisible();
   });
 });

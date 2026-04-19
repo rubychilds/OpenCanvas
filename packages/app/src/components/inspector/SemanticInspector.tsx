@@ -16,6 +16,7 @@ import { LayoutSection } from "./LayoutSection.js";
 import { PositionSection } from "./PositionSection.js";
 import { StrokeSection } from "./StrokeSection.js";
 import { TypographySection, isTypographyTarget } from "./TypographySection.js";
+import { hasOrphanProperties } from "./orphan-properties.js";
 
 /**
  * Semantic-inspector render order (per user direction):
@@ -58,6 +59,13 @@ export function SemanticInspector() {
     );
   }
 
+  // Raw CSS is an escape hatch for properties the semantic layer doesn't
+  // own — after Phases 1-3 that's a small tail (mask, clip-path, transitions,
+  // object-fit, etc.). When nothing orphaned is set on the selection, the
+  // section hides entirely; it reappears as "Other CSS" the moment a
+  // non-modelled property is set via Raw CSS or pasted markup.
+  const orphans = hasOrphanProperties(selected);
+
   return (
     <div className="flex flex-col">
       <PositionSection component={selected} />
@@ -68,14 +76,18 @@ export function SemanticInspector() {
       <StrokeSection component={selected} />
       <EffectsSection component={selected} />
       <ExportsSection component={selected} />
-      <Accordion type="single" collapsible className="border-t border-border">
-        <AccordionItem value="raw-css" className="border-b-0">
-          <AccordionTrigger data-testid="oc-ins-raw-css-trigger">Raw CSS</AccordionTrigger>
-          <AccordionContent>
-            <StylesPanel />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      {orphans ? (
+        <Accordion type="single" collapsible className="border-t border-border">
+          <AccordionItem value="raw-css" className="border-b-0">
+            <AccordionTrigger data-testid="oc-ins-raw-css-trigger">
+              Other CSS
+            </AccordionTrigger>
+            <AccordionContent>
+              <StylesPanel />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      ) : null}
     </div>
   );
 }
