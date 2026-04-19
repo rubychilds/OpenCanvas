@@ -21,22 +21,63 @@ function normalizeStyle(input: string): StrokeStyle {
 }
 
 /**
+ * Parse a `border` shorthand like `2px dashed rgba(255, 0, 0, 0.5)` into the
+ * same shape the split properties expose. Tokens inside parens (rgba) survive
+ * as one unit. Missing tokens come back empty.
+ */
+function parseShorthand(input: string): { width: string; style: string; color: string } {
+  const s = input.trim();
+  if (!s) return { width: "", style: "", color: "" };
+  const tokens: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i]!;
+    if (ch === "(") depth++;
+    else if (ch === ")") depth--;
+    else if (depth === 0 && /\s/.test(ch)) {
+      const t = s.slice(start, i).trim();
+      if (t) tokens.push(t);
+      start = i + 1;
+    }
+  }
+  const tail = s.slice(start).trim();
+  if (tail) tokens.push(tail);
+
+  let width = "";
+  let style = "";
+  let color = "";
+  for (const t of tokens) {
+    if (!width && /^-?\d+(?:\.\d+)?(px|rem|em)?$/.test(t)) width = t;
+    else if (!style && (STYLES as readonly string[]).includes(t)) style = t;
+    else color = color ? `${color} ${t}` : t;
+  }
+  return { width, style, color };
+}
+
+/**
  * Stroke section — colour, width, style (solid/dashed/dotted/double).
  * Writes the compound `border: <w> <style> <color>` shorthand when all three
  * are present; falls back to the split `border-width` / `border-style` /
  * `border-color` properties otherwise so partial state still round-trips.
  */
 export function StrokeSection({ component }: { component: Component }) {
-  // Read split properties first (most reliable); GrapesJS stores shorthand
-  // as split props anyway after parsing.
-  const widthRaw = readStyle(component, "border-width");
-  const styleRaw = readStyle(component, "border-style");
-  const colorRaw = readStyle(component, "border-color");
+  // GrapesJS keeps whichever form the writer used; prefer the shorthand
+  // `border` when present so our own output round-trips cleanly, then fall
+  // back to the split properties for partial state or external edits.
+  const shorthand = readStyle(component, "border");
+  const split = shorthand
+    ? parseShorthand(shorthand)
+    : {
+        width: readStyle(component, "border-width"),
+        style: readStyle(component, "border-style"),
+        color: readStyle(component, "border-color"),
+      };
 
-  const width = parseWidth(widthRaw);
-  const style = normalizeStyle(styleRaw);
-  const color = parseColor(colorRaw);
-  const hasStroke = width > 0 || !!styleRaw || !!colorRaw;
+  const width = parseWidth(split.width);
+  const style = normalizeStyle(split.style);
+  const color = parseColor(split.color);
+  const hasStroke = width > 0 || !!split.style || !!split.color;
 
   const writeAll = (w: number, s: StrokeStyle, hex: string, op: number) => {
     if (w <= 0 && !hasStroke) {
