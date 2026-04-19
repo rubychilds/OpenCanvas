@@ -1,8 +1,9 @@
 import type { SVGProps } from "react";
 
 /**
- * Inline SVG icons the chrome needs in an *outlined* rendering, where the
- * global IconContext weight="fill" on Phosphor would read too heavy.
+ * Inline SVG icons the chrome needs that lucide doesn't ship a direct
+ * analog for — custom stroke primitives (StrokeSolid / Dashed / Dotted /
+ * Double), a Penpot-flavoured plus glyph, and a search outline.
  *
  * Sized by the caller via `size-*` Tailwind utilities on the svg element —
  * we render at 100% of the parent box and inherit `currentColor`.

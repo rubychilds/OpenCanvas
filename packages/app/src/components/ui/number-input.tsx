@@ -34,6 +34,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       unit,
       label,
       className,
+      disabled,
       "data-testid": testId,
       ...rest
     },
@@ -133,15 +134,20 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           // (e.g. width="1440").
           "flex items-center h-7 min-w-0 rounded-md bg-chip",
           "focus-within:ring-1 focus-within:ring-oc-accent",
+          // Disabled chips grey out uniformly (chip, scrubber, unit) and
+          // swallow pointer events — the child <input> still carries its
+          // own `disabled` attr so keyboard focus skips it too.
+          disabled && "opacity-50 pointer-events-none",
           className,
         )}
+        aria-disabled={disabled || undefined}
       >
         {showScrubber ? (
           <span
             role="button"
             tabIndex={-1}
             aria-label="Drag to scrub value"
-            onPointerDown={onScrubberPointerDown}
+            onPointerDown={disabled ? undefined : onScrubberPointerDown}
             className={cn(
               "flex items-center justify-center min-w-5 h-full px-1.5",
               "text-[11px] text-muted-foreground select-none cursor-ew-resize",
@@ -161,8 +167,9 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => commitFromText(draft)}
           onKeyDown={onKeyDown}
+          disabled={disabled}
           className={cn(
-            "flex-1 min-w-0 bg-transparent px-0.5 h-full text-sm tabular-nums text-foreground",
+            "flex-1 min-w-0 bg-transparent px-0.5 h-full text-xs tabular-nums text-foreground",
             "focus:outline-none",
           )}
           data-testid={testId}

@@ -66,17 +66,19 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
     expect(display).toBe("flex");
   });
 
-  test("Overflow X dropdown writes overflow-x:hidden to the selected component", async ({
+  test("Clip content checkbox writes overflow:hidden on both axes", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
     await selectDiv(page, "clip-host");
 
-    // Clip toggle retired in the Phase-2 gap-closer pass; replaced by
-    // overflow-x / overflow-y dropdowns that write CSS longhands.
-    const overflowX = page.locator('[data-testid="oc-ins-overflow-x"]');
-    await expect(overflowX).toBeVisible();
-    await overflowX.selectOption("hidden");
+    // Single "Clip content" checkbox replaced the per-axis overflow
+    // dropdowns — flipping it on writes the `overflow` shorthand so both
+    // axes clip together.
+    const clip = page.locator('[data-testid="oc-ins-clip-content"]');
+    await expect(clip).toBeVisible();
+    await expect(clip).not.toBeChecked();
+    await clip.check();
 
     const css = await page.evaluate(() => {
       const ed = (window as unknown as {
@@ -86,7 +88,7 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
       }).__opencanvas.editor;
       return ed.getSelected().getStyle();
     });
-    expect(css["overflow-x"]).toBe("hidden");
+    expect(css["overflow"]).toBe("hidden");
   });
 
   test("Raw CSS fallback is hidden by default and only renders when orphan properties exist", async ({

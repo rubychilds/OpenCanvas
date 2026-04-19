@@ -1,105 +1,111 @@
 /**
- * Chrome icon re-exports — Lucide-shaped names.
+ * Chrome icon re-exports — sourced entirely from `lucide-react`.
  *
- * Primary source: `@phosphor-icons/react` with `weight="fill"` applied via the
- * IconContext.Provider at the App root (D.4d.2: filled iconography). Phosphor
- * stays the default for chrome glyphs (eye / lock / chevron / device / etc.).
+ * Icons are stroke-based hairline outlines (lucide's default strokeWidth=2).
+ * Callers that need a lighter weight can pass `strokeWidth={1.25}` on the
+ * rendered icon or wrap a subtree with `className="[&_svg]:stroke-[1.25]"`.
  *
- * Lucide source for: (a) flex-layout spacing icons Phosphor has no analog for
- * (AlignHorizontalSpaceBetween / SpaceAround / StretchHorizontal), (b) shape
- * primitives + text alignment + text case / decoration glyphs that read more
- * cleanly as outlines at our small inspector sizes. Per user direction
- * 2026-04-19: Frame, Type, Square, Circle, AlignLeft/Center/Right/Justify,
- * CaseUpper / CaseLower / CaseSensitive, Bold / Italic / Underline /
- * Strikethrough all live here.
- *
- * Keep this the only place that imports either icon library.
+ * Re-export names (e.g. `TextAlignLeft`, `ChevronDown`) are historical
+ * aliases kept so call-sites across the inspector, layers panel, and
+ * canvas chrome don't churn when we migrate upstream icons. Keep this the
+ * only file in the app that imports directly from `lucide-react`.
  */
 
 export {
+  // Text alignment
   AlignCenter as TextAlignCenter,
-  AlignHorizontalSpaceAround,
-  AlignHorizontalSpaceBetween,
   AlignJustify as TextAlignJustify,
   AlignLeft as TextAlignLeft,
   AlignRight as TextAlignRight,
-  Bold,
-  CaseLower,
-  CaseSensitive,
-  CaseUpper,
-  Circle,
-  Eye,
-  EyeClosed,
-  Frame as FrameCorners,
-  Italic,
-  Minus,
-  Square,
-  StretchHorizontal,
-  Strikethrough as TextStrikethrough,
-  Type,
-  Underline as TextUnderline,
-} from "lucide-react";
-
-export {
-  AlignBottom as AlignEndVertical,
-  AlignCenterHorizontal as AlignHorizontalJustifyCenter,
+  // Flex-layout spacing
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignHorizontalJustifyStart,
+  AlignHorizontalSpaceAround,
+  AlignHorizontalSpaceBetween,
   AlignCenterVertical,
+  AlignEndVertical,
+  AlignStartVertical,
   AlignLeft,
-  AlignLeft as AlignHorizontalJustifyStart,
-  AlignRight as AlignHorizontalJustifyEnd,
-  AlignTop as AlignStartVertical,
+  StretchHorizontal,
+  // Arrows + directional
   ArrowDown,
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  ArrowsOutCardinal as Move,
-  CaretDown as ChevronDown,
-  CaretRight as ChevronRight,
+  ChevronDown,
+  ChevronRight,
+  Move,
+  // Type-styling
+  Bold,
+  CaseLower,
+  CaseSensitive,
+  CaseUpper,
+  Italic,
+  Pilcrow,
+  RemoveFormatting as TextTSlash,
+  Strikethrough as TextStrikethrough,
+  Type,
+  Type as TextIcon,
+  Underline as TextUnderline,
+  // Headings
+  Heading1,
+  Heading2,
+  Heading3,
+  Heading4,
+  Heading5,
+  Heading6,
+  // Status / action
   Check,
-  Columns as Columns3,
-  CornersOut as Maximize2,
-  Crop as Maximize,
-  Cube as Box,
-  Cursor as MousePointer,
-  CursorClick as MousePointerClick,
-  DeviceMobile as Smartphone,
-  DeviceTablet as Tablet,
-  FileText,
-  FloppyDisk as Save,
-  Image,
-  Layout as LayoutDashboard,
-  Link,
-  List as Menu,
-  Lock,
-  LockOpen,
-  LockSimple,
-  LockSimpleOpen,
-  Monitor,
-  Moon,
-  Paragraph as Pilcrow,
-  Plugs as Unplug,
+  Minus,
   Plus,
-  Rows as Rows3,
-  ShareNetwork as PanelBottom,
-  SquaresFour,
-  SquaresFour as PanelTop,
+  Link,
+  Save,
+  TextCursor,
+  Trash2,
+  Unplug,
+  // Shapes & canvas primitives
+  Box,
+  Circle,
+  Droplet,
+  Frame as FrameCorners,
+  Image,
+  Square,
+  Crop as Maximize,
+  Maximize2,
+  // Viewports / devices
+  Monitor,
+  Smartphone,
+  Tablet,
+  Video,
+  // Layout primitives & panels
+  Columns3,
+  LayoutDashboard,
+  LayoutGrid as SquaresFour,
+  LayoutPanelLeft,
+  PanelBottom,
+  PanelTop,
+  Rows3,
+  // Pointer / cursor
+  MousePointer,
+  MousePointerClick,
+  // Text document
+  FileText,
+  Menu,
+  // Locks (lucide has no "simple" variant — Lock/Unlock read the same at small
+  // sizes, and lucide's are stroke-consistent with the rest of the set)
+  Eye,
+  EyeOff as EyeClosed,
+  Lock,
+  Lock as LockSimple,
+  LockOpen,
+  Unlock as LockSimpleOpen,
+  // Theming + misc
+  Moon,
   Sun,
-  Tag as Tags,
-  TextAa as TextIcon,
-  TextHFive as Heading5,
-  TextHFour as Heading4,
-  TextHOne as Heading1,
-  TextHSix as Heading6,
-  TextHThree as Heading3,
-  TextHTwo as Heading2,
-  TextTSlash,
-  Textbox as TextCursor,
-  Trash as Trash2,
-  VideoCamera as Video,
-  IconContext,
-} from "@phosphor-icons/react";
-
-export type { Icon as LucideIcon } from "@phosphor-icons/react";
+  Tags,
+  type LucideIcon,
+} from "lucide-react";
 
 export {
   PlusOutline,

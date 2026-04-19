@@ -121,24 +121,23 @@ export function StrokeSection({ component }: { component: Component }) {
 
   return (
     <InspectorSection title="Stroke">
-      <div className="flex items-center gap-1">
+      {/* Stroke color + width split the row evenly — matches the W/H pattern
+          in Layout so the inspector's two-column grid read stays consistent. */}
+      <div className="grid grid-cols-2 gap-2">
         <ColorField
           value={color.hex}
           onChange={(hex) => writeAll(width || 1, style, hex, color.opacity)}
           data-testid="oc-ins-stroke-color"
-          className="flex-1"
         />
-        <div className="w-[52px] shrink-0">
-          <NumberInput
-            value={width}
-            onChange={(n) => writeAll(n, style, color.hex, color.opacity)}
-            min={0}
-            step={1}
-            unit="px"
-            label="W"
-            data-testid="oc-ins-stroke-width"
-          />
-        </div>
+        <NumberInput
+          value={width}
+          onChange={(n) => writeAll(n, style, color.hex, color.opacity)}
+          min={0}
+          step={1}
+          unit="px"
+          label="W"
+          data-testid="oc-ins-stroke-width"
+        />
       </div>
       <FieldGroup label="Style">
         <ToggleGroup

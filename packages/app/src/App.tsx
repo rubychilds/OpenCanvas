@@ -18,7 +18,6 @@ import { buildHandlers } from "./bridge/handlers.js";
 import { Topbar, type SaveStatus } from "./components/Topbar.js";
 import { Shell } from "./components/Shell.js";
 import { TooltipProvider } from "./components/ui/tooltip.js";
-import { IconContext } from "./canvas/chrome-icons.js";
 
 export function App() {
   const [connected, setConnected] = useState(false);
@@ -156,26 +155,24 @@ export function App() {
   }, []);
 
   return (
-    <IconContext.Provider value={{ weight: "fill" }}>
-      <TooltipProvider delayDuration={200}>
-        <div className="flex flex-col h-screen w-screen overflow-hidden">
-          <Topbar
-            connected={connected}
-            saveStatus={saveStatus}
-            saveError={saveError}
-            onSave={handleSave}
-            editor={editor}
-          />
-          <GjsEditor
-            grapesjs={grapesjs}
-            options={editorOptions}
-            onReady={handleReady}
-            className="flex-1 min-h-0 flex"
-          >
-            <Shell />
-          </GjsEditor>
-        </div>
-      </TooltipProvider>
-    </IconContext.Provider>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex flex-col h-screen w-screen overflow-hidden">
+        <Topbar
+          connected={connected}
+          saveStatus={saveStatus}
+          saveError={saveError}
+          onSave={handleSave}
+          editor={editor}
+        />
+        <GjsEditor
+          grapesjs={grapesjs}
+          options={editorOptions}
+          onReady={handleReady}
+          className="flex-1 min-h-0 flex"
+        >
+          <Shell />
+        </GjsEditor>
+      </div>
+    </TooltipProvider>
   );
 }

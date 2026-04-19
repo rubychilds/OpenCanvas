@@ -84,7 +84,11 @@ export function EffectsSection({ component }: { component: Component }) {
   );
 
   if (!expanded) {
-    return <InspectorSection title="Effects" action={action}>{null}</InspectorSection>;
+    return (
+      <InspectorSection title="Effects" action={action} muted>
+        {null}
+      </InspectorSection>
+    );
   }
 
   return (

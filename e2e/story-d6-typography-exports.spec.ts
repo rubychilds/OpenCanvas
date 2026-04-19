@@ -110,8 +110,9 @@ test.describe("D.6: Typography section + Exports section", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="exp-host" style="color: red">hi</div>`);
 
-    // Exports section is collapsed by default — expand via its title toggle.
-    await page.getByRole("button", { name: "Exports" }).click();
+    // Export section is closed by default — open via the section-header +
+    // toggle (same pattern as Fill / Auto Layout).
+    await page.locator('[data-testid="oc-ins-exports-toggle"]').click();
 
     const preview = page.locator('[data-testid="oc-ins-exports-preview"]');
     await expect(preview).toContainText("export default function Component");

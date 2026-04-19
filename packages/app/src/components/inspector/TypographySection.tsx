@@ -162,7 +162,7 @@ export function TypographySection({ component }: { component: Component }) {
           else writeStyle(component, "font-family", v);
         }}
         className={cn(
-          "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
+          "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground",
           "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
         )}
         data-testid="oc-ins-font-family"
@@ -178,11 +178,10 @@ export function TypographySection({ component }: { component: Component }) {
           <option value={fontFamily}>{fontFamily}</option>
         ) : null}
       </select>
-      {/* Weight + size share a row: weight flex-fills, size is a compact
-          64px NumberInput on the right showing the explicit style or the
-          computed font-size (so a default heading reads "32" rather than
-          blank). */}
-      <div className="flex items-center gap-1">
+      {/* Weight + size + LH + LS share one uniform 2-column grid — each chip
+          the same width so the block reads as a cohesive typography block
+          rather than a tapered weight + compact size + separate LH/LS row. */}
+      <div className="grid grid-cols-2 gap-2">
         <select
           value={fontWeight}
           onChange={(e) => {
@@ -191,7 +190,7 @@ export function TypographySection({ component }: { component: Component }) {
             else writeStyle(component, "font-weight", v);
           }}
           className={cn(
-            "h-7 flex-1 min-w-0 rounded-md bg-chip px-2 text-sm text-foreground",
+            "h-7 min-w-0 rounded-md bg-chip px-2 text-xs text-foreground",
             "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-font-weight"
@@ -203,20 +202,15 @@ export function TypographySection({ component }: { component: Component }) {
             </option>
           ))}
         </select>
-        <div className="w-20 shrink-0">
-          <NumberInput
-            value={fontSize}
-            onChange={(n) => writeStyle(component, "font-size", `${n}px`)}
-            unit="px"
-            label="S"
-            min={1}
-            step={1}
-            data-testid="oc-ins-font-size"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-1">
+        <NumberInput
+          value={fontSize}
+          onChange={(n) => writeStyle(component, "font-size", `${n}px`)}
+          unit="px"
+          label=""
+          min={1}
+          step={1}
+          data-testid="oc-ins-font-size"
+        />
         <NumberInput
           value={lineHeight}
           onChange={(n) => writeStyle(component, "line-height", String(n))}
@@ -238,28 +232,57 @@ export function TypographySection({ component }: { component: Component }) {
         />
       </div>
 
-      {/* Three visual ToggleGroups — align / case / deco — render without
-          caption labels. Each icon's tooltip disambiguates the row. */}
-      <ToggleGroup
-        type="single"
-        value={textAlign}
-        onValueChange={(v) => {
-          if (!v) clearStyle(component, "text-align");
-          else writeStyle(component, "text-align", v);
-        }}
-        data-testid="oc-ins-text-align"
-      >
-        {TEXT_ALIGN_OPTIONS.map(({ value, label, Icon }) => (
-          <Tooltip key={value}>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value={value} aria-label={label}>
-                <Icon />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>{label}</TooltipContent>
-          </Tooltip>
-        ))}
-      </ToggleGroup>
+      {/* Alignment shares a row with the text-decoration "stroke decorator"
+          group — both are short, high-frequency toggles and read naturally
+          side-by-side. Case stays on its own row because it carries six
+          options. Each icon's tooltip disambiguates. */}
+      <div className="flex items-center gap-2">
+        <ToggleGroup
+          type="single"
+          value={textAlign}
+          onValueChange={(v) => {
+            if (!v) clearStyle(component, "text-align");
+            else writeStyle(component, "text-align", v);
+          }}
+          data-testid="oc-ins-text-align"
+        >
+          {TEXT_ALIGN_OPTIONS.map(({ value, label, Icon }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+
+        <ToggleGroup
+          type="single"
+          value={textDecoration}
+          onValueChange={(v) => {
+            if (!v || v === "none") clearStyle(component, "text-decoration");
+            else writeStyle(component, "text-decoration", v);
+          }}
+          data-testid="oc-ins-text-decoration"
+        >
+          {TEXT_DECORATION_OPTIONS.map(({ value, label, Icon, glyph }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  {Icon ? (
+                    <Icon />
+                  ) : (
+                    <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
+                  )}
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </div>
 
       <ToggleGroup
         type="single"
@@ -271,31 +294,6 @@ export function TypographySection({ component }: { component: Component }) {
         data-testid="oc-ins-text-transform"
       >
         {CASE_OPTIONS.map(({ value, label, Icon, glyph }) => (
-          <Tooltip key={value}>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value={value} aria-label={label}>
-                {Icon ? (
-                  <Icon />
-                ) : (
-                  <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
-                )}
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>{label}</TooltipContent>
-          </Tooltip>
-        ))}
-      </ToggleGroup>
-
-      <ToggleGroup
-        type="single"
-        value={textDecoration}
-        onValueChange={(v) => {
-          if (!v || v === "none") clearStyle(component, "text-decoration");
-          else writeStyle(component, "text-decoration", v);
-        }}
-        data-testid="oc-ins-text-decoration"
-      >
-        {TEXT_DECORATION_OPTIONS.map(({ value, label, Icon, glyph }) => (
           <Tooltip key={value}>
             <TooltipTrigger asChild>
               <ToggleGroupItem value={value} aria-label={label}>

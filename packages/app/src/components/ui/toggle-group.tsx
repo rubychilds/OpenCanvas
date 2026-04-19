@@ -32,9 +32,12 @@ const toggleGroupItemVariants = cva(
         ghost: "rounded-sm hover:bg-background",
       },
       size: {
-        // Icons sit at 16px inside a 20px button — 2px of breathing room
-        // per side.
-        sm: "h-5 w-5 [&_svg]:size-4",
+        // Items sit inside a chip whose outer height matches inspector
+        // NumberInput / select chips (h-7 = 28px) — items are h-6 (24px)
+        // with the root's 2px padding completing the 28px. Keeps toggles
+        // and inputs on the same baseline grid so Typography / Layout
+        // rows don't have two different row heights side-by-side.
+        sm: "h-6 w-6 [&_svg]:size-4",
         md: "h-6 w-6 [&_svg]:size-4",
       },
     },
@@ -52,8 +55,9 @@ const toggleGroupRootVariants = cva("inline-flex w-fit", {
   variants: {
     variant: {
       // Grey-chip container holding transparent/white-on-select items.
-      // Padding is 1px so the group hugs its content tightly (Penpot-shape).
-      default: "bg-chip p-px rounded-md gap-px",
+      // Padding is 2px so (root padding 4px + item height 24px) adds up
+      // to the 28px input-chip height used elsewhere in the inspector.
+      default: "bg-chip p-0.5 rounded-md gap-px",
       // No container — single buttons that happen to live in a ToggleGroup.
       ghost: "",
     },

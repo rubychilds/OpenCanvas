@@ -73,7 +73,14 @@ function isPrimitiveType(s: string): s is PrimitiveType {
 export const PRIMITIVE_HTML: Record<Exclude<PrimitiveType, "frame">, string> = {
   rectangle: `<div data-oc-shape="rectangle" class="w-32 h-32 bg-neutral-200"></div>`,
   ellipse: `<div data-oc-shape="ellipse" class="w-32 h-32 rounded-full bg-neutral-200"></div>`,
-  text: `<p data-oc-shape="text" class="text-base leading-relaxed">Text</p>`,
+  // `inline-block w-max` = "point text" in Figma / Penpot parlance: the
+  // <p> sizes to its own content width and doesn't participate in the
+  // parent's block flow. This is critical on the edit-mode path — a plain
+  // block <p> in an unsized parent wrapper (or mid-layout contenteditable
+  // swap) collapses to width:0 and wraps one glyph per line. Point-text
+  // sizing makes the box self-measuring so editing just grows/shrinks the
+  // <p> width against its content, no vertical-glyph meltdown.
+  text: `<p data-oc-shape="text" class="inline-block w-max text-base leading-relaxed">Text</p>`,
   image: `<img data-oc-shape="image" src="" alt="" class="max-w-full h-auto" />`,
   // `display: contents` keeps the group invisible to the box model — Figma's
   // Group flattens at export, Penpot's :group is organisational. Same shape.

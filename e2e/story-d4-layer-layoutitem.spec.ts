@@ -50,12 +50,18 @@ test.describe("D.4: Appearance + contextual Layout Item (post-Layer-retirement)"
     expect(await readSelectedStyle(page, "opacity")).toBe("0.5");
   });
 
-  test("Appearance: blend-mode select writes mix-blend-mode", async ({ freshApp: page }) => {
+  test("Appearance: blend-mode picker writes mix-blend-mode", async ({ freshApp: page }) => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="bm-host">b</div>`);
 
-    await page.locator('[data-testid="oc-ins-layer-blend-mode"]').selectOption("multiply");
+    // Droplet-icon trigger opens a DropdownMenu of blend modes; the <select>
+    // input only appears after a non-default mode is chosen.
+    await page.locator('[data-testid="oc-ins-layer-blend-picker"]').click();
+    await page.locator('[data-testid="oc-ins-layer-blend-option-multiply"]').click();
     expect(await readSelectedStyle(page, "mix-blend-mode")).toBe("multiply");
+    await expect(page.locator('[data-testid="oc-ins-layer-blend-mode"]')).toHaveValue(
+      "multiply",
+    );
   });
 
   test("Layout Item section: hidden when parent is not a flex/grid container", async ({

@@ -15,6 +15,14 @@ export interface InspectorSectionProps {
    */
   collapsible?: boolean;
   defaultOpen?: boolean;
+  /**
+   * When true, title renders in the muted/disabled grey — signals that the
+   * section has no active content (e.g. Layout with auto-layout off, Fill
+   * with an empty stack, Export when unopened). Keeps the header visible
+   * so the + action stays reachable, but drops its visual weight so the
+   * eye skips to sections that matter for the current selection.
+   */
+  muted?: boolean;
 }
 
 /**
@@ -32,6 +40,7 @@ export function InspectorSection({
   className,
   collapsible,
   defaultOpen = true,
+  muted = false,
 }: InspectorSectionProps) {
   // Right padding is bigger than left — reserves a ~20px column on the right
   // for section-header `+` (or other) action icons. Input rows never stretch
@@ -51,8 +60,10 @@ export function InspectorSection({
   // coincidence.
   const headerClass =
     "flex items-center justify-between h-8 px-(--panel-padding)";
-  const titleClass =
-    "text-[13px] font-semibold text-foreground leading-5";
+  const titleClass = cn(
+    "text-xs font-semibold leading-5",
+    muted ? "text-muted-foreground" : "text-foreground",
+  );
 
   if (collapsible) {
     return (

@@ -1,30 +1,48 @@
 import { useState } from "react";
 import type { Component } from "grapesjs";
-import { Square } from "../../canvas/chrome-icons.js";
+import { Droplet, Square } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.js";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu.js";
 import { NumberInput } from "../ui/number-input.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { FieldGroup, InspectorSection } from "./InspectorSection.js";
+import { isRadiusApplicable } from "./applicability.js";
 
-const BLEND_MODES = [
-  "normal",
-  "multiply",
-  "screen",
-  "overlay",
-  "darken",
-  "lighten",
-  "color-dodge",
-  "color-burn",
-  "hard-light",
-  "soft-light",
-  "difference",
-  "exclusion",
-  "hue",
-  "saturation",
-  "color",
-  "luminosity",
-] as const;
+/**
+ * Blend modes grouped by family — matches Figma's dropdown structure so the
+ * mental model carries between tools. Separators in the dropdown render
+ * between groups; no header labels (Figma ships none either — the visual
+ * separator is enough).
+ */
+const BLEND_GROUPS: ReadonlyArray<readonly string[]> = [
+  ["normal"],
+  ["darken", "multiply", "color-burn"],
+  ["lighten", "screen", "color-dodge"],
+  ["overlay", "soft-light", "hard-light"],
+  ["difference", "exclusion"],
+  ["hue", "saturation", "color", "luminosity"],
+];
+
+const BLEND_MODES = BLEND_GROUPS.flat();
+
+/**
+ * Display label for a CSS `mix-blend-mode` value — drops the dash and
+ * Title-Cases the parts ("color-dodge" → "Color Dodge"). Matches the casing
+ * used by Figma, Sketch, and most design-tool blend pickers.
+ */
+function formatBlend(mode: string): string {
+  return mode
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 const PER_CORNER_PROPS = [
   ["border-top-left-radius", "↖", "Top-left", "oc-ins-radius-tl"],
@@ -58,11 +76,63 @@ const CURSOR_OPTIONS = [
  * visual/interaction state with no other obvious home.
  */
 export function AppearanceSection({ component }: { component: Component }) {
+  // Blend picker lives up in the section header (mirrors the Layout
+  // section's auto-layout toggle). The body-level <select> chip still
+  // renders via BlendRow but only when a non-default mode is active.
+  const blendMode = readStyle(component, "mix-blend-mode") || "normal";
+  const hasBlend = blendMode !== "normal";
+  const setBlend = (next: string) => {
+    if (next === "normal") clearStyle(component, "mix-blend-mode");
+    else writeStyle(component, "mix-blend-mode", next);
+  };
+
+  const blendPicker = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Choose blend mode"
+          aria-pressed={hasBlend}
+          className={cn(
+            "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
+            // Selected state: light-blue fill + darker-blue stroke so the
+            // "blend is on" signal reads at a glance without wording.
+            hasBlend
+              ? "bg-oc-accent/15 text-oc-accent"
+              : "text-muted-foreground hover:text-foreground hover:bg-background",
+          )}
+          data-testid="oc-ins-layer-blend-picker"
+        >
+          <Droplet className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      {/* min-w-40 gives the label column enough room alongside the left-
+          aligned checkmark so the longest entry ("Color Dodge", "Luminosity")
+          doesn't wrap. */}
+      <DropdownMenuContent align="end" sideOffset={4} className="min-w-40">
+        {BLEND_GROUPS.map((group, groupIndex) => (
+          <div key={groupIndex}>
+            {groupIndex > 0 ? <DropdownMenuSeparator /> : null}
+            {group.map((m) => (
+              <DropdownMenuCheckboxItem
+                key={m}
+                checked={m === blendMode}
+                onSelect={() => setBlend(m)}
+                data-testid={`oc-ins-layer-blend-option-${m}`}
+              >
+                {formatBlend(m)}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </div>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
-    <InspectorSection title="Appearance">
-      <OpacityRow component={component} />
-      <RadiusRow component={component} />
-      <BlendRow component={component} />
+    <InspectorSection title="Appearance" action={blendPicker}>
+      <OpacityRadiusRow component={component} />
+      {hasBlend ? <BlendRow component={component} /> : null}
       <CursorRow component={component} />
       <ZIndexRow component={component} />
     </InspectorSection>
@@ -81,7 +151,7 @@ function CursorRow({ component }: { component: Component }) {
           else writeStyle(component, "cursor", v);
         }}
         className={cn(
-          "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
+          "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground",
           "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
         )}
         data-testid="oc-ins-cursor"
@@ -116,30 +186,27 @@ function ZIndexRow({ component }: { component: Component }) {
   );
 }
 
-function OpacityRow({ component }: { component: Component }) {
-  const raw = readStyle(component, "opacity");
-  const opacity =
-    raw === "" ? 100 : Math.round(Math.max(0, Math.min(1, parseFloat(raw))) * 100);
-  return (
-    <NumberInput
-      value={opacity}
-      onChange={(n) => {
-        const v = Math.max(0, Math.min(100, Math.round(n)));
-        if (v >= 100) clearStyle(component, "opacity");
-        else writeStyle(component, "opacity", String(v / 100));
-      }}
-      min={0}
-      max={100}
-      step={1}
-      unit="%"
-      label="%"
-      data-testid="oc-ins-layer-opacity"
-    />
-  );
-}
-
-function RadiusRow({ component }: { component: Component }) {
+/**
+ * Opacity and radius share a row — both are single-number chips and having
+ * them side-by-side saves a line of vertical space in the inspector. The
+ * per-corner radius toggle lives on the right; when flipped on, the four
+ * per-corner inputs drop to a second row underneath.
+ *
+ * The opacity chip trails with the "%" unit on the right and no scrubber
+ * label on the left — a leading "%" would double up with the trailing unit.
+ */
+function OpacityRadiusRow({ component }: { component: Component }) {
   const [perCorner, setPerCorner] = useState(false);
+  // Greyed-out (not hidden) when the selection can't show a rounded corner
+  // — e.g. inline text runs. Keeps the row rhythm of the panel stable
+  // across selections while signalling "nothing to do here."
+  const radiusEnabled = isRadiusApplicable(component);
+
+  const rawOpacity = readStyle(component, "opacity");
+  const opacity =
+    rawOpacity === ""
+      ? 100
+      : Math.round(Math.max(0, Math.min(1, parseFloat(rawOpacity))) * 100);
 
   const all = readStyle(component, "border-radius");
   const tl = readStyle(component, "border-top-left-radius");
@@ -164,8 +231,23 @@ function RadiusRow({ component }: { component: Component }) {
   };
 
   return (
-    <FieldGroup label="Radius">
-      <div className="flex items-center gap-1">
+    <>
+      <div className="flex items-center gap-2">
+        <NumberInput
+          value={opacity}
+          onChange={(n) => {
+            const v = Math.max(0, Math.min(100, Math.round(n)));
+            if (v >= 100) clearStyle(component, "opacity");
+            else writeStyle(component, "opacity", String(v / 100));
+          }}
+          min={0}
+          max={100}
+          step={1}
+          unit="%"
+          label=""
+          data-testid="oc-ins-layer-opacity"
+          className="flex-1"
+        />
         {perCorner ? (
           <span className="flex-1 text-[11px] text-muted-foreground">Per corner</span>
         ) : (
@@ -176,6 +258,7 @@ function RadiusRow({ component }: { component: Component }) {
             label="R"
             min={0}
             step={1}
+            disabled={!radiusEnabled}
             data-testid="oc-ins-radius-all"
             className="flex-1"
           />
@@ -187,10 +270,12 @@ function RadiusRow({ component }: { component: Component }) {
               onClick={() => setPerCorner((v) => !v)}
               aria-label={perCorner ? "Single radius" : "Per-corner radius"}
               aria-pressed={perCorner}
+              disabled={!radiusEnabled}
               className={cn(
                 "flex items-center justify-center w-6 h-6 rounded-sm transition-colors",
                 "hover:bg-background",
                 perCorner ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                !radiusEnabled && "opacity-50 pointer-events-none",
               )}
               data-testid="oc-ins-radius-mode"
             >
@@ -198,12 +283,16 @@ function RadiusRow({ component }: { component: Component }) {
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            {perCorner ? "Switch to single radius" : "Switch to per-corner radius"}
+            {!radiusEnabled
+              ? "Border radius doesn't apply to this element"
+              : perCorner
+                ? "Switch to single radius"
+                : "Switch to per-corner radius"}
           </TooltipContent>
         </Tooltip>
       </div>
       {perCorner ? (
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-2 gap-2">
           {PER_CORNER_PROPS.map(([prop, glyph, label, testid]) => (
             <NumberInput
               key={prop}
@@ -213,28 +302,37 @@ function RadiusRow({ component }: { component: Component }) {
               label={glyph}
               min={0}
               step={1}
+              disabled={!radiusEnabled}
               aria-label={label}
               data-testid={testid}
             />
           ))}
         </div>
       ) : null}
-    </FieldGroup>
+    </>
   );
 }
 
+/**
+ * Body-level blend <select> — only rendered by AppearanceSection when a
+ * non-default mode is in effect (the section-header droplet is the affordance
+ * for picking the initial mode). Stays a <select> here so the current value
+ * reads at-a-glance and can be changed without re-opening the picker.
+ */
 function BlendRow({ component }: { component: Component }) {
   const blendMode = readStyle(component, "mix-blend-mode") || "normal";
+  const setBlend = (next: string) => {
+    if (next === "normal") clearStyle(component, "mix-blend-mode");
+    else writeStyle(component, "mix-blend-mode", next);
+  };
+
   return (
     <FieldGroup label="Blend">
       <select
         value={blendMode}
-        onChange={(e) => {
-          if (e.target.value === "normal") clearStyle(component, "mix-blend-mode");
-          else writeStyle(component, "mix-blend-mode", e.target.value);
-        }}
+        onChange={(e) => setBlend(e.target.value)}
         className={cn(
-          "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
+          "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground",
           "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
         )}
         data-testid="oc-ins-layer-blend-mode"
@@ -242,7 +340,7 @@ function BlendRow({ component }: { component: Component }) {
       >
         {BLEND_MODES.map((m) => (
           <option key={m} value={m}>
-            {m}
+            {formatBlend(m)}
           </option>
         ))}
       </select>

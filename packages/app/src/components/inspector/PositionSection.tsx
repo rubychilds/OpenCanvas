@@ -62,7 +62,7 @@ function ModeRow({
           else writeStyle(component, "position", v);
         }}
         className={cn(
-          "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
+          "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground",
           "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
         )}
         data-testid="oc-ins-position-mode"
@@ -116,7 +116,7 @@ function XYRow({ component }: { component: Component }) {
   const top = readStyle(component, "top");
   const onChange = (prop: "left" | "top") => (n: number) => writeStyle(component, prop, `${n}px`);
   return (
-    <div className="grid grid-cols-2 gap-1">
+    <div className="grid grid-cols-2 gap-2">
       <NumberInput
         value={left}
         onChange={onChange("left")}

@@ -233,7 +233,7 @@ export function FillSection({ component }: { component: Component }) {
   ) : null;
 
   return (
-    <InspectorSection title="Fill" action={action}>
+    <InspectorSection title="Fill" action={action} muted={localStack.length === 0}>
       {localStack.map((layer, i) => (
         <FillRow
           key={layer.id}

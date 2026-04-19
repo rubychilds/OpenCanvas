@@ -7,7 +7,6 @@ import {
   Eye,
   EyeClosed,
   FrameCorners,
-  IconContext,
   Lock,
   LockOpen,
   PlusOutline,
@@ -600,11 +599,10 @@ export function LayersPanel() {
   };
 
   return (
-    // Override the app-root IconContext (weight="fill") with a 1px-stroke
-    // thin weight for this panel only. Keeps the inspector iconography
-    // filled while the layer tree reads lighter.
-    <IconContext.Provider value={{ weight: "thin" }}>
-      <div className="flex flex-col min-h-0 h-full overflow-auto">
+    // `[&_svg]:stroke-[1.25]` thins the hairline stroke for every lucide
+    // icon inside the panel, so the layer tree reads lighter than the
+    // inspector iconography (default strokeWidth=2).
+    <div className="flex flex-col min-h-0 h-full overflow-auto [&_svg]:stroke-[1.25]">
         <section>
           <div className="h-(--section-title-height) pl-(--panel-padding) pr-1 flex items-center justify-between border-b border-border">
             <span className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -645,6 +643,5 @@ export function LayersPanel() {
           )}
         </section>
       </div>
-    </IconContext.Provider>
   );
 }

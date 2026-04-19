@@ -74,6 +74,12 @@ export function SizeField({
   const label =
     mode === "fixed" ? null : mode === "hug" ? "auto" : "fill";
 
+  // Outside auto-layout the only available mode is Fixed — rendering a
+  // "Fixed ▾" dropdown that only offers the value it already shows is
+  // noise. Collapse to just the axis letter + number when there is
+  // nothing to choose between.
+  const hasModeChoice = availableModes.length > 1;
+
   return (
     <div
       className={cn(
@@ -85,38 +91,40 @@ export function SizeField({
       <span className="flex items-center pl-1.5 pr-0.5 text-[11px] text-muted-foreground select-none">
         {axis}
       </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              "flex items-center justify-center h-5 px-1 rounded-sm",
-              "text-[11px] text-muted-foreground hover:text-foreground hover:bg-background",
-              "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
-            )}
-            aria-label={`${axis} mode`}
-            data-testid={testId ? `${testId}-mode` : undefined}
-          >
-            {MODE_LABEL[mode]}
-            <span aria-hidden className="ml-0.5 text-[9px]">▾</span>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" sideOffset={4} className="min-w-28">
-          {(["fixed", "hug", "fill"] as const).map((m) => {
-            const enabled = availableModes.includes(m);
-            return (
-              <DropdownMenuItem
-                key={m}
-                disabled={!enabled}
-                onSelect={() => enabled && onModeChange(m)}
-                data-testid={testId ? `${testId}-mode-${m}` : undefined}
-              >
-                {MODE_LABEL[m]}
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {hasModeChoice ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "flex items-center justify-center h-5 px-1 rounded-sm",
+                "text-[11px] text-muted-foreground hover:text-foreground hover:bg-background",
+                "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
+              )}
+              aria-label={`${axis} mode`}
+              data-testid={testId ? `${testId}-mode` : undefined}
+            >
+              {MODE_LABEL[mode]}
+              <span aria-hidden className="ml-0.5 text-[9px]">▾</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" sideOffset={4} className="min-w-28">
+            {(["fixed", "hug", "fill"] as const).map((m) => {
+              const enabled = availableModes.includes(m);
+              return (
+                <DropdownMenuItem
+                  key={m}
+                  disabled={!enabled}
+                  onSelect={() => enabled && onModeChange(m)}
+                  data-testid={testId ? `${testId}-mode-${m}` : undefined}
+                >
+                  {MODE_LABEL[m]}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
       {mode === "fixed" ? (
         <>
           <input
@@ -134,7 +142,7 @@ export function SizeField({
               }
             }}
             className={cn(
-              "flex-1 min-w-0 bg-transparent px-0.5 h-full text-sm tabular-nums text-foreground",
+              "flex-1 min-w-0 bg-transparent px-0.5 h-full text-xs tabular-nums text-foreground",
               "focus:outline-none",
             )}
             data-testid={testId}

@@ -12,11 +12,10 @@ import {
   ArrowDown,
   ArrowRight,
   Columns3,
+  LayoutPanelLeft,
   LockSimple,
   LockSimpleOpen,
-  Minus,
   Move,
-  PlusOutline,
   Square,
   StretchHorizontal,
 } from "../../canvas/chrome-icons.js";
@@ -59,21 +58,32 @@ export function LayoutSection({ component }: { component: Component }) {
           onClick={toggle}
           className={cn(
             "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
-            "text-muted-foreground hover:text-foreground hover:bg-background",
+            // Selected state: light-blue fill + darker-blue stroke — same
+            // treatment as the blend picker in Appearance, so "this
+            // section-header toggle is on" reads consistently across the
+            // inspector.
+            enabled
+              ? "bg-oc-accent/15 text-oc-accent"
+              : "text-muted-foreground hover:text-foreground hover:bg-background",
           )}
           aria-pressed={enabled}
           aria-label={enabled ? "Remove auto layout" : "Add auto layout"}
           data-testid="oc-ins-autolayout-toggle"
         >
-          {enabled ? <Minus className="size-3.5" /> : <PlusOutline className="size-3.5" />}
+          <LayoutPanelLeft className="size-3.5" />
         </button>
       </TooltipTrigger>
       <TooltipContent>{enabled ? "Remove auto layout" : "Add auto layout"}</TooltipContent>
     </Tooltip>
   );
 
+  // Section title flips to "Auto Layout" once the flex/grid display is on —
+  // makes the heading match the controls that appear below (direction,
+  // justify, gap — or the grid track editor).
+  const title = enabled ? "Auto Layout" : "Layout";
+
   return (
-    <InspectorSection title="Layout" action={toggleControl}>
+    <InspectorSection title={title} action={toggleControl} muted={!enabled}>
       <WHRow
         component={component}
         selfIsFlex={isFlex}
@@ -185,7 +195,11 @@ function WHRow({
   };
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+    // W and H split the row evenly; the aspect-ratio lock trails on the
+    // right — same pattern as the per-corner radius toggle and per-side
+    // padding toggle so "extra-action lives on the right" stays consistent
+    // across the inspector.
+    <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
       <SizeField
         axis="W"
         value={width}
@@ -194,6 +208,15 @@ function WHRow({
         onModeChange={(m) => writeSize(component, "width", m, widthNum ?? 0)}
         onFixedChange={onWFixed}
         data-testid="oc-ins-width"
+      />
+      <SizeField
+        axis="H"
+        value={height}
+        mode={heightMode}
+        availableModes={heightModes}
+        onModeChange={(m) => writeSize(component, "height", m, heightNum ?? 0)}
+        onFixedChange={onHFixed}
+        data-testid="oc-ins-height"
       />
       <Tooltip>
         <TooltipTrigger asChild>
@@ -218,15 +241,6 @@ function WHRow({
         </TooltipTrigger>
         <TooltipContent>{locked ? "Aspect ratio locked" : "Lock aspect ratio"}</TooltipContent>
       </Tooltip>
-      <SizeField
-        axis="H"
-        value={height}
-        mode={heightMode}
-        availableModes={heightModes}
-        onModeChange={(m) => writeSize(component, "height", m, heightNum ?? 0)}
-        onFixedChange={onHFixed}
-        data-testid="oc-ins-height"
-      />
     </div>
   );
 }
@@ -425,7 +439,7 @@ function GridRows({ component }: { component: Component }) {
           onChange={writeTracks("grid-template-columns")}
           placeholder="1fr 1fr 1fr"
           className={cn(
-            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
+            "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground tabular-nums",
             "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-grid-cols"
@@ -439,14 +453,14 @@ function GridRows({ component }: { component: Component }) {
           onChange={writeTracks("grid-template-rows")}
           placeholder="auto"
           className={cn(
-            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
+            "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground tabular-nums",
             "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-grid-rows"
           aria-label="Grid rows"
         />
       </FieldGroup>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-2">
         <NumberInput
           value={parsePx(colGap) ?? 0}
           onChange={(n) => {
@@ -526,7 +540,7 @@ function FlexItemRows({ component }: { component: Component }) {
           ))}
         </ToggleGroup>
       </FieldGroup>
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-2">
         <NumberInput
           value={flexGrow}
           onChange={(n) => {
@@ -580,7 +594,7 @@ function GridItemRows({ component }: { component: Component }) {
       else writeStyle(component, prop, v);
     };
   const inputClass = cn(
-    "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground tabular-nums",
+    "h-7 w-full rounded-md bg-chip px-2 text-xs text-foreground tabular-nums",
     "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
   );
   return (
@@ -673,11 +687,11 @@ function SpacingRow({
 
   return (
     <FieldGroup label={label}>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         {perSide ? (
           <span className="flex-1 text-[11px] text-muted-foreground">Per side</span>
         ) : (
-          <div className="grid grid-cols-2 gap-1 flex-1">
+          <div className="grid grid-cols-2 gap-2 flex-1">
             <NumberInput
               value={v}
               onChange={(n) => setUnified(n, h)}
@@ -721,7 +735,7 @@ function SpacingRow({
         </Tooltip>
       </div>
       {perSide ? (
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-2 gap-2">
           <NumberInput
             value={pt}
             onChange={setSide("top")}
@@ -788,71 +802,45 @@ function MarginRow({ component }: { component: Component }) {
   );
 }
 
-/* ───────────────────── Overflow (Clip) ────────────────────────── */
-
-const OVERFLOW_OPTIONS = ["visible", "hidden", "scroll", "auto"] as const;
+/* ───────────────────── Clip content (overflow) ────────────────────────── */
 
 /**
- * Overflow controls both axes. Reads the `overflow` shorthand first; if it's
- * set and both axes agree, the dropdowns lock to it. If the longhands
- * disagree (or only one is set), both dropdowns reflect the longhand values
- * individually. Writes go to the longhand whenever a single axis changes,
- * clearing the shorthand to avoid conflict.
+ * Single-checkbox "Clip content" control — unchecked means overflow stays at
+ * the browser default of `visible`; checked writes `overflow: hidden` on
+ * both axes via the shorthand. Replaces the earlier dual X/Y dropdowns
+ * because the full overflow taxonomy (scroll / auto / per-axis) is Raw CSS
+ * territory for the tiny minority of components that need it.
  */
 function ClipRow({ component }: { component: Component }) {
   const shorthand = readStyle(component, "overflow");
-  const ox = readStyle(component, "overflow-x") || shorthand || "visible";
-  const oy = readStyle(component, "overflow-y") || shorthand || "visible";
+  const ox = readStyle(component, "overflow-x") || shorthand;
+  const oy = readStyle(component, "overflow-y") || shorthand;
+  // Anything that isn't "" (unset) or "visible" counts as clipping. Covers
+  // legacy components where the previous per-axis UI wrote `hidden`, `scroll`,
+  // or `auto` on one side.
+  const clipped =
+    (ox !== "" && ox !== "visible") || (oy !== "" && oy !== "visible");
 
-  const setAxis = (axis: "x" | "y") => (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const v = e.target.value;
-    // Bring the other axis up to the shorthand value if shorthand was the
-    // source — otherwise the side we don't touch silently changes.
-    const other = axis === "x" ? oy : ox;
-    const otherProp = axis === "x" ? "overflow-y" : "overflow-x";
-    const thisProp = axis === "x" ? "overflow-x" : "overflow-y";
+  const setClipped = (next: boolean) => {
+    // Clean both longhands and the shorthand before deciding — avoids the
+    // shorthand + longhand mismatch the old per-axis UI had to work around.
+    clearStyle(component, "overflow-x");
+    clearStyle(component, "overflow-y");
     clearStyle(component, "overflow");
-    if (other !== "visible") writeStyle(component, otherProp, other);
-    if (v === "visible") clearStyle(component, thisProp);
-    else writeStyle(component, thisProp, v);
+    if (next) writeStyle(component, "overflow", "hidden");
   };
 
   return (
-    <FieldGroup label="Overflow">
-      <div className="grid grid-cols-2 gap-1">
-        <select
-          value={ox}
-          onChange={setAxis("x")}
-          className={cn(
-            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
-            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
-          )}
-          data-testid="oc-ins-overflow-x"
-          aria-label="Overflow X"
-        >
-          {OVERFLOW_OPTIONS.map((v) => (
-            <option key={v} value={v}>
-              X · {v}
-            </option>
-          ))}
-        </select>
-        <select
-          value={oy}
-          onChange={setAxis("y")}
-          className={cn(
-            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
-            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
-          )}
-          data-testid="oc-ins-overflow-y"
-          aria-label="Overflow Y"
-        >
-          {OVERFLOW_OPTIONS.map((v) => (
-            <option key={v} value={v}>
-              Y · {v}
-            </option>
-          ))}
-        </select>
-      </div>
-    </FieldGroup>
+    <label className="flex items-center gap-2 cursor-pointer text-sm text-foreground">
+      <input
+        type="checkbox"
+        className="accent-oc-accent"
+        checked={clipped}
+        onChange={(e) => setClipped(e.target.checked)}
+        data-testid="oc-ins-clip-content"
+        aria-label="Clip content"
+      />
+      Clip content
+    </label>
   );
 }
