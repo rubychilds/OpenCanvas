@@ -1,7 +1,7 @@
 # ADR-0004: Frames as top-level nodes inside the layer tree
 
-**Status:** Proposed
-**Date:** April 18, 2026
+**Status:** Accepted
+**Date:** April 18, 2026 (Proposed → Accepted same-day after implementation in commit `61c1723`)
 **Owner:** Architecture
 **Supersedes:** [ADR-0003](./0003-panel-information-architecture.md) §"Left panel" item 2 (the "Frames as a collapsible section at the top of Layers" decision)
 **Related:** ADR-0003 (panel IA), PRD §8.1 Epic 5 (multi-artboard canvas)
@@ -127,6 +127,43 @@ Estimated effort: half-day to one day, depending on how many specs hard-code Fra
 - **Drag-to-reorder frames.** Penpot supports drag-reorder of boards in the layer tree. We can either ship that with this ADR or punt it to a follow-up. Likely a follow-up — the `ARTBOARDS_CHANGED` event already supports it on the data side; the UI cost is non-trivial.
 - **Frame group selection.** Should clicking a frame row select the wrapper *or* the wrapper plus all its children (a "select frame" gesture)? Figma does the former; treats children as a separate descendant click. Match Figma.
 - **What replaces FramesSection's "click a frame to focus the canvas on it" affordance?** Today `FramesSection` doubles as a navigation aid. The new layer-tree row should also focus the canvas on click — wire `editor.Canvas.scrollTo(frame)` (or equivalent) on `FrameLayerRow` click, or a dedicated navigate-icon if the click should just select.
+
+---
+
+## Addendum (2026-04-18) — implementation notes
+
+Shipped in commit `61c1723`. Two reality-checks worth recording:
+
+- **`useMemo` deps for `force` setter were a latent bug.** The previous
+  `LayerRow` had `[component, force]` as `useMemo` deps where `force` was
+  the `useState` setter (a stable reference, never changes). The memo
+  silently never re-derived after a `component:add`. The bug only
+  manifested in the new `FrameLayerRow` because frames live longer and
+  see more child-add events than typical layer rows. Fixed in both rows
+  by destructuring `[tick, force]` and using `tick` (the value) in deps.
+- **Subscriptions: split, not space-delimited.** Backbone-style
+  `editor.on("component:add component:remove component:update", fn)`
+  doesn't reliably attach all three on this GrapesJS version. Split into
+  three individual `on/off` calls. The `LayerRow` was previously only
+  subscribing to `component:update`, which means add/remove of children
+  inside an existing layer wouldn't tick the row; this is now fixed too.
+- **`useFrames` listens to GrapesJS native events, not just our
+  `ARTBOARDS_CHANGED`.** `canvas:frame:load` and `canvas:frame:unload`
+  catch raw `editor.Canvas.addFrame` calls (e.g. from MCP tools or tests
+  bypassing the artboards.ts helpers). Belt-and-braces — both work today,
+  but having the native event subscription means we can't accidentally
+  ship code paths that mutate frames without going through our helpers
+  and lose the panel sync.
+- **The Layers section header gained an inline "+" affordance** during
+  implementation (Penpot-style stroked PlusOutline glyph from a new
+  `custom-icons.tsx`, since Phosphor's filled `Plus` doesn't match
+  Penpot's `add.svg` shape). One-click new Desktop frame, replacing one
+  of the old FramesSection's affordances. The icon import lives in
+  `chrome-icons.ts` alongside the rest of the chrome glyphs so the rule
+  "everywhere imports icons through chrome-icons" still holds.
+
+E2E coverage in `e2e/story-adr0004-frames-in-tree.spec.ts` (7 specs, all
+green first run after the `useMemo` dep fix).
 
 ---
 
