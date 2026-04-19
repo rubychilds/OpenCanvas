@@ -20,7 +20,7 @@ import {
   transformWithRotation,
   writeStyle,
 } from "../../canvas/component-style.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { RotationDial } from "./controls/RotationDial.js";
 
 /**
@@ -33,8 +33,7 @@ import { RotationDial } from "./controls/RotationDial.js";
 function AlignItemsRow({ component }: { component: Component }) {
   const value = readStyle(component, "align-items");
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Align</span>
+    <FieldGroup label="Align">
       <ToggleGroup
         type="single"
         value={value}
@@ -57,7 +56,7 @@ function AlignItemsRow({ component }: { component: Component }) {
           </Tooltip>
         ))}
       </ToggleGroup>
-    </div>
+    </FieldGroup>
   );
 }
 
@@ -177,10 +176,9 @@ function RotationRow({ component }: { component: Component }) {
     }
   };
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Rotate</span>
-      <RotationDial value={deg} onChange={onChange} data-testid="oc-ins-rotate" className="flex-1" />
-    </div>
+    <FieldGroup label="Rotate">
+      <RotationDial value={deg} onChange={onChange} data-testid="oc-ins-rotate" />
+    </FieldGroup>
   );
 }
 
@@ -223,9 +221,8 @@ function RadiusRow({ component }: { component: Component }) {
   };
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Radius</span>
+    <FieldGroup label="Radius">
+      <div className="flex items-center gap-1">
         {perCorner ? (
           <span className="flex-1 text-[11px] text-muted-foreground">Per corner</span>
         ) : (
@@ -263,7 +260,7 @@ function RadiusRow({ component }: { component: Component }) {
         </Tooltip>
       </div>
       {perCorner ? (
-        <div className="grid grid-cols-2 gap-1 pl-[52px]">
+        <div className="grid grid-cols-2 gap-1">
           {PER_CORNER_PROPS.map(([prop, glyph, label, testid]) => (
             <NumberInput
               key={prop}
@@ -279,7 +276,7 @@ function RadiusRow({ component }: { component: Component }) {
           ))}
         </div>
       ) : null}
-    </div>
+    </FieldGroup>
   );
 }
 

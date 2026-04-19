@@ -23,7 +23,29 @@ export function InspectorSection({ title, action, children, className }: Inspect
         <h3 className="text-[13px] font-semibold text-foreground leading-none">{title}</h3>
         {action}
       </header>
-      <div className="flex flex-col gap-1.5 px-(--panel-padding) pt-1 pb-2.5">{children}</div>
+      <div className="flex flex-col gap-2 px-(--panel-padding) pt-1 pb-2.5">{children}</div>
     </section>
+  );
+}
+
+/**
+ * Small label sitting directly above its control. Penpot-shaped — the label
+ * is 11px muted grey on its own line, not a 44px column to the left of the
+ * control. Groups that don't need a label render their control directly.
+ */
+export function FieldGroup({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col gap-1", className)}>
+      <span className="text-[11px] text-muted-foreground leading-none">{label}</span>
+      {children}
+    </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   StretchHorizontal,
 } from "../../canvas/chrome-icons.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip.js";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.js";
@@ -32,8 +32,7 @@ export function LayoutItemSection({ component }: { component: Component }) {
 
   return (
     <InspectorSection title="Layout Item">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Align self</span>
+      <FieldGroup label="Align self">
         <ToggleGroup
           type="single"
           value={alignSelf}
@@ -54,7 +53,7 @@ export function LayoutItemSection({ component }: { component: Component }) {
             </Tooltip>
           ))}
         </ToggleGroup>
-      </div>
+      </FieldGroup>
       <div className="grid grid-cols-2 gap-1">
         <NumberInput
           value={flexGrow}
@@ -79,8 +78,7 @@ export function LayoutItemSection({ component }: { component: Component }) {
           data-testid="oc-ins-flex-shrink"
         />
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Basis</span>
+      <FieldGroup label="Basis">
         <NumberInput
           value={flexBasis}
           onChange={(n) => writeStyle(component, "flex-basis", `${n}px`)}
@@ -88,9 +86,8 @@ export function LayoutItemSection({ component }: { component: Component }) {
           label="B"
           step={1}
           data-testid="oc-ins-flex-basis"
-          className="flex-1"
         />
-      </div>
+      </FieldGroup>
     </InspectorSection>
   );
 }

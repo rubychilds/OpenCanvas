@@ -10,7 +10,9 @@ import {
   ArrowDown,
   ArrowRight,
   Maximize,
+  Minus,
   Move,
+  PlusOutline,
   Unplug,
 } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
@@ -27,7 +29,7 @@ import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.
 import { StylesPanel } from "../StylesPanel.js";
 import { EffectsSection } from "./EffectsSection.js";
 import { ExportsSection } from "./ExportsSection.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { LayerSection } from "./LayerSection.js";
 import { LayoutItemSection } from "./LayoutItemSection.js";
 import { FillSection } from "./FillSection.js";
@@ -90,93 +92,93 @@ function AutoLayoutSection({ component }: { component: Component }) {
   const gap = readStyle(component, "gap");
   const justify = readStyle(component, "justify-content");
 
+  // Penpot-shape action: outlined + when off (enable auto-layout), outlined −
+  // when on (remove it). Replaces the earlier On/Off text pill.
   const toggleControl = (
-    <button
-      type="button"
-      onClick={toggle}
-      className={cn(
-        "inline-flex items-center gap-1.5 px-1.5 h-5 rounded-sm text-[11px] transition-colors",
-        enabled
-          ? "bg-oc-accent text-oc-accent-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
-      )}
-      aria-pressed={enabled}
-      data-testid="oc-ins-autolayout-toggle"
-    >
-      {enabled ? "On" : "Off"}
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={toggle}
+          className={cn(
+            "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
+            "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+          )}
+          aria-pressed={enabled}
+          aria-label={enabled ? "Remove auto layout" : "Add auto layout"}
+          data-testid="oc-ins-autolayout-toggle"
+        >
+          {enabled ? <Minus className="size-3.5" /> : <PlusOutline className="size-3.5" />}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{enabled ? "Remove auto layout" : "Add auto layout"}</TooltipContent>
+    </Tooltip>
   );
+
+  // When auto layout is off the section body is empty — the + in the header
+  // is the only affordance needed.
+  if (!enabled) {
+    return <InspectorSection title="Auto Layout" action={toggleControl}>{null}</InspectorSection>;
+  }
 
   return (
     <InspectorSection title="Auto Layout" action={toggleControl}>
-      {enabled ? (
-        <>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Direction</span>
-            <ToggleGroup
-              type="single"
-              value={direction === "free" ? "" : direction}
-              onValueChange={(v) => {
-                if (!v) return;
-                if (v === "free") {
-                  clearStyle(component, "flex-direction");
-                } else {
-                  writeStyle(component, "flex-direction", v);
-                }
-              }}
-              data-testid="oc-ins-flex-direction"
-            >
-              {DIRECTION_OPTIONS.map(({ value: val, label, Icon }) => (
-                <Tooltip key={val}>
-                  <TooltipTrigger asChild>
-                    <ToggleGroupItem value={val} aria-label={label}>
-                      <Icon />
-                    </ToggleGroupItem>
-                  </TooltipTrigger>
-                  <TooltipContent>{label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </ToggleGroup>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Gap</span>
-            <NumberInput
-              value={gap}
-              onChange={(n) => writeStyle(component, "gap", `${n}px`)}
-              unit="px"
-              label="↔"
-              min={0}
-              step={1}
-              data-testid="oc-ins-gap"
-              className="flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Justify</span>
-            <ToggleGroup
-              type="single"
-              value={justify}
-              onValueChange={(v) => v && writeStyle(component, "justify-content", v)}
-              data-testid="oc-ins-justify"
-            >
-              {JUSTIFY_OPTIONS.map(({ value: val, label, Icon }) => (
-                <Tooltip key={val}>
-                  <TooltipTrigger asChild>
-                    <ToggleGroupItem value={val} aria-label={label}>
-                      <Icon />
-                    </ToggleGroupItem>
-                  </TooltipTrigger>
-                  <TooltipContent>{label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </ToggleGroup>
-          </div>
-        </>
-      ) : (
-        <p className="text-[11px] text-muted-foreground py-1">
-          Turn on to arrange children with direction + gap + justify.
-        </p>
-      )}
+      <FieldGroup label="Direction">
+        <ToggleGroup
+          type="single"
+          value={direction === "free" ? "" : direction}
+          onValueChange={(v) => {
+            if (!v) return;
+            if (v === "free") {
+              clearStyle(component, "flex-direction");
+            } else {
+              writeStyle(component, "flex-direction", v);
+            }
+          }}
+          data-testid="oc-ins-flex-direction"
+        >
+          {DIRECTION_OPTIONS.map(({ value: val, label, Icon }) => (
+            <Tooltip key={val}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={val} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
+      <FieldGroup label="Gap">
+        <NumberInput
+          value={gap}
+          onChange={(n) => writeStyle(component, "gap", `${n}px`)}
+          unit="px"
+          label="↔"
+          min={0}
+          step={1}
+          data-testid="oc-ins-gap"
+        />
+      </FieldGroup>
+      <FieldGroup label="Justify">
+        <ToggleGroup
+          type="single"
+          value={justify}
+          onValueChange={(v) => v && writeStyle(component, "justify-content", v)}
+          data-testid="oc-ins-justify"
+        >
+          {JUSTIFY_OPTIONS.map(({ value: val, label, Icon }) => (
+            <Tooltip key={val}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={val} aria-label={label}>
+                  <Icon />
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent>{label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </ToggleGroup>
+      </FieldGroup>
     </InspectorSection>
   );
 }

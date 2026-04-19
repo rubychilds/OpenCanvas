@@ -3,7 +3,7 @@ import { useEditorMaybe } from "@grapesjs/react";
 import type { Component, Editor } from "grapesjs";
 import { cn } from "../../lib/utils.js";
 import { htmlToJsx, mergeStylesIntoHtml, type JsxMode } from "../../canvas/jsx-export.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { Button } from "../ui/button.js";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.js";
 
@@ -60,8 +60,7 @@ export function ExportsSection({ component }: { component: Component }) {
 
   return (
     <InspectorSection title="Exports">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">JSX</span>
+      <FieldGroup label="JSX">
         <ToggleGroup
           type="single"
           value={mode}
@@ -77,7 +76,7 @@ export function ExportsSection({ component }: { component: Component }) {
             Inline
           </ToggleGroupItem>
         </ToggleGroup>
-      </div>
+      </FieldGroup>
 
       <pre
         className={cn(

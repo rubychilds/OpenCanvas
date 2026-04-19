@@ -2,7 +2,7 @@ import type { Component } from "grapesjs";
 import { Eye, EyeOff, Lock, LockOpen } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";
 
 const BLEND_MODES = [
@@ -106,8 +106,7 @@ export function LayerSection({ component }: { component: Component }) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 py-0.5">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Blend</span>
+      <FieldGroup label="Blend">
         <select
           value={blendMode}
           onChange={(e) => {
@@ -115,10 +114,11 @@ export function LayerSection({ component }: { component: Component }) {
             else writeStyle(component, "mix-blend-mode", e.target.value);
           }}
           className={cn(
-            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
+            "h-7 w-full rounded-md bg-chip px-2 text-sm text-foreground",
             "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-layer-blend-mode"
+          aria-label="Blend"
         >
           {BLEND_MODES.map((m) => (
             <option key={m} value={m}>
@@ -126,7 +126,7 @@ export function LayerSection({ component }: { component: Component }) {
             </option>
           ))}
         </select>
-      </label>
+      </FieldGroup>
     </InspectorSection>
   );
 }

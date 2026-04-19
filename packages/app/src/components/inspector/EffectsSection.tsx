@@ -1,6 +1,6 @@
 import type { Component } from "grapesjs";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
-import { InspectorSection } from "./InspectorSection.js";
+import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { NumberInput } from "../ui/number-input.js";
 
 /**
@@ -31,8 +31,7 @@ export function EffectsSection({ component }: { component: Component }) {
 
   return (
     <InspectorSection title="Effects">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Blur</span>
+      <FieldGroup label="Blur">
         <NumberInput
           value={blur}
           onChange={writeBlur}
@@ -41,11 +40,9 @@ export function EffectsSection({ component }: { component: Component }) {
           min={0}
           step={1}
           data-testid="oc-ins-blur"
-          className="flex-1"
         />
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Bg blur</span>
+      </FieldGroup>
+      <FieldGroup label="Bg blur">
         <NumberInput
           value={backdropBlur}
           onChange={writeBackdropBlur}
@@ -54,9 +51,8 @@ export function EffectsSection({ component }: { component: Component }) {
           min={0}
           step={1}
           data-testid="oc-ins-backdrop-blur"
-          className="flex-1"
         />
-      </div>
+      </FieldGroup>
     </InspectorSection>
   );
 }
