@@ -3,6 +3,7 @@ import { ArtboardBootstrap } from "./ArtboardBootstrap.js";
 import { InsertRail } from "./InsertRail.js";
 import { Minimap } from "./Minimap.js";
 import { PanZoomWire } from "./PanZoomWire.js";
+import { SelectionOverlay } from "./SelectionOverlay.js";
 import { ZoomControl } from "./ZoomControl.js";
 
 export function CanvasArea() {
@@ -17,6 +18,7 @@ export function CanvasArea() {
         <div className="absolute bottom-3 right-3 z-10">
           <ZoomControl />
         </div>
+        <SelectionOverlay />
       </div>
       <ArtboardBootstrap />
       <PanZoomWire />
