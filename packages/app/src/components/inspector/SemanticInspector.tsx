@@ -2,19 +2,15 @@ import { useEffect, useState } from "react";
 import { useEditorMaybe } from "@grapesjs/react";
 import type { Component } from "grapesjs";
 import {
-  AlignCenterVertical,
-  AlignEndVertical,
   AlignHorizontalJustifyCenter,
   AlignHorizontalJustifyEnd,
   AlignHorizontalJustifyStart,
   AlignHorizontalSpaceAround,
   AlignHorizontalSpaceBetween,
-  AlignStartVertical,
   ArrowDown,
   ArrowRight,
   Maximize,
   Move,
-  StretchHorizontal,
   Unplug,
 } from "../../canvas/chrome-icons.js";
 import { cn } from "../../lib/utils.js";
@@ -27,18 +23,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../ui/accordion.js";
-import {
-  clearStyle,
-  readStyle,
-  rotationFromTransform,
-  transformWithRotation,
-  writeStyle,
-} from "../../canvas/component-style.js";
+import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { StylesPanel } from "../StylesPanel.js";
 import { ExportsSection } from "./ExportsSection.js";
 import { InspectorSection } from "./InspectorSection.js";
 import { LayerSection } from "./LayerSection.js";
 import { LayoutItemSection } from "./LayoutItemSection.js";
+import { MeasuresSection } from "./MeasuresSection.js";
 import { TypographySection, isTypographyTarget } from "./TypographySection.js";
 import { useInspectorContext } from "./useInspectorContext.js";
 
@@ -63,102 +54,6 @@ function useSelectedComponent(): Component | null {
   }, [editor]);
 
   return selected;
-}
-
-function AlignItemsRow({ component }: { component: Component }) {
-  const value = readStyle(component, "align-items");
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Align</span>
-      <ToggleGroup
-        type="single"
-        value={value}
-        onValueChange={(v) => v && writeStyle(component, "align-items", v)}
-        data-testid="oc-ins-align-items"
-      >
-        {[
-          { value: "flex-start", label: "Top", Icon: AlignStartVertical },
-          { value: "center", label: "Middle", Icon: AlignCenterVertical },
-          { value: "flex-end", label: "Bottom", Icon: AlignEndVertical },
-          { value: "stretch", label: "Stretch", Icon: StretchHorizontal },
-        ].map(({ value: v, label, Icon }) => (
-          <Tooltip key={v}>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem value={v} aria-label={label}>
-                <Icon />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>{label}</TooltipContent>
-          </Tooltip>
-        ))}
-      </ToggleGroup>
-    </div>
-  );
-}
-
-function XYRow({ component }: { component: Component }) {
-  const left = readStyle(component, "left");
-  const top = readStyle(component, "top");
-  const onChange = (prop: "left" | "top") => (n: number) => writeStyle(component, prop, `${n}px`);
-  return (
-    <div className="grid grid-cols-2 gap-1">
-      <NumberInput
-        value={left}
-        onChange={onChange("left")}
-        unit="px"
-        label="X"
-        step={1}
-        data-testid="oc-ins-x"
-      />
-      <NumberInput
-        value={top}
-        onChange={onChange("top")}
-        unit="px"
-        label="Y"
-        step={1}
-        data-testid="oc-ins-y"
-      />
-    </div>
-  );
-}
-
-function RotationRow({ component }: { component: Component }) {
-  const transform = readStyle(component, "transform");
-  const deg = rotationFromTransform(transform);
-  const onChange = (n: number) => {
-    const next = transformWithRotation(transform, n);
-    if (!next) {
-      clearStyle(component, "transform");
-    } else {
-      writeStyle(component, "transform", next);
-    }
-  };
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[11px] text-muted-foreground w-[44px] shrink-0">Rotate</span>
-      <NumberInput
-        value={deg}
-        onChange={onChange}
-        unit="°"
-        label="°"
-        min={-360}
-        max={360}
-        step={1}
-        data-testid="oc-ins-rotate"
-        className="flex-1"
-      />
-    </div>
-  );
-}
-
-function PositionSection({ component }: { component: Component }) {
-  return (
-    <InspectorSection title="Position">
-      <AlignItemsRow component={component} />
-      <XYRow component={component} />
-      <RotationRow component={component} />
-    </InspectorSection>
-  );
 }
 
 const DIRECTION_OPTIONS = [
@@ -349,7 +244,7 @@ export function SemanticInspector() {
         <DetachHint component={selected} />
       </div>
       <LayerSection component={selected} />
-      <PositionSection component={selected} />
+      <MeasuresSection component={selected} />
       {context.isLayoutChild ? <LayoutItemSection component={selected} /> : null}
       <AutoLayoutSection component={selected} />
       <FrameSection component={selected} />
