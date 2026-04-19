@@ -110,3 +110,86 @@ textarea {
     opacity: 0;
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * GrapesJS chrome overrides — pull GrapesJS's default editor surfaces
+ * (rich-text toolbar, component toolbar, badge label, resize handles) into
+ * our token system so they stop reading as a separate dark-mode chunk
+ * floating on top of our white canvas.
+ *
+ * GrapesJS's CSS is loaded via `import "grapesjs/dist/css/grapes.min.css"`
+ * in App.tsx. These rules override its specifics; `!important` is used
+ * sparingly only where the upstream selectors win the cascade with
+ * `.gjs-` chains we'd otherwise have to mirror.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* Rich-text editor floating toolbar (B / I / U / S / link / brush) */
+.gjs-rte-toolbar {
+  background-color: var(--surface) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.12), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+  padding: 2px;
+}
+
+.gjs-rte-toolbar .gjs-rte-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--row-height);
+  height: var(--row-height);
+  border-radius: calc(var(--radius) - 1px);
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background-color 120ms, color 120ms;
+}
+
+.gjs-rte-toolbar .gjs-rte-action:hover {
+  background-color: var(--surface-sunken);
+  color: var(--foreground);
+}
+
+.gjs-rte-toolbar .gjs-rte-action.gjs-rte-active,
+.gjs-rte-toolbar .gjs-rte-active {
+  background-color: var(--oc-accent);
+  color: var(--oc-accent-foreground);
+}
+
+.gjs-rte-toolbar .gjs-rte-action.gjs-rte-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Component toolbar that appears above a selected component on the canvas */
+.gjs-toolbar {
+  background-color: var(--surface) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+}
+
+.gjs-toolbar-item {
+  color: var(--muted-foreground) !important;
+}
+
+.gjs-toolbar-item:hover {
+  background-color: var(--surface-sunken) !important;
+  color: var(--foreground) !important;
+}
+
+/* Component name badge */
+.gjs-badge {
+  background-color: var(--oc-accent) !important;
+  color: var(--oc-accent-foreground) !important;
+  border-radius: calc(var(--radius) - 2px) !important;
+  font-size: var(--text-xs) !important;
+}
+
+/* Selection + hover outlines on the canvas */
+.gjs-selected,
+.gjs-selected-parent {
+  outline: 2px solid var(--oc-accent) !important;
+}
