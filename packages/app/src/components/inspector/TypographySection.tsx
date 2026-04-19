@@ -95,8 +95,8 @@ export function TypographySection({ component }: { component: Component }) {
             else writeStyle(component, "font-family", v);
           }}
           className={cn(
-            "h-(--row-height) flex-1 rounded-md border border-border bg-background px-2 text-sm",
-            "focus:border-oc-accent focus:outline-none",
+            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-font-family"
         >
@@ -122,8 +122,8 @@ export function TypographySection({ component }: { component: Component }) {
             else writeStyle(component, "font-weight", v);
           }}
           className={cn(
-            "h-(--row-height) flex-1 rounded-md border border-border bg-background px-2 text-sm",
-            "focus:border-oc-accent focus:outline-none",
+            "h-7 flex-1 rounded-md bg-chip px-2 text-sm text-foreground",
+            "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
           )}
           data-testid="oc-ins-font-weight"
         >
@@ -206,8 +206,8 @@ export function TypographySection({ component }: { component: Component }) {
               else writeStyle(component, "text-transform", v);
             }}
             className={cn(
-              "h-(--row-height) flex-1 rounded-md border border-border bg-background px-1 text-xs",
-              "focus:border-oc-accent focus:outline-none",
+              "h-7 flex-1 rounded-md bg-chip px-1 text-xs text-foreground",
+              "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
             )}
             data-testid="oc-ins-text-transform"
           >
@@ -228,8 +228,8 @@ export function TypographySection({ component }: { component: Component }) {
               else writeStyle(component, "text-decoration", v);
             }}
             className={cn(
-              "h-(--row-height) flex-1 rounded-md border border-border bg-background px-1 text-xs",
-              "focus:border-oc-accent focus:outline-none",
+              "h-7 flex-1 rounded-md bg-chip px-1 text-xs text-foreground",
+              "focus:outline-none focus-visible:ring-1 focus-visible:ring-oc-accent",
             )}
             data-testid="oc-ins-text-decoration"
           >
