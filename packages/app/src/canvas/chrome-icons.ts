@@ -1,13 +1,22 @@
 /**
- * Chrome icon re-exports — Lucide-shaped names, Phosphor components with
- * `weight="fill"` applied globally via the IconContext.Provider at the App
- * root. Per user direction (D.4d.2): the editor reads as filled-iconography
- * rather than outline.
+ * Chrome icon re-exports — Lucide-shaped names.
  *
- * Keep this the only place that imports `@phosphor-icons/react`. Components
- * elsewhere import from here using Lucide-style names; when a Lucide icon
- * has no direct Phosphor equivalent we pick the closest semantic match.
+ * Primary source: `@phosphor-icons/react` with `weight="fill"` applied via the
+ * IconContext.Provider at the App root (D.4d.2: filled iconography).
+ *
+ * Fallback source: `lucide-react` — used only for flex-layout spacing icons
+ * that Phosphor has no reasonable analog for (AlignHorizontalSpaceBetween /
+ * SpaceAround / StretchHorizontal). These render as outlines; acceptable
+ * since they are structural markers, not ornamental glyphs.
+ *
+ * Keep this the only place that imports either icon library.
  */
+
+export {
+  AlignHorizontalSpaceAround,
+  AlignHorizontalSpaceBetween,
+  StretchHorizontal,
+} from "lucide-react";
 
 export {
   AlignBottom as AlignEndVertical,
@@ -21,7 +30,6 @@ export {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  ArrowsHorizontal as StretchHorizontal,
   ArrowsOutCardinal as Move,
   CaretDown as ChevronDown,
   CaretRight as ChevronRight,
@@ -60,9 +68,7 @@ export {
   Tag as Tags,
   TextAa as TextIcon,
   TextAlignCenter,
-  TextAlignCenter as AlignHorizontalSpaceAround,
   TextAlignJustify,
-  TextAlignJustify as AlignHorizontalSpaceBetween,
   TextAlignLeft,
   TextAlignRight,
   TextHFive as Heading5,
