@@ -36,6 +36,9 @@ import {
 } from "../../canvas/component-style.js";
 import { StylesPanel } from "../StylesPanel.js";
 import { InspectorSection } from "./InspectorSection.js";
+import { LayerSection } from "./LayerSection.js";
+import { LayoutItemSection } from "./LayoutItemSection.js";
+import { useInspectorContext } from "./useInspectorContext.js";
 
 /** Sections the inspector offers (per ADR-0002 direction). */
 
@@ -325,6 +328,7 @@ function DetachHint({ component }: { component: Component }) {
 
 export function SemanticInspector() {
   const selected = useSelectedComponent();
+  const context = useInspectorContext(selected);
 
   if (!selected) {
     return (
@@ -342,7 +346,9 @@ export function SemanticInspector() {
         </span>
         <DetachHint component={selected} />
       </div>
+      <LayerSection component={selected} />
       <PositionSection component={selected} />
+      {context.isLayoutChild ? <LayoutItemSection component={selected} /> : null}
       <AutoLayoutSection component={selected} />
       <FrameSection component={selected} />
       <Accordion type="single" collapsible className="border-t border-border">
