@@ -25,6 +25,7 @@ import {
 } from "../ui/accordion.js";
 import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.js";
 import { StylesPanel } from "../StylesPanel.js";
+import { EffectsSection } from "./EffectsSection.js";
 import { ExportsSection } from "./ExportsSection.js";
 import { InspectorSection } from "./InspectorSection.js";
 import { LayerSection } from "./LayerSection.js";
@@ -254,6 +255,7 @@ export function SemanticInspector() {
       <FillSection component={selected} />
       <StrokeSection component={selected} />
       <ShadowSection component={selected} />
+      <EffectsSection component={selected} />
       {isTypographyTarget(selected) ? <TypographySection component={selected} /> : null}
       <ExportsSection component={selected} />
       <Accordion type="single" collapsible className="border-t border-border">
