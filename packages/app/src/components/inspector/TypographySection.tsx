@@ -1,5 +1,8 @@
 import type { Component } from "grapesjs";
 import {
+  CaseLower,
+  CaseSensitive,
+  CaseUpper,
   TextAlignCenter,
   TextAlignJustify,
   TextAlignLeft,
@@ -69,10 +72,10 @@ const TEXT_ALIGN_OPTIONS = [
 ] as const;
 
 const TEXT_TRANSFORM_OPTIONS = [
-  { value: "none", label: "None", glyph: "–" },
-  { value: "capitalize", label: "Capitalize", glyph: "Aa" },
-  { value: "lowercase", label: "Lowercase", glyph: "aa" },
-  { value: "uppercase", label: "Uppercase", glyph: "AA" },
+  { value: "none", label: "None", Icon: null as null | typeof CaseUpper, glyph: "–" },
+  { value: "capitalize", label: "Capitalize", Icon: CaseSensitive, glyph: null },
+  { value: "lowercase", label: "Lowercase", Icon: CaseLower, glyph: null },
+  { value: "uppercase", label: "Uppercase", Icon: CaseUpper, glyph: null },
 ] as const;
 
 const TEXT_DECORATION_OPTIONS = [
@@ -209,11 +212,15 @@ export function TypographySection({ component }: { component: Component }) {
           }}
           data-testid="oc-ins-text-transform"
         >
-          {TEXT_TRANSFORM_OPTIONS.map(({ value, label, glyph }) => (
+          {TEXT_TRANSFORM_OPTIONS.map(({ value, label, Icon, glyph }) => (
             <Tooltip key={value}>
               <TooltipTrigger asChild>
                 <ToggleGroupItem value={value} aria-label={label}>
-                  <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
+                  {Icon ? (
+                    <Icon className="size-3.5" />
+                  ) : (
+                    <span className="text-[11px] font-semibold tabular-nums">{glyph}</span>
+                  )}
                 </ToggleGroupItem>
               </TooltipTrigger>
               <TooltipContent>{label}</TooltipContent>

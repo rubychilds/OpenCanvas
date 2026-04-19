@@ -2,20 +2,39 @@
  * Chrome icon re-exports — Lucide-shaped names.
  *
  * Primary source: `@phosphor-icons/react` with `weight="fill"` applied via the
- * IconContext.Provider at the App root (D.4d.2: filled iconography).
+ * IconContext.Provider at the App root (D.4d.2: filled iconography). Phosphor
+ * stays the default for chrome glyphs (eye / lock / chevron / device / etc.).
  *
- * Fallback source: `lucide-react` — used only for flex-layout spacing icons
- * that Phosphor has no reasonable analog for (AlignHorizontalSpaceBetween /
- * SpaceAround / StretchHorizontal). These render as outlines; acceptable
- * since they are structural markers, not ornamental glyphs.
+ * Lucide source for: (a) flex-layout spacing icons Phosphor has no analog for
+ * (AlignHorizontalSpaceBetween / SpaceAround / StretchHorizontal), (b) shape
+ * primitives + text alignment + text case / decoration glyphs that read more
+ * cleanly as outlines at our small inspector sizes. Per user direction
+ * 2026-04-19: Frame, Type, Square, Circle, AlignLeft/Center/Right/Justify,
+ * CaseUpper / CaseLower / CaseSensitive, Bold / Italic / Underline /
+ * Strikethrough all live here.
  *
  * Keep this the only place that imports either icon library.
  */
 
 export {
+  AlignCenter as TextAlignCenter,
   AlignHorizontalSpaceAround,
   AlignHorizontalSpaceBetween,
+  AlignJustify as TextAlignJustify,
+  AlignLeft as TextAlignLeft,
+  AlignRight as TextAlignRight,
+  Bold,
+  CaseLower,
+  CaseSensitive,
+  CaseUpper,
+  Circle,
+  Frame as FrameCorners,
+  Italic,
+  Square,
   StretchHorizontal,
+  Strikethrough as TextStrikethrough,
+  Type,
+  Underline as TextUnderline,
 } from "lucide-react";
 
 export {
@@ -34,12 +53,10 @@ export {
   CaretDown as ChevronDown,
   CaretRight as ChevronRight,
   Check,
-  Circle,
   Columns as Columns3,
   CornersOut as Maximize2,
   Crop as Maximize,
   Cube as Box,
-  FrameCorners,
   Cursor as MousePointer,
   CursorClick as MousePointerClick,
   DeviceMobile as Smartphone,
@@ -64,26 +81,18 @@ export {
   Plus,
   Rows as Rows3,
   ShareNetwork as PanelBottom,
-  Square,
   SquaresFour,
   SquaresFour as PanelTop,
   Sun,
   Tag as Tags,
   TextAa as TextIcon,
-  TextAlignCenter,
-  TextAlignJustify,
-  TextAlignLeft,
-  TextAlignRight,
   TextHFive as Heading5,
   TextHFour as Heading4,
   TextHOne as Heading1,
   TextHSix as Heading6,
   TextHThree as Heading3,
   TextHTwo as Heading2,
-  TextStrikethrough,
-  TextT as Type,
   TextTSlash,
-  TextUnderline,
   Textbox as TextCursor,
   Trash as Trash2,
   VideoCamera as Video,
