@@ -122,7 +122,11 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
       <div
         className={cn(
           // Penpot-shape chip: grey fill, no border, ring-on-focus.
-          "flex items-center h-7 rounded-md bg-chip",
+          // `min-w-0` lets the chip shrink inside grid/flex cells whose
+          // track is `1fr`; otherwise the native <input> intrinsic width
+          // pushes the row past the panel edge when the value is long
+          // (e.g. width="1440").
+          "flex items-center h-7 min-w-0 rounded-md bg-chip",
           "focus-within:ring-1 focus-within:ring-oc-accent",
           className,
         )}
@@ -145,6 +149,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           ref={ref}
           type="text"
           inputMode="decimal"
+          size={1}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => commitFromText(draft)}
