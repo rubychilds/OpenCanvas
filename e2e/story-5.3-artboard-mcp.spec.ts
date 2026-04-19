@@ -28,22 +28,34 @@ interface TreeNode {
  * surface to agents via the bridge: list_artboards, create_artboard,
  * find_placement, plus artboardId scoping on get_tree / get_screenshot.
  */
+/**
+ * Fresh canvas now starts with zero frames. Tests that exercise artboard-scoped
+ * operations seed a Desktop explicitly via create_artboard.
+ */
+async function seedDesktop(mcp: import("./mcp-client").McpTestClient): Promise<Artboard> {
+  const { artboard } = await mcp.call<{ artboard: Artboard }>("create_artboard", {
+    name: "Desktop",
+    width: 1440,
+    height: 900,
+    x: 0,
+    y: 0,
+  });
+  return artboard;
+}
+
 test.describe("Story 5.3: artboard MCP tools", () => {
-  test("list_artboards returns the seeded Desktop artboard on a fresh canvas", async ({
+  test("list_artboards returns the unopinionated auto-frame on a fresh canvas", async ({
     freshApp: page,
     mcp,
   }) => {
     await waitForBridge(page, mcp);
 
     const { artboards } = await mcp.call<{ artboards: Artboard[] }>("list_artboards", {});
-    // Phase B's ensureDefaultArtboard seeds one Desktop frame on an empty canvas.
+    // We no longer seed a 1440×900 "Desktop" on fresh canvas. GrapesJS still
+    // auto-creates one blank frame at init (it needs a wrapper to render),
+    // which the user can delete from the Layers panel.
     expect(artboards.length).toBe(1);
-    const seed = artboards[0]!;
-    expect(seed.name).toBe("Desktop");
-    expect(seed.width).toBe(1440);
-    expect(seed.height).toBe(900);
-    expect(typeof seed.id).toBe("string");
-    expect(seed.id.length).toBeGreaterThan(0);
+    expect(artboards[0]!.name.toLowerCase()).not.toContain("desktop");
   });
 
   test("create_artboard adds a frame and list_artboards reflects it", async ({
@@ -74,9 +86,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     mcp,
   }) => {
     await waitForBridge(page, mcp);
-
-    const { artboards } = await mcp.call<{ artboards: Artboard[] }>("list_artboards", {});
-    const seed = artboards[0]!;
+    const seed = await seedDesktop(mcp);
     const expectedRight = seed.x + seed.width;
 
     const placement = await mcp.call<{ x: number; y: number }>("find_placement", {
@@ -93,6 +103,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     mcp,
   }) => {
     await waitForBridge(page, mcp);
+    await seedDesktop(mcp);
 
     const placement = await mcp.call<{ x: number; y: number }>("find_placement", {
       width: 800,
@@ -112,14 +123,31 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     mcp,
   }) => {
     await waitForBridge(page, mcp);
+    const desktop = await seedDesktop(mcp);
 
-    // Seed frame is artboard A. Add a marker component to it via addHtml,
-    // which targets editor.getWrapper() — i.e. the seed frame's wrapper.
-    await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
-        `<div data-frame="A" class="p-4">in seed</div>`,
-      ),
-    );
+    // Append the marker directly to the Desktop seed's wrapper so the test
+    // isn't dependent on which frame happens to be active (GrapesJS's
+    // unopinionated auto-frame may still be active at this point).
+    await page.evaluate((id) => {
+      const ed = (window as unknown as {
+        __opencanvas: {
+          editor: {
+            Canvas: {
+              getFrames: () => Array<{
+                cid?: string;
+                id?: string;
+                get: (k: string) => unknown;
+              }>;
+            };
+          };
+        };
+      }).__opencanvas.editor;
+      const frame = ed.Canvas.getFrames().find(
+        (f) => String(f.cid ?? f.id ?? "") === id,
+      )!;
+      const wrapper = frame.get("component") as { append: (h: string) => unknown };
+      wrapper.append(`<div data-frame="A" class="p-4">in seed</div>`);
+    }, desktop.id);
 
     // Create a second frame (artboard B). It starts with no components.
     const created = await mcp.call<{ artboard: Artboard }>("create_artboard", {
@@ -129,8 +157,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     });
     const bId = created.artboard.id;
 
-    const seedId = (await mcp.call<{ artboards: Artboard[] }>("list_artboards", {}))
-      .artboards.find((a) => a.name !== "Empty B")!.id;
+    const seedId = desktop.id;
 
     const treeA = await mcp.call<{ root: TreeNode | null }>("get_tree", {
       artboardId: seedId,
@@ -168,23 +195,55 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     mcp,
   }) => {
     await waitForBridge(page, mcp);
+    const desktop = await seedDesktop(mcp);
 
-    // Give the seed frame some content so html-to-image has a non-trivial body.
-    await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
+    // Append directly to the Desktop seed's wrapper (see the get_tree test
+    // above for why — active-frame ambiguity with the unopinionated auto-frame).
+    await page.evaluate((id) => {
+      const ed = (window as unknown as {
+        __opencanvas: {
+          editor: {
+            Canvas: {
+              getFrames: () => Array<{
+                cid?: string;
+                id?: string;
+                get: (k: string) => unknown;
+              }>;
+            };
+          };
+        };
+      }).__opencanvas.editor;
+      const frame = ed.Canvas.getFrames().find(
+        (f) => String(f.cid ?? f.id ?? "") === id,
+      )!;
+      const wrapper = frame.get("component") as { append: (h: string) => unknown };
+      wrapper.append(
         `<div data-shot-marker="ok" class="p-8 bg-blue-500 text-white">screenshot me</div>`,
-      ),
-    );
-    // Wait for the marker to be visible inside the iframe so html-to-image
-    // captures a settled DOM.
-    const frame = page.frameLocator('iframe[class*="gjs-frame"]').first();
-    await expect(frame.locator('[data-shot-marker="ok"]')).toBeVisible({ timeout: 5_000 });
+      );
+    }, desktop.id);
+    // Wait for the marker to be visible inside *any* of the canvas iframes
+    // (auto-frame + seeded Desktop — the marker is in Desktop's body). Scan
+    // all iframes because the Desktop iframe may not be .first().
+    await expect
+      .poll(
+        async () => {
+          const iframes = await page.locator('iframe[class*="gjs-frame"]').all();
+          for (const iframe of iframes) {
+            const inner = await iframe.contentFrame();
+            if (!inner) continue;
+            const count = await inner.locator('[data-shot-marker="ok"]').count();
+            if (count > 0) return true;
+          }
+          return false;
+        },
+        { timeout: 5_000, intervals: [100, 250, 500] },
+      )
+      .toBe(true);
     // Give Tailwind v4 CDN one extra paint to apply utility classes — html-to-image
     // captures inline computed styles, and an unstyled body produces a near-empty PNG.
     await page.waitForTimeout(250);
 
-    const { artboards } = await mcp.call<{ artboards: Artboard[] }>("list_artboards", {});
-    const seedId = artboards[0]!.id;
+    const seedId = desktop.id;
 
     const shot = await mcp.call<{ dataUrl: string; width: number; height: number }>(
       "get_screenshot",

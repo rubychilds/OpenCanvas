@@ -71,7 +71,9 @@ test.describe("D.6: Typography section + Exports section", () => {
     expect(await readSelectedStyle(page, "line-height")).toBe("1.4");
 
     // text-transform is now a visual ToggleGroup — aria-label is the stable selector.
-    await page.locator('[data-testid="oc-ins-text-transform"] [aria-label="Uppercase"]').click();
+    // Label shortened from "Uppercase" to "Upper" when Case expanded to include
+    // small-caps variants.
+    await page.locator('[data-testid="oc-ins-text-transform"] [aria-label="Upper"]').click();
     expect(await readSelectedStyle(page, "text-transform")).toBe("uppercase");
   });
 

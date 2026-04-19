@@ -15,14 +15,11 @@ async function readFrames(
 void readFrames;
 
 test.describe("Story 5.1: multi-artboard canvas", () => {
-  test("empty canvas seeds exactly one named Desktop artboard (1440x900 @ 0,0)", async ({
+  test("fresh canvas shows one unopinionated auto-frame (no Desktop preset)", async ({
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => {
-        const w = window as unknown as { __opencanvas?: { editor: { Canvas: { getFrames(): FrameLike[] } } } };
-        return (w.__opencanvas?.editor.Canvas.getFrames().length ?? 0) > 0;
-      },
+      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -33,42 +30,31 @@ test.describe("Story 5.1: multi-artboard canvas", () => {
       };
       return w.__opencanvas.editor.Canvas.getFrames().map((f) => {
         const g = (f as unknown as { get?: (k: string) => unknown }).get?.bind(f);
-        return {
-          name: String(g?.("name") ?? ""),
-          x: Number(g?.("x") ?? 0),
-          y: Number(g?.("y") ?? 0),
-          width: Number(g?.("width") ?? 0),
-          height: Number(g?.("height") ?? 0),
-        };
+        return { name: String(g?.("name") ?? "") };
       });
     });
-
+    // GrapesJS auto-creates one frame at init; we no longer rename/seed it
+    // to "Desktop". The user can delete it from the Layers panel.
     expect(frames.length).toBe(1);
-    expect(frames[0]!.name.toLowerCase()).toContain("desktop");
-    expect(frames[0]!.width).toBe(1440);
-    expect(frames[0]!.height).toBe(900);
+    expect(frames[0]!.name.toLowerCase()).not.toContain("desktop");
   });
 
-  test("creating a Tablet-sized artboard places it to the right of the default frame", async ({
+  test("creating a Tablet-sized artboard next to an existing Desktop places it to the right", async ({
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => {
-        const w = window as unknown as { __opencanvas?: { editor: { Canvas: { getFrames(): FrameLike[] } } } };
-        return (w.__opencanvas?.editor.Canvas.getFrames().length ?? 0) > 0;
-      },
+      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
 
-    // Artboard preset-buttons moved out of the top nav in D.3b; new frames are
-    // created through the InsertRail (default Desktop) or programmatically.
-    // Validate placement logic by calling the shared helper via a window hook.
+    // Canvas starts empty — seed a Desktop then add a Tablet next to it.
     await page.evaluate(() => {
       const api = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas;
       const edt = api.editor as {
         Canvas: { addFrame: (props: unknown) => unknown };
       };
+      edt.Canvas.addFrame({ name: "Desktop", width: 1440, height: 900, x: 0, y: 0 });
       edt.Canvas.addFrame({ name: "Tablet", width: 768, height: 1024, x: 1520, y: 0 });
     });
 
@@ -87,7 +73,8 @@ test.describe("Story 5.1: multi-artboard canvas", () => {
       });
     });
 
-    expect(frames.length).toBe(2);
+    // auto-frame + Desktop + Tablet = 3.
+    expect(frames.length).toBe(3);
     const tablet = frames.find((f) => f.name.toLowerCase() === "tablet")!;
     expect(tablet).toBeDefined();
     expect(tablet.width).toBe(768);

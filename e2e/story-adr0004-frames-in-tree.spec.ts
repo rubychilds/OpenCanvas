@@ -27,6 +27,7 @@ async function frameIds(page: import("@playwright/test").Page): Promise<string[]
   });
 }
 
+
 test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
   test("retired: no standalone FramesSection toggle", async ({ freshApp: page }) => {
     await waitForEditor(page);
@@ -35,23 +36,24 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     await expect(page.locator('[data-testid="oc-frames-section-toggle"]')).toHaveCount(0);
   });
 
-  test("the seeded Desktop frame appears as a top-level row in the Layers tree", async ({
+  test("fresh canvas shows the unopinionated auto-frame in the Layers tree", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
-    const [seedId] = await frameIds(page);
-    expect(seedId).toBeTruthy();
-    const row = page.locator(`[data-testid="oc-frame-row-${seedId}"]`);
-    await expect(row).toBeVisible();
-    // The frame row shows the frame name.
-    await expect(row.locator(`[data-testid="oc-frame-name-${seedId}"]`)).toContainText(/Desktop/i);
+    // Per product direction: we no longer seed a 1440×900 "Desktop" artboard
+    // on a fresh canvas. GrapesJS still auto-creates one blank frame at init
+    // (it needs at least one to render a wrapper) — that's the single row
+    // the user sees, and they can delete it via the hover trash icon.
+    const ids = await frameIds(page);
+    expect(ids.length).toBe(1);
+    await expect(page.locator(`[data-testid="oc-frame-row-${ids[0]}"]`)).toBeVisible();
   });
 
   test("appending a component to a frame's wrapper nests it under that frame's row", async ({
     freshApp: page,
   }) => {
     await waitForEditor(page);
-    // Target the seed frame's wrapper directly so the test isn't dependent on
+    // Target the seeded frame's wrapper directly so the test isn't dependent on
     // which frame `editor.addComponents()` happens to write to (active vs
     // top-level wrapper varies across GrapesJS versions). Frames as tree-roots
     // is what we're verifying.
@@ -108,6 +110,8 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     freshApp: page,
   }) => {
     await waitForEditor(page);
+    // Fresh canvas has one unopinionated auto-frame; adding a second should
+    // give us two top-level rows.
     await page.evaluate(() => {
       const ed = (window as unknown as {
         __opencanvas: { editor: { Canvas: { addFrame: (p: unknown) => unknown } } };
@@ -171,10 +175,14 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     expect(String(name)).toBe("Renamed Frame");
   });
 
-  test("delete affordance is disabled when only one frame exists", async ({ freshApp: page }) => {
+  test("delete affordance is enabled for the sole frame — last one can go", async ({
+    freshApp: page,
+  }) => {
     await waitForEditor(page);
-    const [seedId] = await frameIds(page);
-    const trash = page.locator(`[data-testid="oc-frame-delete-${seedId}"]`);
-    await expect(trash).toBeDisabled();
+    // Fresh canvas has one auto-frame. Its trash is enabled (the prior
+    // guard that refused to delete the last remaining frame has been removed).
+    const [onlyId] = await frameIds(page);
+    const trash = page.locator(`[data-testid="oc-frame-delete-${onlyId}"]`);
+    await expect(trash).toBeEnabled();
   });
 });

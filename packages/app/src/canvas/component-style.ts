@@ -27,6 +27,22 @@ export function writeStyle(
 }
 
 /**
+ * Read a *computed* CSS property off the component's rendered DOM element
+ * inside the GrapesJS iframe. Useful when the component has no explicit
+ * style for the property but the inspector wants to show the inherited /
+ * default value (e.g., font-size shows "16px" for an unset heading).
+ * Returns empty string when the component isn't rendered yet.
+ */
+export function readComputedStyle(component: Component, key: string): string {
+  const el = (component as unknown as { getEl?: () => Element | null | undefined }).getEl?.();
+  if (!el) return "";
+  const view = el.ownerDocument?.defaultView;
+  if (!view) return "";
+  const value = view.getComputedStyle(el).getPropertyValue(key);
+  return value ? value.trim() : "";
+}
+
+/**
  * Remove a property entirely (as opposed to setting it to empty-string, which
  * GrapesJS treats as a valid value for some property types).
  */

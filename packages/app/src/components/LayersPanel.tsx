@@ -7,13 +7,12 @@ import {
   Eye,
   EyeOff,
   FrameCorners,
+  IconContext,
   Lock,
   LockOpen,
   PlusOutline,
-  Trash2,
 } from "../canvas/chrome-icons.js";
 import { cn } from "../lib/utils.js";
-import { Button } from "./ui/button.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
 import { iconForPrimitive, iconForTag } from "../canvas/icons.js";
 import {
@@ -236,13 +235,13 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
             className="flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground"
             aria-label={expanded ? "Collapse" : "Expand"}
           >
-            {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+            {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
           </button>
         ) : (
           <span className="h-4 w-4" />
         )}
 
-        <Icon className="size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground" aria-hidden />
+        <Icon className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" aria-hidden />
 
         {editing ? (
           <input
@@ -299,7 +298,7 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
           }}
           data-testid={`oc-layer-visibility-${component.getId()}`}
         >
-          {hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+          {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </button>
         <button
           type="button"
@@ -315,7 +314,7 @@ function LayerRow({ component, depth, editor, selected }: LayerRowProps) {
           }}
           data-testid={`oc-layer-lock-${component.getId()}`}
         >
-          {locked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+          {locked ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
         </button>
       </div>
 
@@ -339,8 +338,6 @@ interface FrameLayerRowProps {
   frame: Frame;
   editor: Editor | undefined;
   selected: Component | null;
-  /** Disables the delete affordance when this is the only frame on the canvas. */
-  canDelete: boolean;
 }
 
 /**
@@ -350,7 +347,7 @@ interface FrameLayerRowProps {
  * Component, double-click renames the frame, and the wrapper's children
  * recurse below using the existing LayerRow.
  */
-function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProps) {
+function FrameLayerRow({ frame, editor, selected }: FrameLayerRowProps) {
   // `tick` (the value, not the setter) is the dep that re-derives the
   // wrapper's children list when GrapesJS mutates it in place.
   const [tick, force] = useState(0);
@@ -400,11 +397,6 @@ function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProp
     renameArtboard(editor, id, next);
   };
 
-  const remove = () => {
-    if (!editor || !canDelete) return;
-    deleteArtboard(editor, id);
-  };
-
   const hasChildren = children.length > 0;
 
   return (
@@ -425,14 +417,14 @@ function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProp
             className="flex items-center justify-center h-4 w-4 text-muted-foreground hover:text-foreground"
             aria-label={expanded ? "Collapse frame" : "Expand frame"}
           >
-            {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+            {expanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
           </button>
         ) : (
           <span className="h-4 w-4" />
         )}
 
         <FrameCorners
-          className="size-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+          className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground"
           aria-hidden
         />
 
@@ -496,7 +488,7 @@ function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProp
               }}
               data-testid={`oc-frame-visibility-${id}`}
             >
-              {hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+              {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
             <button
               type="button"
@@ -514,28 +506,11 @@ function FrameLayerRow({ frame, editor, selected, canDelete }: FrameLayerRowProp
               }}
               data-testid={`oc-frame-lock-${id}`}
             >
-              {locked ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+              {locked ? <Lock className="size-4" /> : <LockOpen className="size-4" />}
             </button>
           </>
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "h-5 w-5 transition-opacity",
-            canDelete
-              ? "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
-              : "opacity-0 group-hover:opacity-30 text-muted-foreground cursor-not-allowed",
-          )}
-          onClick={remove}
-          aria-label="Delete frame"
-          disabled={!canDelete}
-          title={canDelete ? "Delete frame" : "Cannot delete the last frame"}
-          data-testid={`oc-frame-delete-${id}`}
-        >
-          <Trash2 />
-        </Button>
       </div>
 
       {expanded &&
@@ -584,56 +559,92 @@ export function LayersPanel() {
     };
   }, [editor]);
 
+  // Delete / Backspace deletes the selected layer or frame. Ignored when the
+  // keystroke is targeting a text input (rename input, inspector fields, etc).
+  useEffect(() => {
+    if (!editor) return;
+    const isEditable = (el: EventTarget | null): boolean => {
+      if (!(el instanceof HTMLElement)) return false;
+      if (el.isContentEditable) return true;
+      const tag = el.tagName.toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select";
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== "Delete" && ev.key !== "Backspace") return;
+      if (isEditable(ev.target)) return;
+      const sel = editor.getSelected();
+      if (!sel) return;
+      // Is this component a frame's wrapper? If so, delete the frame.
+      const frames = editor.Canvas.getFrames();
+      for (const frame of frames) {
+        const w = (frame as unknown as { get?: (k: string) => unknown }).get?.("component");
+        if (w === sel) {
+          ev.preventDefault();
+          deleteArtboard(editor, frameId(frame));
+          return;
+        }
+      }
+      // Regular component — call its own remove.
+      ev.preventDefault();
+      (sel as unknown as { remove?: () => void }).remove?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [editor]);
+
   const addFrame = () => {
     if (!editor) return;
     createArtboard(editor, { name: "Frame", width: 1440, height: 900 });
   };
 
   return (
-    <div className="flex flex-col min-h-0 h-full overflow-auto">
-      <section>
-        {/* Penpot's `title-bar*` shape: tight uppercase title left, ghost
-            icon-button right. Uses the outlined Plus rather than Phosphor's
-            fill-weight glyph to match Penpot's `add.svg` stroke treatment. */}
-        <div className="h-(--section-title-height) pl-(--panel-padding) pr-1 flex items-center justify-between border-b border-border">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">
-            Layers
-          </span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={addFrame}
-                className={cn(
-                  "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
-                  "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
-                  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                )}
-                aria-label="Add frame"
-                data-testid="oc-layers-add-frame"
-              >
-                <PlusOutline className="size-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Add frame</TooltipContent>
-          </Tooltip>
-        </div>
-        {frames.length === 0 ? (
-          <div className="p-2 text-xs text-muted-foreground">No frames</div>
-        ) : (
-          <div className="flex flex-col">
-            {frames.map((frame) => (
-              <FrameLayerRow
-                key={frameId(frame)}
-                frame={frame}
-                editor={editor ?? undefined}
-                selected={selected}
-                canDelete={frames.length > 1}
-              />
-            ))}
+    // Override the app-root IconContext (weight="fill") with a 1px-stroke
+    // thin weight for this panel only. Keeps the inspector iconography
+    // filled while the layer tree reads lighter.
+    <IconContext.Provider value={{ weight: "thin" }}>
+      <div className="flex flex-col min-h-0 h-full overflow-auto">
+        <section>
+          <div className="h-(--section-title-height) pl-(--panel-padding) pr-1 flex items-center justify-between border-b border-border">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">
+              Layers
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={addFrame}
+                  className={cn(
+                    "flex items-center justify-center h-5 w-5 rounded-sm transition-colors",
+                    "text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+                    "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                  )}
+                  aria-label="Add frame"
+                  data-testid="oc-layers-add-frame"
+                >
+                  <PlusOutline className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Add frame</TooltipContent>
+            </Tooltip>
           </div>
-        )}
-      </section>
-    </div>
+          {frames.length === 0 ? (
+            <div className="p-2 text-xs text-muted-foreground">No frames</div>
+          ) : (
+            <div className="flex flex-col">
+              {frames.map((frame) => (
+                <FrameLayerRow
+                  key={frameId(frame)}
+                  frame={frame}
+                  editor={editor ?? undefined}
+                  selected={selected}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </IconContext.Provider>
   );
 }

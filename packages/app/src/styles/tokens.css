@@ -73,7 +73,7 @@
   --row-height: 24px;         /* property rows, tree rows, compact buttons */
   --row-height-comfy: 28px;   /* inputs that need a bit more reach */
   --section-title-height: 20px; /* sector titles live on their own thin row */
-  --panel-padding: 8px;
+  --panel-padding: 12px;
 }
 
 [data-theme="dark"] {

@@ -63,6 +63,13 @@ export function App() {
         editor.loadProjectData(projectData);
         if (cssVariables) loadVariables(editor, cssVariables);
       }
+      // No saved project: GrapesJS auto-creates a single blank frame during
+      // init. We no longer opinionate it ("Desktop" rename + 1440×900 preset
+      // is gone) — it shows as an untitled placeholder in the Layers panel
+      // and the user can delete it. Removing it outright isn't safe:
+      // `editor.getWrapper()` calls (made by `get_tree` and other bridge
+      // tools) trigger GrapesJS to re-create a frame, so zero-frame state
+      // isn't stable. The best we can do is leave the blank auto-frame.
     } catch (err) {
       console.warn("[opencanvas] load failed:", err);
     }

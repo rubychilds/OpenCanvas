@@ -32,9 +32,14 @@ async function seedTwoArtboards(page: import("@playwright/test").Page): Promise<
     )) as typeof import("../packages/app/src/canvas/artboards.js");
     const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
       .__opencanvas.editor;
-    // listArtboards returns the default Desktop seeded on load as the first.
-    const seeded = mod.listArtboards(ed);
-    const a = seeded[0]!.id;
+    // Fresh canvas now starts empty — seed A (Desktop-sized at 0,0) and B.
+    const a = mod.createArtboard(ed, {
+      name: "A",
+      width: 1440,
+      height: 900,
+      x: 0,
+      y: 0,
+    }).id;
     const b = mod.createArtboard(ed, {
       name: "B",
       width: 400,
@@ -57,7 +62,15 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       )) as typeof import("../packages/app/src/canvas/artboards.js");
       const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
         .__opencanvas.editor;
-      const ab = mod.listArtboards(ed)[0]!;
+      // Seed a known frame alongside GrapesJS's unopinionated auto-frame and
+      // target it directly by the returned id.
+      const created = mod.createArtboard(ed, {
+        name: "A",
+        width: 1440,
+        height: 900,
+        x: 0,
+        y: 0,
+      });
       let fired = 0;
       const h = () => {
         fired += 1;
@@ -66,8 +79,8 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
         mod.ARTBOARDS_CHANGED,
         h,
       );
-      mod.moveArtboard(ed, ab.id, 500, 200, false);
-      const after = mod.listArtboards(ed)[0]!;
+      mod.moveArtboard(ed, created.id, 500, 200, false);
+      const after = mod.listArtboards(ed).find((a) => a.id === created.id)!;
       (ed as unknown as { off: (ev: string, f: () => void) => void }).off(
         mod.ARTBOARDS_CHANGED,
         h,
@@ -146,9 +159,17 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       )) as typeof import("../packages/app/src/canvas/artboards.js");
       const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
         .__opencanvas.editor;
-      const ab = mod.listArtboards(ed)[0]!;
-      mod.resizeArtboard(ed, ab.id, 1024);
-      return mod.listArtboards(ed).find((a) => a.id === ab.id)!;
+      // Fresh canvas already has GrapesJS's unopinionated auto-frame. Seed a
+      // named one with known dimensions and target it by the returned id.
+      const created = mod.createArtboard(ed, {
+        name: "A",
+        width: 1440,
+        height: 900,
+        x: 0,
+        y: 0,
+      });
+      mod.resizeArtboard(ed, created.id, 1024);
+      return mod.listArtboards(ed).find((a) => a.id === created.id)!;
     });
     expect(after.width).toBe(1024);
     expect(after.height).toBe(900);

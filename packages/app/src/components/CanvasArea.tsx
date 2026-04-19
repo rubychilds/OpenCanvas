@@ -1,5 +1,4 @@
 import { Canvas } from "@grapesjs/react";
-import { ArtboardBootstrap } from "./ArtboardBootstrap.js";
 import { InsertRail } from "./InsertRail.js";
 import { Minimap } from "./Minimap.js";
 import { PanZoomWire } from "./PanZoomWire.js";
@@ -20,7 +19,6 @@ export function CanvasArea() {
         </div>
         <SelectionOverlay />
       </div>
-      <ArtboardBootstrap />
       <PanZoomWire />
     </div>
   );

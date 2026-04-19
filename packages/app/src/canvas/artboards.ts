@@ -101,6 +101,15 @@ export interface CreateArtboardOptions {
   y?: number;
 }
 
+/**
+ * Base stylesheet applied to every new frame's iframe. White body so frames
+ * pop against the off-white canvas void (otherwise a fresh empty frame is
+ * visually indistinguishable from the surrounding canvas and users report it
+ * "briefly appearing then disappearing"). Zero body margin so absolute
+ * positioning of children inside the frame matches the artboard edges.
+ */
+const DEFAULT_FRAME_STYLES = "html,body{margin:0;padding:0;background:#ffffff;}";
+
 export function createArtboard(editor: Editor, opts: CreateArtboardOptions): FrameData {
   const { x, y } = opts.x != null && opts.y != null
     ? { x: opts.x, y: opts.y }
@@ -114,25 +123,29 @@ export function createArtboard(editor: Editor, opts: CreateArtboardOptions): Fra
     width: opts.width,
     height: opts.height,
     components: "",
-    styles: "",
+    styles: DEFAULT_FRAME_STYLES,
   });
   notifyChange(editor);
   return readFrameData(frame);
 }
 
 /**
- * Remove an artboard by id. Refuses to remove the last remaining frame so the
- * canvas never ends up empty. Emits ARTBOARDS_CHANGED on success.
+ * Remove an artboard by id. The last remaining frame *can* be deleted — the
+ * canvas renders a blank void in that state, and users can re-add a frame
+ * via the Layers header's + action. Emits ARTBOARDS_CHANGED on success.
  */
 export function deleteArtboard(editor: Editor, id: string): boolean {
   const frames = editor.Canvas.getFrames();
-  if (frames.length <= 1) return false;
   const frame = (frames as unknown as Array<{ cid?: string; id?: string }>).find(
     (f) => String(f.cid ?? f.id ?? "") === id,
   );
   if (!frame) return false;
-  const col = (editor.Canvas as unknown as { frames?: { remove?: (x: unknown) => void } }).frames;
-  col?.remove?.(frame);
+  const page = (editor.Pages as unknown as {
+    getSelected?: () => { getFrames?: () => { remove?: (x: unknown) => void } } | undefined;
+  }).getSelected?.();
+  const collection = page?.getFrames?.();
+  if (!collection?.remove) return false;
+  collection.remove(frame);
   notifyChange(editor);
   return true;
 }
@@ -260,8 +273,8 @@ export function resizeArtboard(
  * Return the "active" artboard — the one whose wrapper is an ancestor of the
  * currently-selected component. Falls back to the first frame when nothing
  * is selected or the selected component's frame can't be resolved. Returns
- * null only when the canvas has zero frames (which `ensureDefaultArtboard`
- * prevents).
+ * null when the canvas has zero frames — a legitimate state on a fresh
+ * canvas before the user adds the first frame.
  */
 export function getActiveArtboardId(editor: Editor): string | null {
   const frames = editor.Canvas.getFrames();
@@ -309,40 +322,21 @@ export function renameArtboard(editor: Editor, id: string, name: string): boolea
 }
 
 /**
- * Seed a default Desktop artboard on an empty canvas. Called after the saved
- * project (if any) has been loaded.
- *   - 0 frames → create a Desktop artboard.
- *   - ≥1 frames, first frame is unnamed (auto-created by GrapesJS init) →
- *     normalize it to Desktop dimensions + name.
- *   - ≥1 frames and first frame already has a name → trust it (saved project
- *     restore).
+ * Remove every frame on the canvas. Used by App.tsx when no saved project
+ * exists on disk — GrapesJS auto-creates one frame at init and the product
+ * direction is "fresh canvas starts empty." Walks through the active Page's
+ * frames collection (the Canvas module doesn't expose a remove API directly;
+ * Page.getFrames() returns a Backbone collection with .remove on it).
  */
-export function ensureDefaultArtboard(editor: Editor): void {
+export function clearAllFrames(editor: Editor): void {
+  const page = (editor.Pages as unknown as {
+    getSelected?: () => { getFrames?: () => { remove?: (x: unknown) => void } } | undefined;
+  }).getSelected?.();
+  const collection = page?.getFrames?.();
   const frames = editor.Canvas.getFrames();
-  if (frames.length === 0) {
-    createArtboard(editor, {
-      name: "Desktop",
-      width: 1440,
-      height: 900,
-      x: 0,
-      y: 0,
-    });
-    return;
-  }
-  const first = frames[0]!;
-  const mutable = first as unknown as {
-    get?: (k: string) => unknown;
-    set?: (attrs: Record<string, unknown>) => void;
-  };
-  const existingName = mutable.get?.("name");
-  if (!existingName) {
-    mutable.set?.({
-      name: "Desktop",
-      x: 0,
-      y: 0,
-      width: 1440,
-      height: 900,
-    });
-    notifyChange(editor);
-  }
+  if (frames.length === 0 || !collection?.remove) return;
+  // Iterate a snapshot — Backbone collections mutate under you otherwise.
+  const snapshot = [...frames];
+  for (const frame of snapshot) collection.remove(frame);
+  notifyChange(editor);
 }
