@@ -34,6 +34,7 @@ export {
   CaretDown as ChevronDown,
   CaretRight as ChevronRight,
   Check,
+  Circle,
   Columns as Columns3,
   CornersOut as Maximize2,
   Crop as Maximize,

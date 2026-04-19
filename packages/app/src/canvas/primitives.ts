@@ -1,0 +1,206 @@
+import type { Component, Editor } from "grapesjs";
+import { createArtboard } from "./artboards.js";
+
+/**
+ * Per ADR-0005: shape-shaped primitive vocabulary mapped to HTML/CSS storage.
+ *
+ * Each PrimitiveType is the user-facing concept (Penpot's `:rect`, Figma's
+ * Rectangle); the corresponding template renders as real HTML on the canvas.
+ * Identification on the wire goes through the `data-oc-shape` attribute,
+ * which the Layers tree and (future) MCP tooling key off.
+ *
+ * `frame` is exposed here for completeness — it actually creates a new
+ * GrapesJS Frame via `createArtboard` rather than appending an HTML element.
+ */
+export type PrimitiveType = "frame" | "rectangle" | "ellipse" | "text" | "image" | "group";
+
+export const TEXT_TAGS = new Set([
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "span",
+  "a",
+  "label",
+  "button",
+]);
+
+/** Concept name shown in the Layers tree and used as the per-frame counter key. */
+export const PRIMITIVE_LABEL: Record<PrimitiveType, string> = {
+  frame: "Frame",
+  rectangle: "Rectangle",
+  ellipse: "Ellipse",
+  text: "Text",
+  image: "Image",
+  group: "Group",
+};
+
+/**
+ * Resolve a Component's primitive concept. Reads `data-oc-shape` first
+ * (authoritative per ADR-0005), then falls back to a tagName heuristic so
+ * pasted HTML still gets the right icon / label without an explicit attribute.
+ *
+ * Returns null for components that don't map to a primitive concept (raw
+ * containers, semantic-but-unmapped tags like <article>, the GrapesJS
+ * wrapper itself, …). Callers fall back to tagName-based behaviour.
+ */
+export function primitiveTypeOf(component: Component): PrimitiveType | null {
+  const attrs =
+    (component as unknown as { getAttributes?: () => Record<string, unknown> }).getAttributes?.() ??
+    {};
+  const shape = attrs["data-oc-shape"];
+  if (typeof shape === "string" && isPrimitiveType(shape)) return shape;
+
+  const tag = ((component.get("tagName") as string | undefined) ?? "").toLowerCase();
+  if (tag === "img") return "image";
+  if (TEXT_TAGS.has(tag)) return "text";
+  return null;
+}
+
+function isPrimitiveType(s: string): s is PrimitiveType {
+  return (
+    s === "frame" || s === "rectangle" || s === "ellipse" || s === "text" || s === "image" || s === "group"
+  );
+}
+
+/**
+ * HTML / Tailwind template for each primitive. Exported for tests; the
+ * canonical entry-point for production code is {@link createPrimitive}.
+ */
+export const PRIMITIVE_HTML: Record<Exclude<PrimitiveType, "frame">, string> = {
+  rectangle: `<div data-oc-shape="rectangle" class="w-32 h-32 bg-neutral-200"></div>`,
+  ellipse: `<div data-oc-shape="ellipse" class="w-32 h-32 rounded-full bg-neutral-200"></div>`,
+  text: `<p data-oc-shape="text" class="text-base leading-relaxed">Text</p>`,
+  image: `<img data-oc-shape="image" src="" alt="" class="max-w-full h-auto" />`,
+  // `display: contents` keeps the group invisible to the box model — Figma's
+  // Group flattens at export, Penpot's :group is organisational. Same shape.
+  group: `<div data-oc-shape="group" class="contents"></div>`,
+};
+
+export interface CreatePrimitiveOptions {
+  /** Override the auto-generated `"{Concept} {N}"` name. */
+  name?: string;
+  /** Frame-creation only: width / height / position. */
+  width?: number;
+  height?: number;
+}
+
+export interface CreatedPrimitive {
+  type: PrimitiveType;
+  /** The primary new component (or, for frames, the new frame's wrapper). */
+  component: Component | null;
+  /** The chosen display name. */
+  name: string;
+}
+
+/**
+ * Insert a fresh primitive at the canvas. Routes Frame through the existing
+ * artboards.ts helper; everything else parses the HTML template into the
+ * editor's active wrapper. Tags the new component with `custom-name` set to
+ * `"{Concept} {N}"` (per-frame counter) unless the caller overrides via
+ * `options.name`.
+ */
+export function createPrimitive(
+  editor: Editor,
+  type: PrimitiveType,
+  options: CreatePrimitiveOptions = {},
+): CreatedPrimitive {
+  if (type === "frame") {
+    const name = options.name ?? nextNameInScope(editor, "frame");
+    const frame = createArtboard(editor, {
+      name,
+      width: options.width ?? 1440,
+      height: options.height ?? 900,
+    });
+    const wrapper =
+      (frame as unknown as { id?: string }) &&
+      ((frame as unknown as { component?: Component }).component ?? null);
+    return { type, component: wrapper as Component | null, name };
+  }
+
+  const html = PRIMITIVE_HTML[type];
+  const added = editor.addComponents(html) as unknown;
+  const list = Array.isArray(added) ? added : [added];
+  const created = (list[0] as Component | undefined) ?? null;
+  const name = options.name ?? nextNameInScope(editor, type, created ?? undefined);
+  if (created) {
+    (created as unknown as { set?: (k: string, v: unknown) => void }).set?.("custom-name", name);
+  }
+  return { type, component: created, name };
+}
+
+/**
+ * `"{Concept} {N}"` where N is the count of existing primitives of the same
+ * type within the same frame's wrapper, plus one. Walks the wrapper that
+ * contains the new component (not the editor-level wrapper) so multi-frame
+ * scenes count per-frame.
+ */
+function nextNameInScope(
+  editor: Editor,
+  type: PrimitiveType,
+  reference?: Component,
+): string {
+  const wrapper = scopeWrapperFor(editor, reference);
+  const concept = PRIMITIVE_LABEL[type];
+
+  let count = 0;
+  if (wrapper) {
+    walk(wrapper, (c) => {
+      if (c === reference) return; // exclude the just-inserted node from the count
+      if (primitiveTypeOf(c) === type) count += 1;
+    });
+  }
+
+  // For frames, count via Canvas.getFrames() since they aren't children of any
+  // single wrapper.
+  if (type === "frame") {
+    const frames = editor.Canvas.getFrames?.() ?? [];
+    return `${concept} ${frames.length + 1}`;
+  }
+
+  return `${concept} ${count + 1}`;
+}
+
+function scopeWrapperFor(editor: Editor, reference?: Component): Component | null {
+  if (reference) {
+    const parent = (reference as unknown as { parent?: () => Component | undefined }).parent?.();
+    if (parent) return parent;
+  }
+  return (editor.getWrapper?.() as Component | null) ?? null;
+}
+
+function walk(root: Component, visit: (c: Component) => void): void {
+  const stack: Component[] = [root];
+  while (stack.length > 0) {
+    const c = stack.pop()!;
+    visit(c);
+    const children = (c.components() as unknown as { toArray: () => Component[] }).toArray();
+    for (const child of children) stack.push(child);
+  }
+}
+
+/**
+ * For text-bearing components, return the literal text content (first
+ * textnode child's content, or the component's own `content` field if it
+ * IS a textnode). Used by the Layers tree to derive a row label like
+ * "Text · Hello, world".
+ */
+export function textContentOf(component: Component): string {
+  const type = (component.get("type") as string | undefined) ?? "";
+  if (type === "textnode") {
+    const content = (component.get("content") as string | undefined) ?? "";
+    return content.trim();
+  }
+  const childArray = (component.components() as unknown as { toArray: () => Component[] }).toArray();
+  if (childArray.length === 1) {
+    const child = childArray[0]!;
+    if ((child.get("type") as string | undefined) === "textnode") {
+      const content = (child.get("content") as string | undefined) ?? "";
+      return content.trim();
+    }
+  }
+  return "";
+}
