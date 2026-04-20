@@ -42,6 +42,48 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
     expect(frames[0]!.y).toBe(0);
   });
 
+  test("calling ensureDefaultArtboard again with a degenerate auto-frame replaces it", async ({
+    freshApp: page,
+  }) => {
+    // Simulate the live-browser timing where GrapesJS's auto-frame exists
+    // with width>0 but height=0 (the exact state the user reported: '1280×0'
+    // badge + empty canvas). ensure() should delete + recreate, not
+    // frame.set() which drops the height.
+    await page.waitForFunction(
+      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      undefined,
+      { timeout: 10_000 },
+    );
+
+    const after = await page.evaluate(async () => {
+      const mod = (await import(
+        "/src/canvas/artboards.ts"
+      )) as typeof import("../packages/app/src/canvas/artboards.js");
+      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
+        .__opencanvas.editor;
+
+      // Degenerate-auto-frame simulation: unset name, keep width, zero height.
+      const first = ed.Canvas.getFrames()[0]! as unknown as {
+        set: (a: Record<string, unknown>) => void;
+        unset?: (k: string) => void;
+      };
+      first.set({ name: "", width: 1280, height: 0 });
+
+      mod.ensureDefaultArtboard(ed);
+
+      return ed.Canvas.getFrames().map((f) => ({
+        name: f.get("name"),
+        width: Number(f.get("width") ?? 0),
+        height: Number(f.get("height") ?? 0),
+      }));
+    });
+
+    expect(after).toHaveLength(1);
+    expect(after[0]!.name).toBe("Frame 1");
+    expect(after[0]!.width).toBe(1280);
+    expect(after[0]!.height).toBe(800);
+  });
+
   test("saved project with a named frame is not overwritten", async ({ freshApp: page }) => {
     // Simulate a saved project by calling ensureDefaultArtboard AFTER a frame
     // with a distinct name has already been set up. The helper should be a

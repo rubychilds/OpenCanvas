@@ -342,11 +342,17 @@ const DEFAULT_FIRST_FRAME = {
  * renders as nothing on the canvas and makes "Fit all" no-op because the
  * bounding box has zero area. This function:
  *   - 0 frames → create one with DEFAULT_FIRST_FRAME
- *   - ≥1 frames and the first has no name + no/degenerate size → normalize it
+ *   - ≥1 frames and the first has no name + no/degenerate size → replace it
  *   - ≥1 frames with a named first frame → trust it (saved-project restore)
  *
  * Idempotent. Safe to call after `loadProjectData`. Only mutates when the
  * first frame is the unopinionated auto-frame.
+ *
+ * Implementation note: we delete + recreate rather than `frame.set(…)` on
+ * the existing auto-frame. Empirically `frame.set({ height })` doesn't
+ * reliably apply to GrapesJS's auto-frame (width and name do stick, but
+ * height stays at 0), so we route through the verified `addFrame` path
+ * that `createArtboard` uses for every other frame-creation call site.
  */
 export function ensureDefaultArtboard(editor: Editor): void {
   const frames = editor.Canvas.getFrames();
@@ -355,18 +361,18 @@ export function ensureDefaultArtboard(editor: Editor): void {
     return;
   }
   const first = frames[0]!;
-  const mutable = first as unknown as {
-    get?: (k: string) => unknown;
-    set?: (attrs: Record<string, unknown>) => void;
-  };
+  const mutable = first as unknown as { get?: (k: string) => unknown };
   const existingName = mutable.get?.("name");
   const existingWidth = Number(mutable.get?.("width") ?? 0);
   const existingHeight = Number(mutable.get?.("height") ?? 0);
   const degenerate = !existingName && (existingWidth < 1 || existingHeight < 1);
-  if (degenerate) {
-    mutable.set?.({ ...DEFAULT_FIRST_FRAME });
-    notifyChange(editor);
-  }
+  if (!degenerate) return;
+
+  const page = (editor.Pages as unknown as {
+    getSelected?: () => { getFrames?: () => { remove?: (x: unknown) => void } } | undefined;
+  }).getSelected?.();
+  page?.getFrames?.()?.remove?.(first);
+  createArtboard(editor, { ...DEFAULT_FIRST_FRAME });
 }
 
 /**
