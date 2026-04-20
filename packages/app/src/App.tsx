@@ -4,7 +4,7 @@ import grapesjs from "grapesjs";
 import type { Component, Editor } from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 
-import { editorOptions } from "./canvas/editor-options.js";
+import { editorOptions, PRIMITIVE_BASE_CSS } from "./canvas/editor-options.js";
 import { attachPasteImport, importPastedHtml } from "./canvas/paste-import.js";
 import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
 import {
@@ -106,6 +106,34 @@ export function App() {
       editor.runCommand("core:copy");
       editor.runCommand("core:paste");
       return undefined;
+    });
+
+    // Inject our primitive base CSS into every frame's iframe as soon as
+    // it finishes loading. This lives outside `canvas.styles` because the
+    // headless browser in CI occasionally stalls on data: stylesheet
+    // loads, which would hold `canvas:frame:load` up and cause downstream
+    // test timeouts. Appending a <style> tag after load is fire-and-
+    // forget — the CSS is live by the next paint and no async fetch is
+    // involved.
+    const injectPrimitiveCssIntoDoc = (doc: Document | null | undefined): void => {
+      if (!doc || !doc.head) return;
+      if (doc.getElementById("oc-primitive-base")) return;
+      const style = doc.createElement("style");
+      style.id = "oc-primitive-base";
+      style.textContent = PRIMITIVE_BASE_CSS;
+      doc.head.appendChild(style);
+    };
+    editor.on("canvas:frame:load", ({ window: frameWindow, el }) => {
+      injectPrimitiveCssIntoDoc(frameWindow?.document ?? el?.contentDocument);
+    });
+    // Cover frames that had already loaded by the time we registered the
+    // listener (the first auto-frame races us on initial app boot).
+    editor.Canvas.getFrames().forEach((frame) => {
+      const view = (frame as unknown as {
+        view?: { getWindow?: () => Window | undefined };
+      }).view;
+      const win = view?.getWindow?.();
+      injectPrimitiveCssIntoDoc(win?.document);
     });
 
     // Override the default `core:component-delete` command so that pressing

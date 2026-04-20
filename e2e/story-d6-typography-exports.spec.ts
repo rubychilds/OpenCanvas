@@ -129,8 +129,9 @@ test.describe("D.6: Typography section + Exports section", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<span data-testid="copy-host">copyme</span>`);
 
-    // Exports section is collapsed by default — expand first.
-    await page.getByRole("button", { name: "Exports" }).click();
+    // Export section is closed by default — open via the section-header +
+    // toggle (same pattern as Fill / Auto Layout).
+    await page.locator('[data-testid="oc-ins-exports-toggle"]').click();
 
     await page.locator('[data-testid="oc-ins-exports-copy-html"]').click();
     const clip = await page.evaluate(() => navigator.clipboard.readText());
