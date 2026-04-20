@@ -154,21 +154,25 @@ export interface CreateArtboardOptions {
 
 /**
  * Base style applied to every new frame's body. White background so frames
- * pop against the off-white canvas void (otherwise a fresh empty frame is
- * visually indistinguishable from the surrounding canvas and users report
- * it "briefly appearing then disappearing"). `min-height: 100%` so an
- * empty body still paints the full artboard rect.
+ * pop against the off-white canvas void.
  *
  * Applied directly to the wrapper component's styles — not via addFrame's
  * `styles: "html,body{…}"` string — because GrapesJS's CSS parser strips
  * element-name selectors like `html` and `body`, causing the injected
- * defaults to silently vanish on re-render.
+ * defaults to silently vanish on re-render. The component-level style
+ * survives because it renders as `#<wrapper-id> { … }` (ID selector).
+ *
+ * Height is NOT set here. `html,body { height: 100% }` is injected into
+ * the iframe document via `PRIMITIVE_BASE_CSS` on `canvas:frame:load`
+ * (see editor-options.ts) — that's low specificity and doesn't fight
+ * with user-authored styles. Setting `min-height: 100%` on the wrapper
+ * collapses to zero when `<html>` has no explicit height, which caused
+ * the "appears instantly, then fades bottom-to-top" regression.
  */
 const DEFAULT_FRAME_BODY_STYLE = {
   margin: "0",
   padding: "0",
   background: "#ffffff",
-  "min-height": "100%",
 } as const;
 
 function applyDefaultFrameStyle(frame: Frame): void {

@@ -25,6 +25,11 @@ const TAILWIND_V4_CDN = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4";
  * wrapping-paragraph mode.
  */
 export const PRIMITIVE_BASE_CSS = `
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 [data-oc-shape="text"] {
   display: inline-block !important;
   white-space: nowrap !important;
