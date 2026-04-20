@@ -216,7 +216,25 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
 
     add_components: (params) => {
       const input = AddComponentsInput.parse(params);
-      const parent = input.target ? findById(editor, input.target) : undefined;
+      // Routing precedence: target (component id) > artboardId (frame id) >
+      // default (editor.addComponents, which lands in the first frame).
+      // target wins because it's the more-specific of the two — "append into
+      // this component" beats "put at the top of this frame".
+      let parent: Component | undefined;
+      if (input.target) {
+        parent = findById(editor, input.target);
+        if (!parent) throw new Error(`target component not found: ${input.target}`);
+      } else if (input.artboardId) {
+        const frame = findFrameById(editor, input.artboardId);
+        if (!frame) throw new Error(`artboard not found: ${input.artboardId}`);
+        const wrapper = (frame as unknown as { get?: (k: string) => unknown }).get?.("component") as
+          | Component
+          | undefined;
+        if (!wrapper) {
+          throw new Error(`artboard ${input.artboardId} has no wrapper component`);
+        }
+        parent = wrapper;
+      }
       const added = parent
         ? parent.append(input.html)
         : editor.addComponents(input.html);

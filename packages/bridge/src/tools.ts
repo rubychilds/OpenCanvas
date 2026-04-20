@@ -54,7 +54,18 @@ export const GetSelectionInput = z.object({}).strict();
 export const GetSelectionOutput = z.object({ componentIds: z.array(z.string()) });
 
 export const AddComponentsInput = z
-  .object({ html: z.string(), target: z.string().optional() })
+  .object({
+    html: z.string(),
+    /** Component id to append into. Use this to insert into a nested element. */
+    target: z.string().optional(),
+    /**
+     * Artboard/frame id (from `create_artboard` / `list_artboards`). Routes the
+     * new components into that frame's root wrapper. Use this when you want
+     * content at the top level of a specific artboard. `target` overrides
+     * `artboardId` when both are provided.
+     */
+    artboardId: z.string().optional(),
+  })
   .strict();
 export const AddComponentsOutput = z.object({ componentIds: z.array(z.string()) });
 
@@ -187,7 +198,7 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_selection:
     "Return the componentIds of currently selected elements in the editor. Empty array if nothing selected.",
   add_components:
-    "Insert raw HTML onto the canvas. Tailwind classes resolve correctly. Returns the created componentIds. Optional target inserts into a specific parent.",
+    "Insert raw HTML onto the OpenCanvas design canvas. Tailwind classes resolve correctly. Returns the created componentIds. To land content inside a specific artboard (the common case after `create_artboard`), pass `artboardId` — not `target`. `target` is for appending into an existing component's subtree. Without either, content lands in the first/default frame, which is usually not what you want on a multi-artboard canvas.",
   update_styles:
     "Update CSS properties on an existing component. Accepts both CSS properties and Tailwind utility strings (via the 'class' key convention).",
   delete_nodes:
