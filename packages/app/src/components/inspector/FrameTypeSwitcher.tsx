@@ -54,7 +54,7 @@ export function FrameTypeSwitcher({ editor, frameId }: FrameTypeSwitcherProps) {
           type="button"
           className={cn(
             "flex items-center gap-1 px-1 -ml-1 rounded-sm",
-            "text-xs text-muted-foreground hover:text-foreground hover:bg-surface-sunken",
+            "text-sm text-foreground hover:bg-surface-sunken",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           )}
           data-testid="oc-ins-type-frame"

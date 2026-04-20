@@ -81,12 +81,12 @@ export function SemanticInspector() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between px-(--panel-padding) h-(--section-title-height) border-b border-border">
+      <div className="flex items-center justify-between px-(--panel-padding) py-2 min-h-(--section-title-height) border-b border-border">
         {frameId && editor ? (
           <FrameTypeSwitcher editor={editor} frameId={frameId} />
         ) : (
           <span
-            className="text-xs text-muted-foreground truncate"
+            className="text-sm text-foreground truncate"
             data-testid="oc-ins-type-label"
           >
             {typeLabel(selected)}
