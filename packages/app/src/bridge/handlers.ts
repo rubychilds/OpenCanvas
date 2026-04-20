@@ -8,6 +8,7 @@ import {
   DeleteNodesInput,
   DeselectInput,
   FindPlacementInput,
+  FitArtboardInput,
   GetCssInput,
   GetHtmlInput,
   GetJsxInput,
@@ -22,7 +23,12 @@ import {
   SetVariablesInput,
   UpdateStylesInput,
 } from "@opencanvas/bridge";
-import { createArtboard, findPlacement, listArtboards } from "../canvas/artboards.js";
+import {
+  createArtboard,
+  findPlacement,
+  fitArtboardToContent,
+  listArtboards,
+} from "../canvas/artboards.js";
 import { htmlToJsx, mergeStylesIntoHtml } from "../canvas/jsx-export.js";
 import { getVariables, setVariables } from "../canvas/variables.js";
 
@@ -132,8 +138,27 @@ function frameIframe(frame: Frame): HTMLIFrameElement | undefined {
   return undefined;
 }
 
+/**
+ * MCP tools that mutate canvas state. After a successful call, we need to
+ * mark the project dirty so `attachPersistence`'s 30s autosave catches it.
+ * GrapesJS doesn't reliably fire its `"update"` event for programmatic
+ * mutations (e.g. component.append from an MCP call), so we explicitly
+ * trigger it ourselves below.
+ */
+const WRITE_TOOLS = new Set([
+  "add_components",
+  "update_styles",
+  "delete_nodes",
+  "set_variables",
+  "create_artboard",
+  "fit_artboard",
+  "add_classes",
+  "remove_classes",
+  "set_text",
+]);
+
 export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
-  return {
+  const handlers: Record<string, ToolHandler> = {
     ping: (params) => {
       PingInput.parse(params);
       return { pong: true, at: Date.now() };
@@ -312,6 +337,34 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       return findPlacement(editor, input.width, input.height);
     },
 
+    fit_artboard: async (params) => {
+      const input = FitArtboardInput.parse(params);
+      // Fail fast if the artboard genuinely doesn't exist — avoid the
+      // retry loop for a doomed call that would just eat time.
+      if (!listArtboards(editor).some((a) => a.id === input.artboardId)) {
+        throw new Error(`cannot fit artboard: ${input.artboardId} (not found)`);
+      }
+      // Iframe may still be mounting when this is called (typical agent
+      // workflow: create_artboard → add_components → fit_artboard). Retry
+      // briefly so the wrapper + body become measurable. setTimeout (not
+      // rAF) because rAF can be throttled in background/detached states.
+      const deadline = Date.now() + 1500;
+      let height: number | null = null;
+      while (Date.now() < deadline) {
+        height = fitArtboardToContent(editor, input.artboardId);
+        if (height != null) break;
+        await new Promise<void>((resolve) => setTimeout(resolve, 50));
+      }
+      if (height == null) {
+        throw new Error(
+          `cannot fit artboard: ${input.artboardId} (wrapper/content not measurable within 1500ms)`,
+        );
+      }
+      const artboard = listArtboards(editor).find((a) => a.id === input.artboardId);
+      if (!artboard) throw new Error(`artboard not found after fit: ${input.artboardId}`);
+      return { artboard, height };
+    },
+
     add_classes: (params) => {
       const input = AddClassesInput.parse(params);
       const c = findById(editor, input.componentId);
@@ -382,6 +435,26 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       return { componentIds: editor.getSelectedAll().map((c) => c.getId()) };
     },
   };
+
+  // Wrap every write-side tool with a post-success hook that fires GrapesJS's
+  // `update` event — the signal `attachPersistence` listens for to flip the
+  // dirty bit. Without this, MCP-driven mutations (which bypass the user
+  // interactions GrapesJS normally instruments) wouldn't trigger autosave
+  // and agent-authored content disappears on reload.
+  const triggerUpdate = () => {
+    (editor as unknown as { trigger?: (ev: string) => void }).trigger?.("update");
+  };
+  for (const name of Object.keys(handlers)) {
+    if (!WRITE_TOOLS.has(name)) continue;
+    const inner = handlers[name]!;
+    handlers[name] = async (params) => {
+      const result = await inner(params);
+      triggerUpdate();
+      return result;
+    };
+  }
+
+  return handlers;
 }
 
 function countDescendants(c: Component): number {

@@ -128,6 +128,14 @@ export const FindPlacementInput = z
   .strict();
 export const FindPlacementOutput = z.object({ x: z.number(), y: z.number() });
 
+export const FitArtboardInput = z
+  .object({ artboardId: z.string() })
+  .strict();
+export const FitArtboardOutput = z.object({
+  artboard: ArtboardData,
+  height: z.number(),
+});
+
 export const AddClassesInput = z
   .object({
     componentId: z.string(),
@@ -176,6 +184,7 @@ export const TOOL_SCHEMAS = {
   create_artboard: { input: CreateArtboardInput, output: CreateArtboardOutput },
   list_artboards: { input: ListArtboardsInput, output: ListArtboardsOutput },
   find_placement: { input: FindPlacementInput, output: FindPlacementOutput },
+  fit_artboard: { input: FitArtboardInput, output: FitArtboardOutput },
   add_classes: { input: AddClassesInput, output: AddClassesOutput },
   remove_classes: { input: RemoveClassesInput, output: RemoveClassesOutput },
   set_text: { input: SetTextInput, output: SetTextOutput },
@@ -215,6 +224,8 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
     "List all artboards currently on the canvas with their ids, names, positions (x/y world coordinates), and dimensions. Use the returned ids with create_artboard's positioning, or scope get_tree / get_screenshot to a specific frame.",
   find_placement:
     "Suggest non-overlapping canvas-world coordinates for an artboard of the given width and height. Returns { x, y } placed to the right of the rightmost existing artboard with an 80px gap. Use this to pick coordinates for create_artboard without colliding.",
+  fit_artboard:
+    "Resize the artboard's height to match its actual content (via scrollHeight on the wrapper element). Width is preserved. Call this after adding content to an artboard that was created with a fixed preset height (e.g. Desktop 1440×900) so the artboard shrinks down to the content rather than leaving large blank space below. Returns the new height.",
   add_classes:
     "Add Tailwind / CSS class names to an existing component without touching unrelated classes. Idempotent: classes already present are left alone. Returns the component's full class list after the add.",
   remove_classes:

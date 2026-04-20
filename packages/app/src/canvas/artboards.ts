@@ -210,7 +210,39 @@ function applyDefaultFrameStyle(frame: Frame): void {
   applyFrameDimensions(frame);
 }
 
+/**
+ * A "scratch" frame is the empty default frame from `ensureDefaultArtboard`
+ * — always named exactly "Frame 1" with no components inside. When the user
+ * (or an agent) creates their first real artboard, we want the scratch
+ * frame to be replaced, not left behind as clutter. Named frames and frames
+ * with any content are left alone.
+ */
+function isScratchFrame(frame: unknown): boolean {
+  const f = frame as { get?: (k: string) => unknown };
+  const name = String(f.get?.("name") ?? "");
+  if (name !== "Frame 1") return false;
+  const wrapper = f.get?.("component") as
+    | { components?: () => { length?: number } }
+    | undefined;
+  const children = wrapper?.components?.();
+  const childCount = Number(children?.length ?? 0);
+  return childCount === 0;
+}
+
 export function createArtboard(editor: Editor, opts: CreateArtboardOptions): FrameData {
+  // If the canvas only has an empty scratch frame sitting around, delete it
+  // so `create_artboard({ name: "Desktop" })` on a fresh canvas yields one
+  // Desktop frame rather than a Desktop next to a lingering "Frame 1".
+  const existing = editor.Canvas.getFrames();
+  for (const f of existing) {
+    if (isScratchFrame(f)) {
+      const page = (editor.Pages as unknown as {
+        getSelected?: () => { getFrames?: () => { remove?: (x: unknown) => void } } | undefined;
+      }).getSelected?.();
+      page?.getFrames?.()?.remove?.(f);
+    }
+  }
+
   const { x, y } = opts.x != null && opts.y != null
     ? { x: opts.x, y: opts.y }
     : findPlacement(editor, opts.width, opts.height);
@@ -341,6 +373,78 @@ export function moveArtboard(
   frame.set({ x: final.x, y: final.y });
   notifyChange(editor);
   return final;
+}
+
+/**
+ * Shrink/grow an artboard's height to match its content's actual bounding
+ * box. Reads the wrapper element's `scrollHeight` (browser-native content
+ * height, includes padding, excludes margins). Width is preserved.
+ *
+ * Use case: agent creates a Desktop artboard (1440×900), drops a pricing
+ * section in, then calls `fit_artboard` so the frame shrinks to the real
+ * content height — no blank space below. Returns the new height, or null
+ * when the frame can't be resolved or has no measurable content.
+ */
+export function fitArtboardToContent(editor: Editor, id: string): number | null {
+  const frames = editor.Canvas.getFrames();
+  const frame = (frames as unknown as Array<{ cid?: string; id?: string }>).find(
+    (f) => String(f.cid ?? f.id ?? "") === id,
+  );
+  if (!frame) return null;
+
+  // Measure content extent. Body + the wrapper div we've applied explicit
+  // `height: Xpx` to (via applyFrameDimensions) need that height cleared
+  // during the measurement — otherwise scrollHeight reports the frame
+  // height, not the content height. Temporarily unset height on body + all
+  // descendants that carry an inline height, read body.scrollHeight (which
+  // now reflects only real content), then restore the originals.
+  const view = (frame as unknown as {
+    view?: {
+      getWindow?: () => Window | undefined;
+      frame?: { el?: HTMLIFrameElement };
+      el?: HTMLIFrameElement;
+    };
+  }).view;
+  const iframeEl: HTMLIFrameElement | undefined =
+    view?.frame?.el ?? view?.el ?? undefined;
+  const doc =
+    view?.getWindow?.()?.document ?? iframeEl?.contentDocument ?? undefined;
+  const body = doc?.body;
+  if (!body) return null;
+
+  // Override the frame-height inline on body + the wrapper div (GrapesJS
+  // renders the wrapper component as a div inside body with id matching
+  // `wrapper.getId()`; applyFrameDimensions sizes it via `#<id> { height }`
+  // which an inline `style.height = "auto"` beats by specificity). Body
+  // gets `height: 100%` from PRIMITIVE_BASE_CSS, which inline also wins.
+  // Other descendants (user content with explicit heights) are untouched.
+  const restore: Array<() => void> = [];
+  const clearHeight = (el: HTMLElement) => {
+    const prev = el.style.height;
+    el.style.height = "auto";
+    restore.push(() => {
+      el.style.height = prev;
+    });
+  };
+  clearHeight(body);
+  const wrapperComponent = (frame as unknown as { get?: (k: string) => unknown }).get?.(
+    "component",
+  ) as { getId?: () => string } | undefined;
+  const wrapperId = wrapperComponent?.getId?.();
+  if (wrapperId) {
+    const wrapperEl = doc?.getElementById(wrapperId);
+    if (wrapperEl) clearHeight(wrapperEl as HTMLElement);
+  }
+
+  const contentHeight = Math.ceil(body.scrollHeight);
+  for (const fn of restore) fn();
+
+  if (contentHeight < 1) return null;
+  const width = Number(
+    (frame as unknown as { get?: (k: string) => unknown }).get?.("width") ?? 0,
+  );
+  if (!resizeArtboard(editor, id, width, contentHeight)) return null;
+  return contentHeight;
 }
 
 /**
