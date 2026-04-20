@@ -175,11 +175,39 @@ const DEFAULT_FRAME_BODY_STYLE = {
   background: "#ffffff",
 } as const;
 
+/**
+ * Apply the frame's width/height as explicit CSS on the wrapper component.
+ *
+ * In `infiniteCanvas: true` mode the frame model's `width` field propagates
+ * to the rendered `.gjs-frame-wrapper` (GrapesJS reads it somewhere in the
+ * positioning pipeline) but `height` does NOT — the `.gjs-frames` container
+ * and every descendant collapse to `height: 0`, which is why an empty frame
+ * paints as nothing despite the frame model claiming 1280×800.
+ *
+ * Setting width+height on the wrapper component's styles gives GrapesJS the
+ * sizing signal it needs to give the wrapper real dimensions. Verified live
+ * 2026-04-19: calling wrapper.addStyle({ width, height }) in the console
+ * made a previously-invisible frame render correctly.
+ */
+function applyFrameDimensions(frame: Frame): void {
+  const f = frame as unknown as {
+    get?: (k: string) => unknown;
+  };
+  const width = Number(f.get?.("width") ?? 0);
+  const height = Number(f.get?.("height") ?? 0);
+  const wrapper = f.get?.("component") as
+    | { addStyle?: (s: Record<string, string>) => void }
+    | undefined;
+  if (!wrapper || !width || !height) return;
+  wrapper.addStyle?.({ width: `${width}px`, height: `${height}px` });
+}
+
 function applyDefaultFrameStyle(frame: Frame): void {
   const wrapper = (frame as unknown as { get?: (k: string) => unknown }).get?.("component") as
     | { addStyle?: (s: Record<string, string>) => void }
     | undefined;
   wrapper?.addStyle?.({ ...DEFAULT_FRAME_BODY_STYLE });
+  applyFrameDimensions(frame);
 }
 
 export function createArtboard(editor: Editor, opts: CreateArtboardOptions): FrameData {
@@ -337,6 +365,11 @@ export function resizeArtboard(
   const attrs: Record<string, unknown> = { width };
   if (typeof height === "number") attrs.height = height;
   frame.set(attrs);
+  // Mirror the new dimensions onto the wrapper component's CSS so the
+  // infiniteCanvas layout actually updates — without this the frame model
+  // updates but the rendered .gjs-frames container stays at old (or zero)
+  // height. See applyFrameDimensions docstring for why.
+  applyFrameDimensions(frame as unknown as Frame);
   notifyChange(editor);
   return true;
 }

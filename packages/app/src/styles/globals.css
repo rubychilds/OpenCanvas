@@ -194,3 +194,25 @@ textarea {
 .gjs-selected-parent {
   outline: 2px solid var(--oc-accent) !important;
 }
+
+/* Suppress GrapesJS's built-in width/height transition on the iframe itself
+ * (`transition: width .35s ease, height .35s ease` in grapes.min.css). That
+ * transition fired during the delete→recreate cycle in `ensureDefaultArtboard`,
+ * producing a visible fade of the frame on boot. We don't rely on the
+ * transition anywhere — resize operations (Measures section, breakpoint
+ * preset picks) are instant and look fine without it. */
+.gjs-frame,
+.gjs-frame-wrapper--anim {
+  transition: none !important;
+}
+
+/* Paint the iframe element itself white so a fresh frame always pops against
+ * the off-white canvas void — even when the wrapper/body inside has
+ * `height: auto` and collapses to 0 (empty frame). User-set body backgrounds
+ * (via the Fill section) paint *over* this whitewherever body has non-zero
+ * height, so this only shows through on empty regions. Done at the chrome
+ * level (not via iframe document injection) to sidestep the `canvas:frame:load`
+ * listener-registration race. */
+.gjs-frame {
+  background: #ffffff !important;
+}

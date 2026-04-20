@@ -49,6 +49,33 @@ export function App() {
     editorRef.current = editor;
     setEditor(editor);
 
+    // Register the iframe-CSS injection listener FIRST — before loadProject
+    // or ensureDefaultArtboard. Those can synchronously create frames whose
+    // `canvas:frame:load` event might fire before any later-registered
+    // listener attaches, causing the injection to miss that frame (no white
+    // body background → frame paints transparent → canvas void shows through).
+    // Must run before ensureDefaultArtboard's delete→recreate cycle.
+    const injectPrimitiveCssIntoDoc = (doc: Document | null | undefined): void => {
+      if (!doc || !doc.head) return;
+      if (doc.getElementById("oc-primitive-base")) return;
+      const style = doc.createElement("style");
+      style.id = "oc-primitive-base";
+      style.textContent = PRIMITIVE_BASE_CSS;
+      doc.head.appendChild(style);
+    };
+    editor.on("canvas:frame:load", ({ window: frameWindow, el }) => {
+      injectPrimitiveCssIntoDoc(frameWindow?.document ?? el?.contentDocument);
+    });
+    // Cover frames that had already loaded by the time we registered the
+    // listener (the auto-frame races us on initial app boot).
+    editor.Canvas.getFrames().forEach((frame) => {
+      const view = (frame as unknown as {
+        view?: { getWindow?: () => Window | undefined };
+      }).view;
+      const win = view?.getWindow?.();
+      injectPrimitiveCssIntoDoc(win?.document);
+    });
+
     // Reset the module-scoped variables store so a Vite HMR reload doesn't
     // carry stale entries forward into the rehydration step below.
     resetVariablesStore();
@@ -75,20 +102,20 @@ export function App() {
     // already named (saved-project restore path).
     ensureDefaultArtboard(editor);
 
-    // Kick the canvas to fit-to-view once the frame has mounted so a stale
-    // pan/zoom from a previous session (e.g. x=35690, y=-2694) doesn't hide
-    // the new default frame off-screen. `core:canvas-fit` isn't registered
-    // immediately after init — it's wired by the infiniteCanvas plugin on
-    // the first frame:load. Wait for that event, then fit.
-    const fitOnce = () => {
+    // Fit the viewport to all frames after boot so the default 1280×800
+    // frame (or whatever the saved project has) is visible from the first
+    // paint. The 300ms delay lets the infiniteCanvas plugin register
+    // `core:canvas-fit` (not available synchronously at handleReady) and
+    // lets the replacement frame's iframe mount so `.gjs-frames` reports
+    // a real bounding box. try/catch swallows the case where the command
+    // still isn't registered — user can always press ⌘0 manually.
+    window.setTimeout(() => {
       try {
         editor.runCommand("core:canvas-fit");
       } catch {
-        /* command not yet registered — another frame:load will try again */
+        /* no-op — command not yet registered */
       }
-      editor.off("canvas:frame:load", fitOnce);
-    };
-    editor.on("canvas:frame:load", fitOnce);
+    }, 300);
 
     (window as unknown as { __opencanvas?: unknown }).__opencanvas = {
       editor,
@@ -123,34 +150,6 @@ export function App() {
       editor.runCommand("core:copy");
       editor.runCommand("core:paste");
       return undefined;
-    });
-
-    // Inject our primitive base CSS into every frame's iframe as soon as
-    // it finishes loading. This lives outside `canvas.styles` because the
-    // headless browser in CI occasionally stalls on data: stylesheet
-    // loads, which would hold `canvas:frame:load` up and cause downstream
-    // test timeouts. Appending a <style> tag after load is fire-and-
-    // forget — the CSS is live by the next paint and no async fetch is
-    // involved.
-    const injectPrimitiveCssIntoDoc = (doc: Document | null | undefined): void => {
-      if (!doc || !doc.head) return;
-      if (doc.getElementById("oc-primitive-base")) return;
-      const style = doc.createElement("style");
-      style.id = "oc-primitive-base";
-      style.textContent = PRIMITIVE_BASE_CSS;
-      doc.head.appendChild(style);
-    };
-    editor.on("canvas:frame:load", ({ window: frameWindow, el }) => {
-      injectPrimitiveCssIntoDoc(frameWindow?.document ?? el?.contentDocument);
-    });
-    // Cover frames that had already loaded by the time we registered the
-    // listener (the first auto-frame races us on initial app boot).
-    editor.Canvas.getFrames().forEach((frame) => {
-      const view = (frame as unknown as {
-        view?: { getWindow?: () => Window | undefined };
-      }).view;
-      const win = view?.getWindow?.();
-      injectPrimitiveCssIntoDoc(win?.document);
     });
 
     // Override the default `core:component-delete` command so that pressing

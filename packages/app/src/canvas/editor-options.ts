@@ -30,6 +30,9 @@ html, body {
   margin: 0;
   padding: 0;
 }
+body {
+  background: #ffffff;
+}
 [data-oc-shape="text"] {
   display: inline-block !important;
   white-space: nowrap !important;
