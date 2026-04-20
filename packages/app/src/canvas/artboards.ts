@@ -321,6 +321,54 @@ export function renameArtboard(editor: Editor, id: string, name: string): boolea
   return true;
 }
 
+/** Neutral first-frame default — used by `ensureDefaultArtboard` when the
+ * auto-created boot frame has degenerate (0×0 / unpositioned) geometry. We
+ * deliberately pick "Frame 1" (not "Desktop") + 1280×800 (not 1440×900) so
+ * we don't bias the user toward a specific device class. They can rename + resize
+ * in the Measures section or via `create_artboard`. */
+const DEFAULT_FIRST_FRAME = {
+  name: "Frame 1",
+  x: 0,
+  y: 0,
+  width: 1280,
+  height: 800,
+} as const;
+
+/**
+ * Ensures the canvas has at least one usable frame at first boot.
+ *
+ * In `infiniteCanvas: true` mode GrapesJS auto-creates one frame at init, but
+ * that frame often has degenerate geometry (0×0 or unpositioned), which
+ * renders as nothing on the canvas and makes "Fit all" no-op because the
+ * bounding box has zero area. This function:
+ *   - 0 frames → create one with DEFAULT_FIRST_FRAME
+ *   - ≥1 frames and the first has no name + no/degenerate size → normalize it
+ *   - ≥1 frames with a named first frame → trust it (saved-project restore)
+ *
+ * Idempotent. Safe to call after `loadProjectData`. Only mutates when the
+ * first frame is the unopinionated auto-frame.
+ */
+export function ensureDefaultArtboard(editor: Editor): void {
+  const frames = editor.Canvas.getFrames();
+  if (frames.length === 0) {
+    createArtboard(editor, { ...DEFAULT_FIRST_FRAME });
+    return;
+  }
+  const first = frames[0]!;
+  const mutable = first as unknown as {
+    get?: (k: string) => unknown;
+    set?: (attrs: Record<string, unknown>) => void;
+  };
+  const existingName = mutable.get?.("name");
+  const existingWidth = Number(mutable.get?.("width") ?? 0);
+  const existingHeight = Number(mutable.get?.("height") ?? 0);
+  const degenerate = !existingName && (existingWidth < 1 || existingHeight < 1);
+  if (degenerate) {
+    mutable.set?.({ ...DEFAULT_FIRST_FRAME });
+    notifyChange(editor);
+  }
+}
+
 /**
  * Remove every frame on the canvas. Used by App.tsx when no saved project
  * exists on disk — GrapesJS auto-creates one frame at init and the product

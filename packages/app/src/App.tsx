@@ -5,6 +5,7 @@ import type { Component, Editor } from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 
 import { editorOptions, PRIMITIVE_BASE_CSS } from "./canvas/editor-options.js";
+import { ensureDefaultArtboard } from "./canvas/artboards.js";
 import { attachPasteImport, importPastedHtml } from "./canvas/paste-import.js";
 import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
 import {
@@ -62,16 +63,17 @@ export function App() {
         editor.loadProjectData(projectData);
         if (cssVariables) loadVariables(editor, cssVariables);
       }
-      // No saved project: GrapesJS auto-creates a single blank frame during
-      // init. We no longer opinionate it ("Desktop" rename + 1440×900 preset
-      // is gone) — it shows as an untitled placeholder in the Layers panel
-      // and the user can delete it. Removing it outright isn't safe:
-      // `editor.getWrapper()` calls (made by `get_tree` and other bridge
-      // tools) trigger GrapesJS to re-create a frame, so zero-frame state
-      // isn't stable. The best we can do is leave the blank auto-frame.
     } catch (err) {
       console.warn("[opencanvas] load failed:", err);
     }
+
+    // GrapesJS's `infiniteCanvas: true` auto-frame boots with degenerate
+    // geometry (0×0 / unpositioned), which renders as nothing on the canvas
+    // and makes ⌘0 fit no-op. `ensureDefaultArtboard` normalizes the
+    // unopinionated auto-frame to a neutral 1280×800 "Frame 1" so a fresh
+    // boot shows *something*. Idempotent — no-op when the first frame is
+    // already named (saved-project restore path).
+    ensureDefaultArtboard(editor);
 
     (window as unknown as { __opencanvas?: unknown }).__opencanvas = {
       editor,
