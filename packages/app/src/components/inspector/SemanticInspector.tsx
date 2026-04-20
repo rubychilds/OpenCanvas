@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEditorMaybe } from "@grapesjs/react";
 import type { Component } from "grapesjs";
+import { getFrameIdForComponent } from "../../canvas/artboards.js";
 import {
   Accordion,
   AccordionContent,
@@ -12,11 +13,21 @@ import { AppearanceSection } from "./AppearanceSection.js";
 import { EffectsSection } from "./EffectsSection.js";
 import { ExportsSection } from "./ExportsSection.js";
 import { FillSection } from "./FillSection.js";
+import { FrameTypeSwitcher } from "./FrameTypeSwitcher.js";
 import { LayoutSection } from "./LayoutSection.js";
 import { PositionSection } from "./PositionSection.js";
 import { StrokeSection } from "./StrokeSection.js";
 import { TypographySection, isTypographyTarget } from "./TypographySection.js";
 import { hasOrphanProperties } from "./orphan-properties.js";
+
+function typeLabel(component: Component): string {
+  const name = (component as unknown as { getName?: () => string }).getName?.();
+  if (name) return name;
+  const tag = String(component.get?.("tagName") ?? "").toLowerCase();
+  if (!tag) return "Selected";
+  // Capitalise: "div" → "Div", "h1" → "H1".
+  return tag.charAt(0).toUpperCase() + tag.slice(1);
+}
 
 /**
  * Semantic-inspector render order (per user direction):
@@ -49,6 +60,7 @@ function useSelectedComponent(): Component | null {
 }
 
 export function SemanticInspector() {
+  const editor = useEditorMaybe();
   const selected = useSelectedComponent();
 
   if (!selected) {
@@ -65,9 +77,22 @@ export function SemanticInspector() {
   // section hides entirely; it reappears as "Other CSS" the moment a
   // non-modelled property is set via Raw CSS or pasted markup.
   const orphans = hasOrphanProperties(selected);
+  const frameId = editor ? getFrameIdForComponent(editor, selected) : null;
 
   return (
     <div className="flex flex-col">
+      <div className="flex items-center justify-between px-(--panel-padding) h-(--section-title-height) border-b border-border">
+        {frameId && editor ? (
+          <FrameTypeSwitcher editor={editor} frameId={frameId} />
+        ) : (
+          <span
+            className="text-xs text-muted-foreground truncate"
+            data-testid="oc-ins-type-label"
+          >
+            {typeLabel(selected)}
+          </span>
+        )}
+      </div>
       <PositionSection component={selected} />
       <LayoutSection component={selected} />
       <AppearanceSection component={selected} />

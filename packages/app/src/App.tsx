@@ -75,6 +75,21 @@ export function App() {
     // already named (saved-project restore path).
     ensureDefaultArtboard(editor);
 
+    // Kick the canvas to fit-to-view once the frame has mounted so a stale
+    // pan/zoom from a previous session (e.g. x=35690, y=-2694) doesn't hide
+    // the new default frame off-screen. `core:canvas-fit` isn't registered
+    // immediately after init — it's wired by the infiniteCanvas plugin on
+    // the first frame:load. Wait for that event, then fit.
+    const fitOnce = () => {
+      try {
+        editor.runCommand("core:canvas-fit");
+      } catch {
+        /* command not yet registered — another frame:load will try again */
+      }
+      editor.off("canvas:frame:load", fitOnce);
+    };
+    editor.on("canvas:frame:load", fitOnce);
+
     (window as unknown as { __opencanvas?: unknown }).__opencanvas = {
       editor,
       addHtml: (html: string) => editor.addComponents(html),

@@ -1,6 +1,5 @@
 import type { Editor } from "grapesjs";
 import { Moon, Save as SaveIcon, Sun } from "../canvas/chrome-icons.js";
-import { BreakpointToolbar } from "./BreakpointToolbar.js";
 import { Button } from "./ui/button.js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip.js";
 import { VariablesPopover } from "./VariablesPopover.js";
@@ -71,9 +70,6 @@ export function Topbar({ connected, saveStatus, saveError, onSave, editor }: Top
 
       <div className="mx-2 h-4 w-px bg-border" />
       <VariablesPopover editor={editor} />
-
-      <div className="mx-2 h-4 w-px bg-border" />
-      <BreakpointToolbar editor={editor} />
 
       <div className="ml-auto flex items-center gap-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="oc-bridge-status">

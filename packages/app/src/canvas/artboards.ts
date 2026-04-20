@@ -1,19 +1,70 @@
 import type { Editor, Frame } from "grapesjs";
 
-export type DeviceId = "desktop" | "tablet" | "mobile";
+export type ArtboardCategory =
+  | "mobile"
+  | "tablet"
+  | "desktop"
+  | "presentation"
+  | "watch";
 
 export interface ArtboardPreset {
-  id: DeviceId | "custom";
+  id: string;
   label: string;
   width: number;
   height: number;
+  category: ArtboardCategory;
 }
 
+/**
+ * Device presets matching the Figma shape. Used by the inspector's Frame
+ * type-switcher dropdown (per user direction 2026-04-19) and by the MCP
+ * `create_artboard` tool as preset shortcuts. Order inside a category matters
+ * — it's the display order in the dropdown.
+ */
 export const ARTBOARD_PRESETS: ArtboardPreset[] = [
-  { id: "desktop", label: "Desktop", width: 1440, height: 900 },
-  { id: "tablet", label: "Tablet", width: 768, height: 1024 },
-  { id: "mobile", label: "Mobile", width: 375, height: 812 },
-  { id: "custom", label: "Custom", width: 800, height: 600 },
+  // Mobile
+  { id: "iphone-17-pro-max", label: "iPhone 17 Pro Max", width: 440, height: 956, category: "mobile" },
+  { id: "iphone-17", label: "iPhone 17", width: 402, height: 874, category: "mobile" },
+  { id: "iphone-16-plus", label: "iPhone 16 Plus", width: 430, height: 932, category: "mobile" },
+  { id: "iphone-16", label: "iPhone 16", width: 393, height: 852, category: "mobile" },
+  { id: "iphone-air", label: "iPhone Air", width: 420, height: 912, category: "mobile" },
+  { id: "iphone-14-15", label: "iPhone 14 & 15", width: 393, height: 852, category: "mobile" },
+  { id: "iphone-13-14", label: "iPhone 13 & 14", width: 390, height: 844, category: "mobile" },
+  { id: "android-compact", label: "Android Compact", width: 412, height: 917, category: "mobile" },
+  { id: "android-medium", label: "Android Medium", width: 700, height: 840, category: "mobile" },
+
+  // Tablet
+  { id: "ipad-mini", label: 'iPad mini 8.3"', width: 744, height: 1133, category: "tablet" },
+  { id: "ipad-pro-11", label: 'iPad Pro 11"', width: 834, height: 1194, category: "tablet" },
+  { id: "ipad-pro-129", label: 'iPad Pro 12.9"', width: 1024, height: 1366, category: "tablet" },
+  { id: "surface-pro-8", label: "Surface Pro 8", width: 1440, height: 960, category: "tablet" },
+
+  // Desktop
+  { id: "macbook-air", label: "MacBook Air", width: 1280, height: 832, category: "desktop" },
+  { id: "macbook-pro-14", label: 'MacBook Pro 14"', width: 1512, height: 982, category: "desktop" },
+  { id: "macbook-pro-16", label: 'MacBook Pro 16"', width: 1728, height: 1117, category: "desktop" },
+  { id: "desktop", label: "Desktop", width: 1440, height: 1024, category: "desktop" },
+  { id: "wireframes", label: "Wireframes", width: 1440, height: 1024, category: "desktop" },
+  { id: "android-expanded", label: "Android Expanded", width: 1280, height: 800, category: "desktop" },
+  { id: "tv", label: "TV", width: 1280, height: 720, category: "desktop" },
+
+  // Presentation
+  { id: "slide-16-9", label: "Slide 16:9", width: 1920, height: 1080, category: "presentation" },
+  { id: "slide-4-3", label: "Slide 4:3", width: 1024, height: 768, category: "presentation" },
+
+  // Watch
+  { id: "apple-watch-45", label: "Apple Watch 45mm", width: 198, height: 242, category: "watch" },
+  { id: "apple-watch-41", label: "Apple Watch 41mm", width: 176, height: 215, category: "watch" },
+  { id: "apple-watch-44", label: "Apple Watch 44mm", width: 184, height: 224, category: "watch" },
+  { id: "apple-watch-40", label: "Apple Watch 40mm", width: 162, height: 197, category: "watch" },
+];
+
+export const ARTBOARD_CATEGORIES: { id: ArtboardCategory; label: string }[] = [
+  { id: "mobile", label: "Mobile" },
+  { id: "tablet", label: "Tablet" },
+  { id: "desktop", label: "Desktop" },
+  { id: "presentation", label: "Presentation" },
+  { id: "watch", label: "Watch" },
 ];
 
 export const DEFAULT_ARTBOARD_GAP = 80;
@@ -102,13 +153,30 @@ export interface CreateArtboardOptions {
 }
 
 /**
- * Base stylesheet applied to every new frame's iframe. White body so frames
+ * Base style applied to every new frame's body. White background so frames
  * pop against the off-white canvas void (otherwise a fresh empty frame is
- * visually indistinguishable from the surrounding canvas and users report it
- * "briefly appearing then disappearing"). Zero body margin so absolute
- * positioning of children inside the frame matches the artboard edges.
+ * visually indistinguishable from the surrounding canvas and users report
+ * it "briefly appearing then disappearing"). `min-height: 100%` so an
+ * empty body still paints the full artboard rect.
+ *
+ * Applied directly to the wrapper component's styles — not via addFrame's
+ * `styles: "html,body{…}"` string — because GrapesJS's CSS parser strips
+ * element-name selectors like `html` and `body`, causing the injected
+ * defaults to silently vanish on re-render.
  */
-const DEFAULT_FRAME_STYLES = "html,body{margin:0;padding:0;background:#ffffff;}";
+const DEFAULT_FRAME_BODY_STYLE = {
+  margin: "0",
+  padding: "0",
+  background: "#ffffff",
+  "min-height": "100%",
+} as const;
+
+function applyDefaultFrameStyle(frame: Frame): void {
+  const wrapper = (frame as unknown as { get?: (k: string) => unknown }).get?.("component") as
+    | { addStyle?: (s: Record<string, string>) => void }
+    | undefined;
+  wrapper?.addStyle?.({ ...DEFAULT_FRAME_BODY_STYLE });
+}
 
 export function createArtboard(editor: Editor, opts: CreateArtboardOptions): FrameData {
   const { x, y } = opts.x != null && opts.y != null
@@ -123,8 +191,8 @@ export function createArtboard(editor: Editor, opts: CreateArtboardOptions): Fra
     width: opts.width,
     height: opts.height,
     components: "",
-    styles: DEFAULT_FRAME_STYLES,
   });
+  applyDefaultFrameStyle(frame);
   notifyChange(editor);
   return readFrameData(frame);
 }
@@ -319,6 +387,36 @@ export function renameArtboard(editor: Editor, id: string, name: string): boolea
   frame.set({ name });
   notifyChange(editor);
   return true;
+}
+
+/**
+ * Given a component, return the id of the frame whose root wrapper is that
+ * component (or whose tree contains it, optionally). Returns null when the
+ * component is not a frame wrapper.
+ *
+ * Used by the SemanticInspector to decide whether to render the Frame
+ * type-switcher (with device-preset dropdown) vs a plain type label.
+ *
+ * `wrapperOnly` mode (default): only returns an id when the component is
+ * *exactly* the frame's top-level wrapper, not a nested descendant.
+ */
+export function getFrameIdForComponent(
+  editor: Editor,
+  component: unknown,
+): string | null {
+  if (!component) return null;
+  const frames = editor.Canvas.getFrames();
+  const frameId = (f: unknown): string =>
+    String(
+      (f as { cid?: string; id?: string }).cid ??
+        (f as { cid?: string; id?: string }).id ??
+        "",
+    );
+  for (const frame of frames) {
+    const wrapper = (frame as unknown as { get?: (k: string) => unknown }).get?.("component");
+    if (wrapper && wrapper === component) return frameId(frame);
+  }
+  return null;
 }
 
 /** Neutral first-frame default — used by `ensureDefaultArtboard` when the

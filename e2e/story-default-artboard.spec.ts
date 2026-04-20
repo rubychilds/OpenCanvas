@@ -84,6 +84,27 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
     expect(after[0]!.height).toBe(800);
   });
 
+  test("default frame's wrapper has a white background (paints against canvas void)", async ({
+    freshApp: page,
+  }) => {
+    await page.waitForFunction(
+      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      undefined,
+      { timeout: 10_000 },
+    );
+
+    const bg = await page.evaluate(() => {
+      const ed = (window as unknown as {
+        __opencanvas: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
+      }).__opencanvas.editor;
+      const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
+        getStyle: () => Record<string, string>;
+      };
+      return wrapper.getStyle().background ?? "";
+    });
+    expect(bg).toBe("#ffffff");
+  });
+
   test("saved project with a named frame is not overwritten", async ({ freshApp: page }) => {
     // Simulate a saved project by calling ensureDefaultArtboard AFTER a frame
     // with a distinct name has already been set up. The helper should be a
