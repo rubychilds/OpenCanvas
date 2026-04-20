@@ -27,6 +27,7 @@ import { clearStyle, readStyle, writeStyle } from "../../canvas/component-style.
 import { FieldGroup, InspectorSection } from "./InspectorSection.js";
 import { SizeField, type SizeMode } from "./controls/SizeField.js";
 import { useInspectorContext } from "./useInspectorContext.js";
+import { isAutoLayoutApplicable } from "./applicability.js";
 
 /**
  * Layout — auto-layout (flex) parent controls + dimensions (W/H) + child-side
@@ -39,6 +40,12 @@ export function LayoutSection({ component }: { component: Component }) {
   const isGrid = display === "grid" || display === "inline-grid";
   const enabled = isFlex || isGrid;
   const context = useInspectorContext(component);
+  // Text elements are leaves in the design model — auto-layout (flex/grid
+  // on this element as a container) has no meaning there. Hide the toggle
+  // entirely rather than greying it, unless the component already carries
+  // flex/grid (e.g. pasted markup) so the user still has a way to turn it
+  // back off.
+  const showAutoLayoutToggle = isAutoLayoutApplicable(component) || enabled;
 
   const toggle = () => {
     if (enabled) {
@@ -83,7 +90,11 @@ export function LayoutSection({ component }: { component: Component }) {
   const title = enabled ? "Auto Layout" : "Layout";
 
   return (
-    <InspectorSection title={title} action={toggleControl} muted={!enabled}>
+    <InspectorSection
+      title={title}
+      action={showAutoLayoutToggle ? toggleControl : undefined}
+      muted={!enabled}
+    >
       <WHRow
         component={component}
         selfIsFlex={isFlex}

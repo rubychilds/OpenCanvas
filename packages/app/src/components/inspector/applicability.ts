@@ -32,6 +32,27 @@ const INLINE_TEXT_TAGS = new Set([
   "label",
 ]);
 
+/**
+ * Any tag whose primary purpose is rendering text — both inline runs and
+ * block-level headings / paragraphs. Auto-layout doesn't make sense on
+ * these: Figma and Penpot both treat text as a terminal leaf node, not a
+ * flex container. The user can still apply `display: flex` via Raw CSS
+ * for advanced cases.
+ */
+const TEXT_TAGS = new Set([
+  ...INLINE_TEXT_TAGS,
+  "p",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "blockquote",
+  "li",
+  "button",
+]);
+
 function tagOf(component: Component): string {
   return String(component.get?.("tagName") ?? "").toLowerCase();
 }
@@ -39,6 +60,11 @@ function tagOf(component: Component): string {
 /** Is this an inline text run where box-model visuals typically do nothing? */
 export function isInlineTextObject(component: Component): boolean {
   return INLINE_TEXT_TAGS.has(tagOf(component));
+}
+
+/** Is this component a text-bearing tag (inline or block text container)? */
+export function isTextObject(component: Component): boolean {
+  return TEXT_TAGS.has(tagOf(component));
 }
 
 /**
@@ -49,4 +75,14 @@ export function isInlineTextObject(component: Component): boolean {
  */
 export function isRadiusApplicable(component: Component): boolean {
   return !isInlineTextObject(component);
+}
+
+/**
+ * Auto-layout (flex / grid on the parent) isn't meaningful on a text
+ * element — text objects are leaves in the design model. Consumers should
+ * hide the auto-layout toggle entirely rather than grey it, since there's
+ * no analogue the user is missing out on.
+ */
+export function isAutoLayoutApplicable(component: Component): boolean {
+  return !isTextObject(component);
 }

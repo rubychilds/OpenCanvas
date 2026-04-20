@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import GjsEditor from "@grapesjs/react";
 import grapesjs from "grapesjs";
-import type { Editor } from "grapesjs";
+import type { Component, Editor } from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 
 import { editorOptions } from "./canvas/editor-options.js";
@@ -106,6 +106,24 @@ export function App() {
       editor.runCommand("core:copy");
       editor.runCommand("core:paste");
       return undefined;
+    });
+
+    // Override the default `core:component-delete` command so that pressing
+    // Backspace / Delete while a text component is in RTE (contenteditable)
+    // mode doesn't nuke the whole component. The default grapes keymap
+    // routes both keys to this command with `preventDefault: true`, which
+    // was intercepting character-level deletes and removing the text node
+    // wholesale. When RTE is active we no-op and let the native
+    // contenteditable handling remove the character instead.
+    const editorWithEditing = editor as unknown as {
+      getEditing?: () => Component | undefined | null;
+    };
+    editor.Commands.add("core:component-delete", {
+      run(ed) {
+        if (editorWithEditing.getEditing?.()) return;
+        const sel = ed.getSelected();
+        (sel as unknown as { remove?: () => void } | undefined)?.remove?.();
+      },
     });
 
     const disposePersist = attachPersistence(editor, {
