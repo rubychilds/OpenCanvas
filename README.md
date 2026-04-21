@@ -50,8 +50,8 @@ The canvas app runs locally (it's not hosted). Two ways:
 **From source** (recommended while v0.2 is in development — get all the latest):
 
 ```bash
-git clone https://github.com/rubychilds/designjs.git
-cd designjs
+git clone https://github.com/rubychilds/DesignJS.git
+cd DesignJS
 pnpm install
 pnpm dev
 ```

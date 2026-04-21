@@ -1,6 +1,6 @@
 # create-designjs
 
-Scaffolder for [DesignJS](https://github.com/rubychilds/designjs) — the open-source MCP design canvas that gives AI coding agents eyes.
+Scaffolder for [DesignJS](https://github.com/rubychilds/DesignJS) — the open-source MCP design canvas that gives AI coding agents eyes.
 
 ## Usage
 
@@ -23,8 +23,8 @@ Creates `my-app/` with:
 The DesignJS canvas app runs separately at `http://localhost:3000`. Clone it once:
 
 ```bash
-git clone https://github.com/rubychilds/designjs.git
-cd designjs && pnpm install && pnpm dev
+git clone https://github.com/rubychilds/DesignJS.git
+cd DesignJS && pnpm install && pnpm dev
 ```
 
 Leave it running, then point your agent at your scaffolded project and start prompting.

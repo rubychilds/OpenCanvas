@@ -11,8 +11,8 @@ Thanks for your interest in contributing. This document covers local setup, codi
 ## Local setup
 
 ```bash
-git clone https://github.com/rubychilds/designjs.git
-cd designjs
+git clone https://github.com/rubychilds/DesignJS.git
+cd DesignJS
 pnpm install
 pnpm dev
 ```

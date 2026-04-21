@@ -116,8 +116,8 @@ function main(): void {
   process.stdout.write(`\n  ✨ Created ${projectName} at ${dest}\n\n`);
   process.stdout.write(`  Next steps:\n\n`);
   process.stdout.write(`    1. In another terminal, start DesignJS:\n`);
-  process.stdout.write(`       git clone https://github.com/rubychilds/designjs.git\n`);
-  process.stdout.write(`       cd designjs && pnpm install && pnpm dev\n\n`);
+  process.stdout.write(`       git clone https://github.com/rubychilds/DesignJS.git\n`);
+  process.stdout.write(`       cd DesignJS && pnpm install && pnpm dev\n\n`);
   process.stdout.write(`    2. Connect your agent:\n`);
   process.stdout.write(`       cd ${rel}\n`);
   process.stdout.write(`       claude                  # or cursor . / code .\n\n`);

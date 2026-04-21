@@ -1,6 +1,6 @@
 # @designjs/bridge
 
-Shared [Zod](https://zod.dev/) schemas and protocol constants for [DesignJS](https://github.com/rubychilds/designjs) — the open-source MCP design canvas.
+Shared [Zod](https://zod.dev/) schemas and protocol constants for [DesignJS](https://github.com/rubychilds/DesignJS) — the open-source MCP design canvas.
 
 This package is consumed by both halves of DesignJS:
 

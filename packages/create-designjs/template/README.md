@@ -7,8 +7,8 @@ An DesignJS-powered design workspace. Claude Code, Cursor, and any MCP-compatibl
 The DesignJS canvas app must be running locally. If you haven't set it up yet:
 
 ```bash
-git clone https://github.com/rubychilds/designjs.git
-cd designjs
+git clone https://github.com/rubychilds/DesignJS.git
+cd DesignJS
 pnpm install
 pnpm dev
 ```
@@ -40,6 +40,6 @@ Then try a prompt like:
 
 ## Learn more
 
-- DesignJS docs: <https://github.com/rubychilds/designjs-docs>
-- Tool reference (20 MCP tools): [`designjs-docs/mcp/`](https://github.com/rubychilds/designjs-docs/tree/main/mcp)
-- Source: <https://github.com/rubychilds/designjs>
+- DesignJS docs: <https://github.com/rubychilds/DesignJS-docs>
+- Tool reference (20 MCP tools): [`designjs-docs/mcp/`](https://github.com/rubychilds/DesignJS-docs/tree/main/mcp)
+- Source: <https://github.com/rubychilds/DesignJS>
