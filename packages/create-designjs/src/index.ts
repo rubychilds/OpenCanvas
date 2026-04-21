@@ -34,20 +34,20 @@ function parseArgs(argv: string[]): ParsedArgs {
   return { target, help };
 }
 
-const HELP_TEXT = `Usage: create-opencanvas <project-directory>
+const HELP_TEXT = `Usage: create-designjs <project-directory>
 
-Scaffold a new OpenCanvas-wired project. Drops:
+Scaffold a new DesignJS-wired project. Drops:
   .mcp.json     MCP config pointing at @designjs/mcp-server
-  CLAUDE.md     agent guidance biasing toward the OpenCanvas tools
+  CLAUDE.md     agent guidance biasing toward the DesignJS tools
   README.md     quickstart + prerequisites
 
 Typical flow:
 
-  npm create opencanvas@latest my-app
+  npm create designjs@latest my-app
   cd my-app
   claude                   # or cursor . / code .
 
-The OpenCanvas canvas app itself must be running separately on
+The DesignJS canvas app itself must be running separately on
 localhost:3000. See the generated README.md for setup.
 `;
 
@@ -99,7 +99,7 @@ function main(): void {
   if (!existsSync(TEMPLATE_DIR)) {
     process.stderr.write(
       `error: template directory not found at ${TEMPLATE_DIR}\n` +
-        `(this usually means the package wasn't built; try 'pnpm build' in packages/create-opencanvas)\n`,
+        `(this usually means the package wasn't built; try 'pnpm build' in packages/create-designjs)\n`,
     );
     process.exit(1);
   }
@@ -115,9 +115,9 @@ function main(): void {
   const rel = target;
   process.stdout.write(`\n  ✨ Created ${projectName} at ${dest}\n\n`);
   process.stdout.write(`  Next steps:\n\n`);
-  process.stdout.write(`    1. In another terminal, start OpenCanvas:\n`);
-  process.stdout.write(`       git clone https://github.com/rubychilds/opencanvas.git\n`);
-  process.stdout.write(`       cd opencanvas && pnpm install && pnpm dev\n\n`);
+  process.stdout.write(`    1. In another terminal, start DesignJS:\n`);
+  process.stdout.write(`       git clone https://github.com/rubychilds/designjs.git\n`);
+  process.stdout.write(`       cd designjs && pnpm install && pnpm dev\n\n`);
   process.stdout.write(`    2. Connect your agent:\n`);
   process.stdout.write(`       cd ${rel}\n`);
   process.stdout.write(`       claude                  # or cursor . / code .\n\n`);

@@ -13,7 +13,7 @@ import WebSocket from "ws";
 import { randomUUID } from "node:crypto";
 
 const PORT = 29170;
-const PATH = "/opencanvas-bridge";
+const PATH = "/designjs-bridge";
 const URL = `ws://localhost:${PORT}${PATH}`;
 const TIMEOUT_MS = 5000;
 

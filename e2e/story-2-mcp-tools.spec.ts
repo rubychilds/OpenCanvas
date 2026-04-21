@@ -26,7 +26,7 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
     mcp,
   }) => {
     await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
+      (window as unknown as { __designjs: { addHtml: (h: string) => unknown } }).__designjs.addHtml(
         `<section class="p-4"><h1 class="text-2xl">hello</h1><p>world</p></section>`,
       ),
     );
@@ -52,7 +52,7 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
 
   test("get_tree respects depth parameter", async ({ freshApp: page, mcp }) => {
     await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
+      (window as unknown as { __designjs: { addHtml: (h: string) => unknown } }).__designjs.addHtml(
         `<div class="p-4"><div class="p-2"><span>deep</span></div></div>`,
       ),
     );
@@ -75,7 +75,7 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
     mcp,
   }) => {
     await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
+      (window as unknown as { __designjs: { addHtml: (h: string) => unknown } }).__designjs.addHtml(
         `<div class="card"><h2>Title</h2><p>Body</p></div>`,
       ),
     );
@@ -90,8 +90,8 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
   test("get_css returns CSS from component styles", async ({ freshApp: page, mcp }) => {
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: { addHtml: (h: string) => unknown };
-      }).__opencanvas;
+        __designjs: { addHtml: (h: string) => unknown };
+      }).__designjs;
       const added = api.addHtml(`<div data-testid="styled">styled</div>`) as Array<{
         addStyle: (s: Record<string, string>) => void;
       }>;
@@ -112,8 +112,8 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
   }) => {
     const targetId = await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: { addHtml: (h: string) => unknown };
-      }).__opencanvas;
+        __designjs: { addHtml: (h: string) => unknown };
+      }).__designjs;
       const added = api.addHtml(
         `<div><h1 data-testid="keep">keep</h1><p data-testid="drop">drop</p></div>`,
       ) as Array<{ getId: () => string; components: () => { toArray: () => Array<{ getId: () => string }> } }>;
@@ -130,7 +130,7 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
   // ── Story 2.5 ────────────────────────────────────────────────────────────
   test("get_screenshot returns a base64 PNG data URL", async ({ freshApp: page, mcp }) => {
     await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
+      (window as unknown as { __designjs: { addHtml: (h: string) => unknown } }).__designjs.addHtml(
         `<div class="p-8 bg-blue-500 text-white">screenshot me</div>`,
       ),
     );
@@ -148,7 +148,7 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
 
   test("get_screenshot with scale=2 produces a larger image", async ({ freshApp: page, mcp }) => {
     await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } }).__opencanvas.addHtml(
+      (window as unknown as { __designjs: { addHtml: (h: string) => unknown } }).__designjs.addHtml(
         `<div class="p-4">scale</div>`,
       ),
     );
@@ -173,7 +173,7 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
     expect(componentIds[0]).toMatch(/.+/);
 
     const html = await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { getHtml: () => string } }).__opencanvas.getHtml(),
+      (window as unknown as { __designjs: { getHtml: () => string } }).__designjs.getHtml(),
     );
     expect(html).toContain("mcp-btn");
     expect(html).toContain("bg-green-600");
@@ -258,8 +258,8 @@ test.describe("Story 2.x: MCP tools (end-to-end via bridge)", () => {
 
     const id = await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: { editor: unknown; addHtml: (h: string) => unknown };
-      }).__opencanvas;
+        __designjs: { editor: unknown; addHtml: (h: string) => unknown };
+      }).__designjs;
       const added = api.addHtml(`<div data-testid="sel">select me</div>`) as Array<{
         getId: () => string;
       }>;

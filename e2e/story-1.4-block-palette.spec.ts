@@ -17,7 +17,7 @@ test.describe("Story 1.4: block palette", () => {
         getId?: () => string;
         getCategoryLabel?: () => string;
       };
-      const ed = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas
+      const ed = (window as unknown as { __designjs: { editor: unknown } }).__designjs
         .editor as {
         BlockManager: { getAll: () => Block[] };
       };
@@ -43,7 +43,7 @@ test.describe("Story 1.4: block palette", () => {
     freshApp: page,
   }) => {
     await page.evaluate(() => {
-      const ed = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas
+      const ed = (window as unknown as { __designjs: { editor: unknown } }).__designjs
         .editor as {
         BlockManager: { get: (id: string) => { get: (k: string) => unknown } };
         addComponents: (html: string) => void;
@@ -54,7 +54,7 @@ test.describe("Story 1.4: block palette", () => {
     });
 
     const html = await page.evaluate(() =>
-      (window as unknown as { __opencanvas: { getHtml: () => string } }).__opencanvas.getHtml(),
+      (window as unknown as { __designjs: { getHtml: () => string } }).__designjs.getHtml(),
     );
     expect(html).toContain("<button");
     expect(html).toContain("bg-blue-600");
@@ -64,8 +64,8 @@ test.describe("Story 1.4: block palette", () => {
     freshApp: page,
   }) => {
     await page.evaluate(() => {
-      const api = (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } })
-        .__opencanvas;
+      const api = (window as unknown as { __designjs: { addHtml: (h: string) => unknown } })
+        .__designjs;
       api.addHtml(
         `<button class="px-4 py-2 bg-blue-600 text-white rounded-md" data-testid="oc-btn">Ping</button>`,
       );

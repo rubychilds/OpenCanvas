@@ -1,8 +1,8 @@
-# OpenCanvas
+# DesignJS
 
 **An open-source MCP design canvas that gives AI coding agents eyes.**
 
-OpenCanvas is a local-first, HTML/CSS-native visual canvas that AI coding agents (Claude Code, Cursor, Codex) read and write through the [Model Context Protocol](https://modelcontextprotocol.io). Design and code converge into a single artifact — no translation gap between visual intent and production output.
+DesignJS is a local-first, HTML/CSS-native visual canvas that AI coding agents (Claude Code, Cursor, Codex) read and write through the [Model Context Protocol](https://modelcontextprotocol.io). Design and code converge into a single artifact — no translation gap between visual intent and production output.
 
 > **Status:** early v0.1 in active development. Foundations — canvas, MCP server, WebSocket bridge — are working end-to-end. Polish and feature stories from the [roadmap](#roadmap) are in flight.
 
@@ -10,7 +10,7 @@ OpenCanvas is a local-first, HTML/CSS-native visual canvas that AI coding agents
 
 AI coding agents currently generate frontend UI **blind**. They produce React components from text prompts alone, with no ability to see a visual design, iterate spatially, or maintain layout relationships. Design engineers spend 2–4 hours a day in prompt → preview → re-prompt cycles getting agents to match their visual intent.
 
-Two proprietary tools are closing this gap from different angles. **Paper.design** ships an HTML/CSS-native canvas — the design *is* the production code — but as a hosted SaaS product tied to its own backend. **Pencil.dev** ships a local-first, git-native canvas that any agent can drive over MCP — but the design file is a vector format in a closed renderer, not the HTML/CSS that ships to production. OpenCanvas combines both bets: **HTML/CSS-native like Paper, local-first and git-native like Pencil, MIT-licensed**, and built on open-source foundations (GrapesJS, the MCP TypeScript SDK, html-to-image).
+Two proprietary tools are closing this gap from different angles. **Paper.design** ships an HTML/CSS-native canvas — the design *is* the production code — but as a hosted SaaS product tied to its own backend. **Pencil.dev** ships a local-first, git-native canvas that any agent can drive over MCP — but the design file is a vector format in a closed renderer, not the HTML/CSS that ships to production. DesignJS combines both bets: **HTML/CSS-native like Paper, local-first and git-native like Pencil, MIT-licensed**, and built on open-source foundations (GrapesJS, the MCP TypeScript SDK, html-to-image).
 
 ## How it works
 
@@ -32,7 +32,7 @@ Two proprietary tools are closing this gap from different angles. **Paper.design
 └─────────────────────────────────────────────┘
                       │
               ┌───────┴───────┐
-              │ .opencanvas   │
+              │ .designjs   │
               │   .json       │
               └───────────────┘
 ```
@@ -50,8 +50,8 @@ The canvas app runs locally (it's not hosted). Two ways:
 **From source** (recommended while v0.2 is in development — get all the latest):
 
 ```bash
-git clone https://github.com/rubychilds/opencanvas.git
-cd opencanvas
+git clone https://github.com/rubychilds/designjs.git
+cd designjs
 pnpm install
 pnpm dev
 ```
@@ -61,7 +61,7 @@ Opens at <http://localhost:3000>. The WebSocket bridge listens on `127.0.0.1:291
 ### 2. Scaffold a project (or use one you already have)
 
 ```bash
-npm create opencanvas@latest my-app
+npm create designjs@latest my-app
 cd my-app
 ```
 
@@ -90,7 +90,7 @@ If you'd rather write the MCP config yourself, add this to your project's `.mcp.
 ```json
 {
   "mcpServers": {
-    "opencanvas": {
+    "designjs": {
       "command": "npx",
       "args": ["-y", "@designjs/mcp-server"]
     }
@@ -105,8 +105,8 @@ If you'd rather write the MCP config yourself, add this to your project's `.mcp.
 | [`packages/app`](./packages/app) | *(not published)* | Vite + React SPA hosting the GrapesJS canvas. Embeds a WebSocket hub (port 29170) that relays messages between the MCP server and the browser. |
 | [`packages/mcp-server`](./packages/mcp-server) | `@designjs/mcp-server` | Standalone stdio MCP server. Registers all tools, forwards calls over WebSocket to the canvas. This is what `npx -y @designjs/mcp-server` runs. |
 | [`packages/bridge`](./packages/bridge) | `@designjs/bridge` | Shared Zod schemas for the WS wire protocol and MCP tool I/O. Consumed by both halves. |
-| [`packages/cli`](./packages/cli) | `@designjs/cli` | `opencanvas init` — detects the installed IDE(s) and writes the right MCP config. |
-| [`packages/create-opencanvas`](./packages/create-opencanvas) | `create-opencanvas` | `npm create opencanvas@latest <dir>` scaffolder. Drops `.mcp.json` + `CLAUDE.md` into a fresh project. |
+| [`packages/cli`](./packages/cli) | `@designjs/cli` | `designjs init` — detects the installed IDE(s) and writes the right MCP config. |
+| [`packages/create-designjs`](./packages/create-designjs) | `create-designjs` | `npm create designjs@latest <dir>` scaffolder. Drops `.mcp.json` + `CLAUDE.md` into a fresh project. |
 
 ## MCP tools
 
@@ -131,7 +131,7 @@ Twenty bidirectional tools, grouped by area. Full input/output schemas in [`pack
 | `update_styles` | Set CSS properties on a component by id. |
 | `add_classes` / `remove_classes` | Tailwind class helpers without re-emitting full HTML. |
 | `set_text` | Replace the text content of a text-bearing component. |
-| `set_variables` | Write CSS custom properties (persisted to `.opencanvas.json`). |
+| `set_variables` | Write CSS custom properties (persisted to `.designjs.json`). |
 | `delete_nodes` | Remove components and their children. |
 | `select` / `deselect` | Drive the editor's selection from the agent side. |
 
@@ -154,7 +154,7 @@ Twenty bidirectional tools, grouped by area. Full input/output schemas in [`pack
 | GrapesJS | HTML/CSS iframe | None | BSD-3 |
 | Onlook | Live React DOM | Own agent | Apache-2.0 |
 | Webstudio | DOM (real CSS) | None | AGPL-3.0 |
-| **OpenCanvas** | **HTML/CSS iframe (GrapesJS)** | **Open bidirectional** | **MIT** |
+| **DesignJS** | **HTML/CSS iframe (GrapesJS)** | **Open bidirectional** | **MIT** |
 
 ## Roadmap
 
@@ -163,9 +163,9 @@ Twenty bidirectional tools, grouped by area. Full input/output schemas in [`pack
 **Foundations**
 - [x] Three-pane editor shell — resizable panels, layers tree, semantic inspector, all keyboard shortcuts
 - [x] GrapesJS canvas with Tailwind v4 (CDN in iframe), light + dark themes
-- [x] Save/load to `.opencanvas.json` — Cmd+S, 30s autosave, reload-restore, git-diffable
+- [x] Save/load to `.designjs.json` — Cmd+S, 30s autosave, reload-restore, git-diffable
 - [x] MCP server (stdio) + WebSocket bridge on `127.0.0.1:29170`, multi-peer routing
-- [x] `opencanvas init` CLI — auto-detects Claude Code / Cursor / VS Code and writes the right MCP config
+- [x] `designjs init` CLI — auto-detects Claude Code / Cursor / VS Code and writes the right MCP config
 - [x] CI: typecheck, build, smoke tests (bridge round-trip, MCP stdio, init), Playwright E2E (160+ tests across 28 specs)
 - [x] Repo: MIT, CONTRIBUTING, RELEASING (Changesets), ADR-driven design log
 
@@ -203,7 +203,7 @@ Twenty bidirectional tools, grouped by area. Full input/output schemas in [`pack
 
 **Remaining for v0.1**
 - [ ] HTML/Tailwind clipboard paste import (Epic 3 — partial: `paste-import.ts` exists for image paste)
-- [x] `npm create opencanvas@latest` scaffolder *(shipped — `packages/create-opencanvas`)*
+- [x] `npm create designjs@latest` scaffolder *(shipped — `packages/create-designjs`)*
 - [ ] Drag-to-canvas from the InsertRail (click-to-insert works today)
 - [ ] User-extensible block config + custom Tailwind config loading
 - [ ] Demo GIF, per-tool examples, troubleshooting docs (Epic 4)
@@ -219,7 +219,7 @@ Twenty bidirectional tools, grouped by area. Full input/output schemas in [`pack
 
 ### v0.3 — extension, multi-agent, IDE *(weeks 9–12)*
 
-Chrome extension for site capture (DOM walk + computed-style serialization), concurrent MCP sessions with workspace isolation (foundation already in the bridge), VS Code custom editor for `.opencanvas.json`, shadcn/ui block library.
+Chrome extension for site capture (DOM walk + computed-style serialization), concurrent MCP sessions with workspace isolation (foundation already in the bridge), VS Code custom editor for `.designjs.json`, shadcn/ui block library.
 
 Detailed stories and acceptance criteria live in the PRD (not checked in).
 

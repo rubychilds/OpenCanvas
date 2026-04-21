@@ -47,7 +47,7 @@ Terminology and behaviour from the public Help Center and 2025 Config disclosure
 - **Padding.** Stored as 4 independent values (top, right, bottom, left). UI toggles between *uniform* / *vertical+horizontal* / *per-side* input modes. Default when auto-layout is turned on is **16px on all sides**. Negative padding is blocked in the UI (but settable via variable binding; messy — a cleaner design-tool answer is "fully allow or fully block").
 - **Canvas model.** A Figma file holds Pages; each Page has an infinite canvas. Children of a Page can be Frames, Sections, Groups, or **loose leaves** (text / shapes / vectors / images directly on the page). Frames are not required. Coordinates are stored **parent-relative**: a frame at (100, 200) containing a child at (10, 20) is absolutely at (110, 220). The plugin API exposes `relativeTransform` for stored and `absoluteBoundingBox` for derived. Groups are transparent for the relative transform.
 
-### Current OpenCanvas state
+### Current DesignJS state
 
 - Sizing: raw `width` / `height` px inputs. No Hug / Fill abstraction; users translate CSS mentally.
 - Auto-layout: Direction is free / horizontal / vertical (no grid).

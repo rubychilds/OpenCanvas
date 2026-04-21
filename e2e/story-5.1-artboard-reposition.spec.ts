@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -19,8 +19,8 @@ async function useArtboardAPIs(page: import("@playwright/test").Page) {
     const mod = (await import(
       "/src/canvas/artboards.ts"
     )) as typeof import("../packages/app/src/canvas/artboards.js");
-    const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-      .__opencanvas.editor;
+    const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+      .__designjs.editor;
     return { mod, editor: ed };
   });
 }
@@ -30,8 +30,8 @@ async function seedTwoArtboards(page: import("@playwright/test").Page): Promise<
     const mod = (await import(
       "/src/canvas/artboards.ts"
     )) as typeof import("../packages/app/src/canvas/artboards.js");
-    const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-      .__opencanvas.editor;
+    const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+      .__designjs.editor;
     // Fresh canvas now starts empty — seed A (Desktop-sized at 0,0) and B.
     const a = mod.createArtboard(ed, {
       name: "A",
@@ -60,8 +60,8 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       // Seed a known frame alongside GrapesJS's unopinionated auto-frame and
       // target it directly by the returned id.
       const created = mod.createArtboard(ed, {
@@ -104,8 +104,8 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       return mod.findSnapOffset(ed, bId, 1435, 0);
     }, b);
     expect(snap.x).toBe(1440);
@@ -122,8 +122,8 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       return mod.findSnapOffset(ed, bId, 1500, 0);
     }, b);
     expect(snap.x).toBe(1500);
@@ -140,8 +140,8 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       mod.moveArtboard(ed, bId, 1443, 5, true); // 3px off right edge, 5px off top
       return mod.listArtboards(ed).find((a) => a.id === bId)!;
     }, b);
@@ -157,8 +157,8 @@ test.describe("Story 5.1 tail: artboard reposition + edge snap", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       // Fresh canvas already has GrapesJS's unopinionated auto-frame. Seed a
       // named one with known dimensions and target it by the returned id.
       const created = mod.createArtboard(ed, {

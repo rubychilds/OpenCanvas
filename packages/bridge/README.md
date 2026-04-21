@@ -1,11 +1,11 @@
 # @designjs/bridge
 
-Shared [Zod](https://zod.dev/) schemas and protocol constants for [OpenCanvas](https://github.com/rubychilds/opencanvas) — the open-source MCP design canvas.
+Shared [Zod](https://zod.dev/) schemas and protocol constants for [DesignJS](https://github.com/rubychilds/designjs) — the open-source MCP design canvas.
 
-This package is consumed by both halves of OpenCanvas:
+This package is consumed by both halves of DesignJS:
 
 - `@designjs/mcp-server` (the stdio MCP binary agents spawn)
-- The OpenCanvas canvas runtime (browser-side WebSocket bridge client)
+- The DesignJS canvas runtime (browser-side WebSocket bridge client)
 
 You typically don't install this directly. It's a dependency of `@designjs/mcp-server`, which is what you register with Claude Code / Cursor / VS Code.
 
@@ -15,7 +15,7 @@ You typically don't install this directly. It's a dependency of `@designjs/mcp-s
 - **Protocol constants** — WebSocket host/port/path + message envelope types.
 - **Tool descriptions** — the strings that ship to agents so they know when to call each tool.
 
-Both halves of OpenCanvas import from here; when the two need to agree on a wire shape, it's defined here once.
+Both halves of DesignJS import from here; when the two need to agree on a wire shape, it's defined here once.
 
 ## License
 

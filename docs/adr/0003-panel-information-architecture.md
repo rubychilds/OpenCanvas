@@ -46,7 +46,7 @@ Source: `penpot/frontend/src/app/main/ui/workspace/sidebar/options.cljs`, `optio
 - **Visibility gating:** centralized `select-keys` extracts relevant attrs per shape; conditional sections key off layout-parent refs (is-flex-parent? is-grid-parent? is-layout-child-absolute?) — **contextual**, not just tag-based.
 - **Notable differentiators vs Figma:** layered fills (CSS-cascade model), rotation dial, applied-tokens tracking through every section, explicit Layout Container vs Layout Item split.
 
-### Current OpenCanvas state before this ADR
+### Current DesignJS state before this ADR
 
 - **Left panel (D.3c):** tabs for Layers · Artboards · Blocks. Tree rows 24px, icon + name only, no per-row affordances. Artboards and Blocks tabs are structurally redundant (InsertRail is the creation path; Artboards-as-tab duplicates frame metadata).
 - **Right panel (D.3d):** tabs for Inspector · Traits. Inspector has Position (align + X/Y + rotation numeric), Auto Layout (toggle + direction + gap + justify), Frame (clip), and a Raw CSS accordion with the legacy sector panel inside. Traits is empty in practice.

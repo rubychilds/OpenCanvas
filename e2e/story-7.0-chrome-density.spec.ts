@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -11,8 +11,8 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
 async function selectDiv(page: import("@playwright/test").Page, marker: string): Promise<void> {
   await page.evaluate((mk) => {
     const api = (window as unknown as {
-      __opencanvas: { addHtml: (h: string) => unknown; editor: { select: (c: unknown) => void } };
-    }).__opencanvas;
+      __designjs: { addHtml: (h: string) => unknown; editor: { select: (c: unknown) => void } };
+    }).__designjs;
     const added = api.addHtml(`<div data-testid="${mk}">m</div>`) as Array<unknown>;
     api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
   }, marker);
@@ -59,8 +59,8 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
     await page.locator('[data-testid="oc-ins-autolayout-toggle"]').click();
     const display = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
+      }).__designjs.editor;
       return ed.getSelected().getStyle().display ?? "";
     });
     expect(display).toBe("flex");
@@ -82,10 +82,10 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
 
     const css = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: { getSelected: () => { getStyle: () => Record<string, string> } };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       return ed.getSelected().getStyle();
     });
     expect(css["overflow"]).toBe("hidden");
@@ -105,10 +105,10 @@ test.describe("Story 7.0 / D.3d: semantic inspector sections", () => {
     // and the Raw CSS section reappears under the label "Other CSS".
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: { getSelected: () => { addStyle: (s: Record<string, string>) => void } };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       ed.getSelected().addStyle({ transition: "all 200ms ease" });
     });
 

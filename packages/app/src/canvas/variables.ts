@@ -4,7 +4,7 @@ import type { Editor } from "grapesjs";
  * Module-scoped store of CSS custom properties currently applied to the canvas
  * iframe `:root`. The MCP get_variables/set_variables handlers read and write
  * this store; persistence reads it via getVariables() to merge into the saved
- * .opencanvas.json blob, and loadVariables() rehydrates it on page load.
+ * .designjs.json blob, and loadVariables() rehydrates it on page load.
  *
  * Keys are full custom-property names including the leading `--` (e.g.
  * "--brand-primary"). Values are CSS strings.
@@ -38,7 +38,7 @@ export function setVariables(
 
 /**
  * Replaces the in-memory store with `vars` and applies them to the iframe.
- * Used on page load to rehydrate from .opencanvas.json. If the iframe document
+ * Used on page load to rehydrate from .designjs.json. If the iframe document
  * isn't ready yet, polls briefly until it is so the variables actually land.
  */
 export function loadVariables(editor: Editor, vars: Record<string, string>): void {

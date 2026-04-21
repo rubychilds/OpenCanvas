@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-const STORAGE_KEY = "opencanvas:theme";
+const STORAGE_KEY = "designjs:theme";
 
 test.describe("Story 7.0 + ADR-0001: light/dark theme toggle", () => {
   test("defaults to light theme", async ({ freshApp: page }) => {
@@ -48,7 +48,7 @@ test.describe("Story 7.0 + ADR-0001: light/dark theme toggle", () => {
 
     await page.reload();
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );

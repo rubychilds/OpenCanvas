@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { waitForBridge } from "./helpers";
 
 interface PasteApi {
-  __opencanvas: {
+  __designjs: {
     paste: (html: string) => unknown;
     addHtml: (html: string) => unknown;
     getHtml: () => string;
@@ -16,7 +16,7 @@ interface AddedComponent {
 
 /**
  * Story 3.1: clipboard HTML paste — `attachPasteImport` listens on window and
- * the canvas iframe contentWindow. The window.__opencanvas.paste(html) test
+ * the canvas iframe contentWindow. The window.__designjs.paste(html) test
  * hook routes through the same importPastedHtml function the listener calls,
  * so exercising the hook validates the end-to-end import behaviour without
  * the cross-browser ClipboardEvent constructor footgun.
@@ -24,13 +24,13 @@ interface AddedComponent {
 test.describe("Story 3.1: clipboard HTML paste", () => {
   test("paste flat HTML adds the component to the canvas", async ({ freshApp: page }) => {
     await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.paste(
+      (window as unknown as PasteApi).__designjs.paste(
         `<div data-marker="paste-flat" class="p-4">hello from paste</div>`,
       ),
     );
 
     const html = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
     expect(html).toContain('data-marker="paste-flat"');
     expect(html).toContain("hello from paste");
@@ -41,7 +41,7 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
     await waitForBridge(page, mcp);
 
     await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.paste(
+      (window as unknown as PasteApi).__designjs.paste(
         `<div data-paste="root" class="flex gap-2"><span data-paste="a">a</span><span data-paste="b">b</span></div>`,
       ),
     );
@@ -64,7 +64,7 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
     freshApp: page,
   }) => {
     await page.evaluate(() => {
-      const api = (window as unknown as PasteApi).__opencanvas;
+      const api = (window as unknown as PasteApi).__designjs;
       const added = api.addHtml(
         `<div data-paste-host="parent" class="grid"></div>`,
       ) as AddedComponent[];
@@ -73,13 +73,13 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
     });
 
     await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.paste(
+      (window as unknown as PasteApi).__designjs.paste(
         `<span data-pasted-child="x">child via paste</span>`,
       ),
     );
 
     const html = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
     // Parent must wrap the pasted child — i.e. the child appears inside the parent's tag.
     expect(html).toMatch(
@@ -91,7 +91,7 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
     freshApp: page,
   }) => {
     await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.paste(
+      (window as unknown as PasteApi).__designjs.paste(
         `<div data-paste-tw="ok" class="bg-blue-500 p-4 text-white">tailwind paste</div>`,
       ),
     );
@@ -108,18 +108,18 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
 
   test("paste with empty/plain-text clipboard is a silent no-op", async ({ freshApp: page }) => {
     const beforeHtml = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
 
     await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.paste(""),
+      (window as unknown as PasteApi).__designjs.paste(""),
     );
     await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.paste("   \n  "),
+      (window as unknown as PasteApi).__designjs.paste("   \n  "),
     );
 
     const afterHtml = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
     expect(afterHtml).toBe(beforeHtml);
   });
@@ -139,7 +139,7 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
     });
 
     const html = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
     expect(html).toContain('data-event-paste="ok"');
   });
@@ -155,7 +155,7 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
       '<span data-buffer="<!--(figma)ZmlnL3RrL2t3aQ==(/figma)-->"></span>';
 
     const beforeHtml = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
 
     // Capture the CustomEvent + console.warn that the handler emits.
@@ -166,16 +166,16 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
         const detail = (ev as CustomEvent).detail as { reason: string; message: string };
         events.push(detail);
       };
-      window.addEventListener("opencanvas:paste-blocked", onEvent);
+      window.addEventListener("designjs:paste-blocked", onEvent);
       const originalWarn = console.warn;
       console.warn = (...args: unknown[]) => {
         warns.push(args.map(String).join(" "));
         originalWarn.apply(console, args as []);
       };
       try {
-        (window as unknown as { __opencanvas: { paste: (s: string) => unknown } }).__opencanvas.paste(html);
+        (window as unknown as { __designjs: { paste: (s: string) => unknown } }).__designjs.paste(html);
       } finally {
-        window.removeEventListener("opencanvas:paste-blocked", onEvent);
+        window.removeEventListener("designjs:paste-blocked", onEvent);
         console.warn = originalWarn;
       }
       return { events, warns };
@@ -188,7 +188,7 @@ test.describe("Story 3.1: clipboard HTML paste", () => {
 
     // Canvas must be unchanged — the binary payload was NOT added.
     const afterHtml = await page.evaluate(() =>
-      (window as unknown as PasteApi).__opencanvas.getHtml(),
+      (window as unknown as PasteApi).__designjs.getHtml(),
     );
     expect(afterHtml).toBe(beforeHtml);
     expect(afterHtml).not.toContain("(figma)");

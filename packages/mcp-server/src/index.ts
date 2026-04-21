@@ -4,14 +4,14 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { TOOL_SCHEMAS, TOOL_DESCRIPTIONS, type ToolName } from "@designjs/bridge";
 import { BridgeClient } from "./bridge-client.js";
 
-const log = (msg: string) => process.stderr.write(`[opencanvas-mcp] ${msg}\n`);
+const log = (msg: string) => process.stderr.write(`[designjs-mcp] ${msg}\n`);
 
 async function main() {
   const bridge = new BridgeClient({ log });
   bridge.connect();
 
   const server = new McpServer({
-    name: "opencanvas",
+    name: "designjs",
     version: "0.1.0",
   });
 

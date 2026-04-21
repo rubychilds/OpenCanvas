@@ -26,7 +26,7 @@ Kept below verbatim as the historical record.
 
 ## Context
 
-OpenCanvas today renders the right-panel inspector straight from GrapesJS `Sector` + `Property` objects (`packages/app/src/components/StylesPanel.tsx`). Every row is one CSS property. The resulting panel reads as a stylesheet editor: a flat list of `display`, `flex-direction`, `align-items`, `width`, `min-width`, `padding`, and so on.
+DesignJS today renders the right-panel inspector straight from GrapesJS `Sector` + `Property` objects (`packages/app/src/components/StylesPanel.tsx`). Every row is one CSS property. The resulting panel reads as a stylesheet editor: a flat list of `display`, `flex-direction`, `align-items`, `width`, `min-width`, `padding`, and so on.
 
 Professional design tools — Figma and Pencil specifically, which are the reference points in [ADR-0001](./0001-frontend-ui-stack.md) and PRD §4.3 — present a **semantic inspector**: component-oriented sections (Alignment, Auto Layout, Dimensions, Appearance, Fill, Stroke, Effects, Export) with purpose-built controls (icon ToggleGroups, a 3×3 alignment pad, Hug/Fill/Fixed sizing, linked corner radius, color swatches with eye toggles). The controls compress several CSS properties into one affordance, and hide properties that don't apply to the selected element.
 
@@ -53,7 +53,7 @@ This ADR decides that information architecture so Epic 7 can build against it ra
 
 ## Decision
 
-OpenCanvas will render the right-panel inspector as a **semantic layer** composed of fixed sections, each backed by a small catalogue of purpose-built controls. The semantic layer reads from and writes to GrapesJS using the same `Property.upValue` path as the current panel. The existing sector-driven view is retained as a collapsible "Raw CSS" fallback.
+DesignJS will render the right-panel inspector as a **semantic layer** composed of fixed sections, each backed by a small catalogue of purpose-built controls. The semantic layer reads from and writes to GrapesJS using the same `Property.upValue` path as the current panel. The existing sector-driven view is retained as a collapsible "Raw CSS" fallback.
 
 ### Information architecture
 

@@ -92,7 +92,7 @@ export function App() {
         if (cssVariables) loadVariables(editor, cssVariables);
       }
     } catch (err) {
-      console.warn("[opencanvas] load failed:", err);
+      console.warn("[designjs] load failed:", err);
     }
 
     // GrapesJS's `infiniteCanvas: true` auto-frame boots with degenerate
@@ -118,7 +118,7 @@ export function App() {
       }
     }, 300);
 
-    (window as unknown as { __opencanvas?: unknown }).__opencanvas = {
+    (window as unknown as { __designjs?: unknown }).__designjs = {
       editor,
       addHtml: (html: string) => editor.addComponents(html),
       getHtml: () => editor.getHtml(),
@@ -145,7 +145,7 @@ export function App() {
       getVariables: () => getVariables(),
       setVariables: (vars: Record<string, string>) => setVariables(editor, vars),
     };
-    window.dispatchEvent(new CustomEvent("opencanvas:ready"));
+    window.dispatchEvent(new CustomEvent("designjs:ready"));
 
     editor.Keymaps.add("oc:duplicate", "ctrl+d,command+d", () => {
       editor.runCommand("core:copy");

@@ -12,7 +12,7 @@ export interface PasteImportHooks {
  * dump a megabyte of unrenderable junk into the canvas. We detect the marker
  * and refuse the import with a clear user-facing message instead.
  *
- * Source: see /Users/rubychilds/Documents/Ruby Obsidian Notes/OpenCanvas-Notes/
+ * Source: see /Users/rubychilds/Documents/Ruby Obsidian Notes/DesignJS-Notes/
  * — `<!--(figma)` and `<!--(figmeta)` are the two known marker variants.
  */
 export const FIGMA_CLIPBOARD_SIGNATURE = /<!--\(figma(?:meta)?\)/;
@@ -23,12 +23,12 @@ export const FIGMA_CLIPBOARD_SIGNATURE = /<!--\(figma(?:meta)?\)/;
  * to surface the message to users. Detail shape:
  *   { message: string, reason: "figma-binary" }
  */
-export const PASTE_BLOCKED_EVENT = "opencanvas:paste-blocked";
+export const PASTE_BLOCKED_EVENT = "designjs:paste-blocked";
 
 const FIGMA_BLOCKED_MESSAGE =
-  "OpenCanvas can't paste Figma's binary clipboard payload. Right-click in " +
+  "DesignJS can't paste Figma's binary clipboard payload. Right-click in " +
   "Figma → Copy as SVG/PNG for a one-shot import, or pair the Figma Dev Mode " +
-  "MCP server with OpenCanvas in Cursor / Claude Code so an agent can " +
+  "MCP server with DesignJS in Cursor / Claude Code so an agent can " +
   "translate the design.";
 
 /**
@@ -46,7 +46,7 @@ export function importPastedHtml(editor: Editor, html: string): unknown {
   if (!html.trim()) return undefined;
 
   if (FIGMA_CLIPBOARD_SIGNATURE.test(html)) {
-    console.warn(`[opencanvas] ${FIGMA_BLOCKED_MESSAGE}`);
+    console.warn(`[designjs] ${FIGMA_BLOCKED_MESSAGE}`);
     window.dispatchEvent(
       new CustomEvent(PASTE_BLOCKED_EVENT, {
         detail: { reason: "figma-binary", message: FIGMA_BLOCKED_MESSAGE },

@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { McpTestClient } from "./mcp-client";
 
-const PROJECT_FILE = resolve(__dirname, "../.opencanvas.json");
+const PROJECT_FILE = resolve(__dirname, "../.designjs.json");
 const ARTIFACTS_DIR = resolve(__dirname, "../.e2e-artifacts");
 
 export interface EditorAPI {
@@ -46,10 +46,10 @@ export const test = base.extend<Fixtures>({
 export { expect };
 
 export async function waitForEditorReady(page: Page): Promise<void> {
-  // __opencanvas is set inside onReady; wait for its presence.
+  // __designjs is set inside onReady; wait for its presence.
   await page.waitForFunction(
     () =>
-      typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 20_000 },
   );

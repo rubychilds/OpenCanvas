@@ -13,7 +13,7 @@ export interface VariablesPopoverProps {
 
 /**
  * Variables (design tokens) UI — the visual half of PRD Story 6.2. The MCP
- * `get_variables` / `set_variables` tools and `.opencanvas.json` persistence
+ * `get_variables` / `set_variables` tools and `.designjs.json` persistence
  * sidecar were shipped in commit `0adad7a`; this popover gives humans the same
  * surface the agents have.
  *

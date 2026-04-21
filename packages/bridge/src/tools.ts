@@ -207,7 +207,7 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_selection:
     "Return the componentIds of currently selected elements in the editor. Empty array if nothing selected.",
   add_components:
-    "Insert raw HTML onto the OpenCanvas design canvas. Tailwind classes resolve correctly. Returns the created componentIds. To land content inside a specific artboard (the common case after `create_artboard`), pass `artboardId` — not `target`. `target` is for appending into an existing component's subtree. Without either, content lands in the first/default frame, which is usually not what you want on a multi-artboard canvas.",
+    "Insert raw HTML onto the DesignJS design canvas. Tailwind classes resolve correctly. Returns the created componentIds. To land content inside a specific artboard (the common case after `create_artboard`), pass `artboardId` — not `target`. `target` is for appending into an existing component's subtree. Without either, content lands in the first/default frame, which is usually not what you want on a multi-artboard canvas.",
   update_styles:
     "Update CSS properties on an existing component. Accepts both CSS properties and Tailwind utility strings (via the 'class' key convention).",
   delete_nodes:
@@ -217,7 +217,7 @@ export const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_variables:
     "Read CSS custom properties currently applied to the canvas iframe :root. Returns a flat key→value map (e.g. { '--brand-primary': 'oklch(0.55 0.2 260)' }).",
   set_variables:
-    "Write CSS custom properties to the canvas iframe :root. Variables are merged into the existing set (existing keys overwritten, others preserved). Persisted to .opencanvas.json under cssVariables and re-applied on reload. Returns the full updated map.",
+    "Write CSS custom properties to the canvas iframe :root. Variables are merged into the existing set (existing keys overwritten, others preserved). Persisted to .designjs.json under cssVariables and re-applied on reload. Returns the full updated map.",
   create_artboard:
     "Create a new artboard (frame) on the spatial canvas. Requires width and height; name defaults to 'Artboard N'; x/y default to a non-overlapping position to the right of existing artboards. Returns the created artboard's id, name, position, and dimensions.",
   list_artboards:

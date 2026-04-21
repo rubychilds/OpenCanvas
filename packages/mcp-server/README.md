@@ -1,6 +1,6 @@
 # @designjs/mcp-server
 
-The stdio [Model Context Protocol](https://modelcontextprotocol.io/) server for [OpenCanvas](https://github.com/rubychilds/opencanvas) — an open-source MCP design canvas that gives AI coding agents eyes on a live HTML/CSS canvas.
+The stdio [Model Context Protocol](https://modelcontextprotocol.io/) server for [DesignJS](https://github.com/rubychilds/designjs) — an open-source MCP design canvas that gives AI coding agents eyes on a live HTML/CSS canvas.
 
 Register this server with Claude Code, Cursor, or any MCP-compatible client and the agent can:
 
@@ -12,9 +12,9 @@ Register this server with Claude Code, Cursor, or any MCP-compatible client and 
 ## Quickstart
 
 ```bash
-# 1. Start the canvas locally (needs the OpenCanvas app running)
-git clone https://github.com/rubychilds/opencanvas.git
-cd opencanvas && pnpm install && pnpm dev
+# 1. Start the canvas locally (needs the DesignJS app running)
+git clone https://github.com/rubychilds/designjs.git
+cd designjs && pnpm install && pnpm dev
 
 # 2. Register the MCP server in your project
 cd ~/your-project
@@ -29,7 +29,7 @@ The `init` command writes a config pointing at `npx -y @designjs/mcp-server`. If
 ```json
 {
   "mcpServers": {
-    "opencanvas": {
+    "designjs": {
       "command": "npx",
       "args": ["-y", "@designjs/mcp-server"]
     }
@@ -39,7 +39,7 @@ The `init` command writes a config pointing at `npx -y @designjs/mcp-server`. If
 
 ## Tool reference
 
-Full per-tool docs with input/output schemas and example prompts live at [opencanvas.dev/mcp](https://github.com/rubychilds/opencanvas-docs). Twenty tools across five categories:
+Full per-tool docs with input/output schemas and example prompts live at [designjs.dev/mcp](https://github.com/rubychilds/designjs-docs). Twenty tools across five categories:
 
 - **Read:** `get_tree` · `get_html` · `get_css` · `get_screenshot` · `get_selection` · `list_artboards` · `get_variables` · `ping`
 - **Write (components):** `add_components` · `update_styles` · `add_classes` · `remove_classes` · `set_text` · `delete_nodes`
@@ -51,7 +51,7 @@ Full per-tool docs with input/output schemas and example prompts live at [openca
 
 ```
 ┌───────────┐    stdio     ┌───────────────────┐    WebSocket    ┌──────────────┐
-│ Agent     │──(JSON-RPC)─▶│ @designjs/       │◄──(bridge)─────▶│ OpenCanvas   │
+│ Agent     │──(JSON-RPC)─▶│ @designjs/       │◄──(bridge)─────▶│ DesignJS   │
 │ (Claude,  │              │ mcp-server         │   127.0.0.1:    │ canvas app   │
 │  Cursor)  │              │ (this package)     │    29170        │ (pnpm dev)   │
 └───────────┘              └───────────────────┘                 └──────────────┘

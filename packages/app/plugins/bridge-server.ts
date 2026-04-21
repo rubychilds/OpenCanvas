@@ -38,12 +38,12 @@ export function bridgeServerPlugin(): Plugin {
 
     wss.on("listening", () => {
       console.log(
-        `[opencanvas:bridge] listening on ws://${BRIDGE_HOST}:${BRIDGE_PORT}${BRIDGE_PATH}`,
+        `[designjs:bridge] listening on ws://${BRIDGE_HOST}:${BRIDGE_PORT}${BRIDGE_PATH}`,
       );
     });
 
     wss.on("error", (err) => {
-      console.error("[opencanvas:bridge] server error:", err);
+      console.error("[designjs:bridge] server error:", err);
     });
 
     wss.on("connection", (socket) => {
@@ -68,7 +68,7 @@ export function bridgeServerPlugin(): Plugin {
             }
           }
           peers.set(socket, { role: msg.data.role, socket });
-          console.log(`[opencanvas:bridge] peer connected: ${msg.data.role}`);
+          console.log(`[designjs:bridge] peer connected: ${msg.data.role}`);
           return;
         }
 
@@ -105,7 +105,7 @@ export function bridgeServerPlugin(): Plugin {
 
       socket.on("close", () => {
         const me = peers.get(socket);
-        if (me) console.log(`[opencanvas:bridge] peer disconnected: ${me.role}`);
+        if (me) console.log(`[designjs:bridge] peer disconnected: ${me.role}`);
         peers.delete(socket);
         // Drop any pending requests originating from this socket — no one left
         // to receive the response.
@@ -126,7 +126,7 @@ export function bridgeServerPlugin(): Plugin {
   };
 
   return {
-    name: "opencanvas-bridge-server",
+    name: "designjs-bridge-server",
     apply: "serve",
     configureServer() {
       start();

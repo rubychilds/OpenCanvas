@@ -16,15 +16,15 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
 
     const frames = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
+      }).__designjs.editor;
       return ed.Canvas.getFrames().map((f) => ({
         name: f.get("name"),
         x: Number(f.get("x") ?? -1),
@@ -50,7 +50,7 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
     // badge + empty canvas). ensure() should delete + recreate, not
     // frame.set() which drops the height.
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -59,8 +59,8 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
 
       // Degenerate-auto-frame simulation: unset name, keep width, zero height.
       const first = ed.Canvas.getFrames()[0]! as unknown as {
@@ -88,15 +88,15 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
 
     const bg = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
         getStyle: () => Record<string, string>;
       };
@@ -111,7 +111,7 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
     // no-op in this case (the named frame wins — "Frame 1" only applies to
     // the unopinionated auto-frame).
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -120,8 +120,8 @@ test.describe("Default artboard: fresh boot has a visible frame", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
 
       // Rename the first frame to simulate a saved-project restore.
       const first = ed.Canvas.getFrames()[0]! as unknown as {

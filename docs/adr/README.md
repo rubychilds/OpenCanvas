@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Load-bearing decisions that govern how OpenCanvas is built. Each ADR describes the context, the decision, and the consequences at the time it was made. Later realities go into an **Addendum** at the bottom of the same file; the original body is not rewritten — the history of how the decision aged is part of the record.
+Load-bearing decisions that govern how DesignJS is built. Each ADR describes the context, the decision, and the consequences at the time it was made. Later realities go into an **Addendum** at the bottom of the same file; the original body is not rewritten — the history of how the decision aged is part of the record.
 
 When a decision is genuinely reversed, write a new ADR that supersedes the old one and link both ways.
 

@@ -76,7 +76,7 @@ export const DEFAULT_ARTBOARD_GAP = 80;
  * events in this GrapesJS version (they don't consistently fire for
  * programmatic addFrame).
  */
-export const ARTBOARDS_CHANGED = "opencanvas:artboards-changed";
+export const ARTBOARDS_CHANGED = "designjs:artboards-changed";
 
 function notifyChange(editor: Editor): void {
   (editor as unknown as { trigger?: (ev: string) => void }).trigger?.(ARTBOARDS_CHANGED);

@@ -10,7 +10,7 @@ export interface InitOptions {
   ides?: IdeId[];
   /** Override the MCP server command. Defaults to `npx -y @designjs/mcp-server`. */
   command?: string[];
-  /** Name to register the MCP server under. Defaults to "opencanvas". */
+  /** Name to register the MCP server under. Defaults to "designjs". */
   name?: string;
   /** If false, skip writing and just return the plan. */
   write?: boolean;
@@ -53,7 +53,7 @@ export function planInit(options: InitOptions = {}): InitResult[] {
     const detected = detectIdes(cwd);
     return detected.length > 0 ? detected : (["claude-code"] as IdeId[]);
   })();
-  const name = options.name ?? "opencanvas";
+  const name = options.name ?? "designjs";
   const command = options.command ?? ["npx", "-y", "@designjs/mcp-server"];
 
   const results: InitResult[] = [];

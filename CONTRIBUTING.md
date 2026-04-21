@@ -1,4 +1,4 @@
-# Contributing to OpenCanvas
+# Contributing to DesignJS
 
 Thanks for your interest in contributing. This document covers local setup, coding conventions, and the PR process.
 
@@ -11,8 +11,8 @@ Thanks for your interest in contributing. This document covers local setup, codi
 ## Local setup
 
 ```bash
-git clone https://github.com/<org>/opencanvas.git
-cd opencanvas
+git clone https://github.com/rubychilds/designjs.git
+cd designjs
 pnpm install
 pnpm dev
 ```
@@ -28,7 +28,7 @@ pnpm mcp
 ## Workspace layout
 
 ```
-opencanvas/
+designjs/
 ├── packages/
 │   ├── app/          # Vite + React SPA hosting the GrapesJS canvas
 │   ├── mcp-server/   # stdio MCP server process
@@ -59,7 +59,7 @@ The CI pipeline runs the same checks on every push and PR. Before running Playwr
 
 ### E2E test layout
 
-End-to-end tests live in [`e2e/`](./e2e) and run against a real browser booting `pnpm dev`. They exercise the app through `window.__opencanvas` (an editor handle exposed at runtime in dev) to keep interactions deterministic; iframe drag-drop is avoided because it's fragile. Each story has its own spec — e.g. `story-1.4-block-palette.spec.ts`.
+End-to-end tests live in [`e2e/`](./e2e) and run against a real browser booting `pnpm dev`. They exercise the app through `window.__designjs` (an editor handle exposed at runtime in dev) to keep interactions deterministic; iframe drag-drop is avoided because it's fragile. Each story has its own spec — e.g. `story-1.4-block-palette.spec.ts`.
 
 ## Code conventions
 

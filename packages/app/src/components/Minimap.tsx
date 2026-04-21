@@ -75,7 +75,7 @@ export function Minimap() {
         }
         setFrames(list);
       } catch (err) {
-        console.warn("[opencanvas] minimap refresh failed:", err);
+        console.warn("[designjs] minimap refresh failed:", err);
       }
     };
 

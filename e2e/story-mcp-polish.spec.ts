@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { waitForBridge } from "./helpers";
 
 interface OpencanvasGlobal {
-  __opencanvas: {
+  __designjs: {
     addHtml: (html: string) => unknown;
     getHtml: () => string;
     editor: unknown;
@@ -80,7 +80,7 @@ test.describe("MCP polish round 1", () => {
     expect(res.text).toBe("new label");
 
     const html = await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.getHtml(),
+      (window as unknown as OpencanvasGlobal).__designjs.getHtml(),
     );
     expect(html).toContain("new label");
     expect(html).not.toContain("old label");

@@ -6,11 +6,11 @@ test.describe("Story 1.6: flex controls", () => {
   }) => {
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: unknown;
           addHtml: (h: string) => unknown;
         };
-      }).__opencanvas;
+      }).__designjs;
       const added = api.addHtml(
         `<div data-testid="oc-container"><span>a</span><span>b</span></div>`,
       ) as Array<{ addStyle: (s: Record<string, string>) => void }>;
@@ -52,11 +52,11 @@ test.describe("Story 1.6: flex controls", () => {
   }) => {
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: unknown;
           addHtml: (h: string) => unknown;
         };
-      }).__opencanvas;
+      }).__designjs;
       const added = api.addHtml(`<div>layout target</div>`) as Array<{
         addStyle: (s: Record<string, string>) => void;
       }>;

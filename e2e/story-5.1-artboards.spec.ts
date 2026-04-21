@@ -19,16 +19,16 @@ test.describe("Story 5.1: multi-artboard canvas", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
 
     const frames = await page.evaluate(() => {
       const w = window as unknown as {
-        __opencanvas: { editor: { Canvas: { getFrames(): FrameLike[] } } };
+        __designjs: { editor: { Canvas: { getFrames(): FrameLike[] } } };
       };
-      return w.__opencanvas.editor.Canvas.getFrames().map((f) => {
+      return w.__designjs.editor.Canvas.getFrames().map((f) => {
         const g = (f as unknown as { get?: (k: string) => unknown }).get?.bind(f);
         return { name: String(g?.("name") ?? "") };
       });
@@ -43,14 +43,14 @@ test.describe("Story 5.1: multi-artboard canvas", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
 
     // Canvas starts empty — seed a Desktop then add a Tablet next to it.
     await page.evaluate(() => {
-      const api = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas;
+      const api = (window as unknown as { __designjs: { editor: unknown } }).__designjs;
       const edt = api.editor as {
         Canvas: { addFrame: (props: unknown) => unknown };
       };
@@ -60,9 +60,9 @@ test.describe("Story 5.1: multi-artboard canvas", () => {
 
     const frames = await page.evaluate(() => {
       const w = window as unknown as {
-        __opencanvas: { editor: { Canvas: { getFrames(): FrameLike[] } } };
+        __designjs: { editor: { Canvas: { getFrames(): FrameLike[] } } };
       };
-      return w.__opencanvas.editor.Canvas.getFrames().map((f) => {
+      return w.__designjs.editor.Canvas.getFrames().map((f) => {
         const g = (f as unknown as { get?: (k: string) => unknown }).get?.bind(f);
         return {
           name: String(g?.("name") ?? ""),
@@ -85,7 +85,7 @@ test.describe("Story 5.1: multi-artboard canvas", () => {
 
   test("InsertRail Frame button is visible in the canvas overlay", async ({ freshApp: page }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );

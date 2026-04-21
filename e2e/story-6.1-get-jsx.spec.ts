@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { waitForBridge } from "./helpers";
 
 interface OpencanvasGlobal {
-  __opencanvas: {
+  __designjs: {
     addHtml: (html: string) => unknown;
   };
 }
@@ -19,7 +19,7 @@ test.describe("Story 6.1: get_jsx", () => {
   }) => {
     await waitForBridge(page, mcp);
     await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
+      (window as unknown as OpencanvasGlobal).__designjs.addHtml(
         `<form class="space-y-2"><label for="email">Email</label><input id="email" type="email" required /><br /></form>`,
       ),
     );
@@ -42,7 +42,7 @@ test.describe("Story 6.1: get_jsx", () => {
   }) => {
     await waitForBridge(page, mcp);
     await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
+      (window as unknown as OpencanvasGlobal).__designjs.addHtml(
         `<div class="p-4 bg-blue-500" style="padding: 16px; box-shadow: 0 0 5px red;">hi</div>`,
       ),
     );
@@ -62,7 +62,7 @@ test.describe("Story 6.1: get_jsx", () => {
   }) => {
     await waitForBridge(page, mcp);
     await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
+      (window as unknown as OpencanvasGlobal).__designjs.addHtml(
         `<div style="color: red; padding: 8px; background-color: yellow;">x</div>`,
       ),
     );
@@ -78,7 +78,7 @@ test.describe("Story 6.1: get_jsx", () => {
   test("componentId scopes JSX output to that subtree only", async ({ freshApp: page, mcp }) => {
     await waitForBridge(page, mcp);
     const targetId = await page.evaluate(() => {
-      const api = (window as unknown as OpencanvasGlobal).__opencanvas;
+      const api = (window as unknown as OpencanvasGlobal).__designjs;
       const added = api.addHtml(
         `<div><h1 data-keep="yes">keep</h1><p data-drop="yes">drop</p></div>`,
       ) as Array<{

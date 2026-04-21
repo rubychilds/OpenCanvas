@@ -143,7 +143,7 @@ export function TypographySection({ component }: { component: Component }) {
   const lineHeight = readStyle(component, "line-height");
   const letterSpacing = readStyle(component, "letter-spacing");
   // No explicit text-align → the browser default is "left" (for LTR locales,
-  // which is what OpenCanvas targets today). Surface that in the inspector
+  // which is what DesignJS targets today). Surface that in the inspector
   // so the Left toggle shows as selected rather than the whole group sitting
   // in a "no selection" state.
   const textAlign = readStyle(component, "text-align") || "left";

@@ -3,13 +3,13 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-const ROUTE = "/__opencanvas/project";
-const FILENAME = ".opencanvas.json";
+const ROUTE = "/__designjs/project";
+const FILENAME = ".designjs.json";
 
 /**
- * Dev-only HTTP endpoints for reading/writing `.opencanvas.json`:
- *   GET  /__opencanvas/project  → { exists: boolean, project?: <ProjectData> }
- *   POST /__opencanvas/project  → { ok: true }  (body is raw ProjectData JSON)
+ * Dev-only HTTP endpoints for reading/writing `.designjs.json`:
+ *   GET  /__designjs/project  → { exists: boolean, project?: <ProjectData> }
+ *   POST /__designjs/project  → { ok: true }  (body is raw ProjectData JSON)
  *
  * Writes land in the directory of the nearest pnpm-workspace.yaml / package.json
  * upwards from the Vite root — i.e. the repo root in monorepo dev, or the
@@ -17,12 +17,12 @@ const FILENAME = ".opencanvas.json";
  */
 export function persistenceMiddlewarePlugin(): Plugin {
   return {
-    name: "opencanvas-persistence-middleware",
+    name: "designjs-persistence-middleware",
     apply: "serve",
     configureServer(server) {
       const projectRoot = findProjectRoot(server.config.root);
       const filePath = join(projectRoot, FILENAME);
-      server.config.logger.info(`[opencanvas:persistence] storing at ${filePath}`);
+      server.config.logger.info(`[designjs:persistence] storing at ${filePath}`);
 
       server.middlewares.use(ROUTE, async (req, res) => {
         try {

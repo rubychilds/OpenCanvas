@@ -19,7 +19,7 @@ That mapping was wrong. A re-read of `penpot/frontend/src/app/main/ui/workspace/
 - Penpot's **Sitemap** section is *pages-only*. Pages are the higher structural tier — switching pages swaps the entire layer tree.
 - **Boards (frames)** are top-level nodes *inside* the layer tree, rendered by `frame-wrapper*` (which is a `layer-item*` plus a `:type-frame` row class and a 50ms selection debounce). They are not a separate section.
 
-A second pass surveying Figma, Sketch, and Adobe XD found the convention is universal: **Frames / Artboards / Boards are top-level nodes inside the layer tree, with Pages as a separate higher tier when present**. No mainstream design tool puts frames in a section above the layer tree. The current OpenCanvas shape (a `FramesSection` above the `LayersProvider` tree, see [`packages/app/src/components/LayersPanel.tsx`](../../packages/app/src/components/LayersPanel.tsx)) is an outlier with no precedent.
+A second pass surveying Figma, Sketch, and Adobe XD found the convention is universal: **Frames / Artboards / Boards are top-level nodes inside the layer tree, with Pages as a separate higher tier when present**. No mainstream design tool puts frames in a section above the layer tree. The current DesignJS shape (a `FramesSection` above the `LayersProvider` tree, see [`packages/app/src/components/LayersPanel.tsx`](../../packages/app/src/components/LayersPanel.tsx)) is an outlier with no precedent.
 
 The user flagged this directly after living with the running app: *"We are showing frames as a separate section on the left, which I wouldn't expect. I would expect to see frames on the layers hierarchy."*
 
@@ -115,7 +115,7 @@ Estimated effort: half-day to one day, depending on how many specs hard-code Fra
 
 - Open the editor with two artboards; confirm both frame rows appear at the top of the layer tree, expandable, with FrameCorners icons.
 - Add a div to one frame; confirm it nests under that frame's row.
-- Rename a frame via double-click; confirm the new name persists across reload (`.opencanvas.json` round-trip via Story 1.5).
+- Rename a frame via double-click; confirm the new name persists across reload (`.designjs.json` round-trip via Story 1.5).
 - Delete a frame; confirm the last-frame guard still prevents an empty canvas.
 - Run `pnpm exec playwright test` and confirm only the deliberately-updated specs changed.
 

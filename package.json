@@ -1,5 +1,5 @@
 {
-  "name": "opencanvas",
+  "name": "designjs",
   "version": "0.1.0-dev",
   "private": true,
   "description": "Open-source MCP design canvas that gives AI coding agents eyes",
@@ -12,7 +12,7 @@
     "mcp": "pnpm --filter @designjs/bridge build && pnpm --filter @designjs/mcp-server start",
     "smoke:bridge": "pnpm --filter @designjs/bridge build && node scripts/smoke-bridge.mjs",
     "smoke:init": "pnpm --filter @designjs/cli build && node scripts/smoke-init.mjs",
-    "smoke:create": "pnpm --filter create-opencanvas build && node scripts/smoke-create.mjs",
+    "smoke:create": "pnpm --filter create-designjs build && node scripts/smoke-create.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

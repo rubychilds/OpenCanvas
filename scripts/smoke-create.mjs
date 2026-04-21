@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke test for `create-opencanvas`. Mirrors scripts/smoke-init.mjs — runs
+ * Smoke test for `create-designjs`. Mirrors scripts/smoke-init.mjs — runs
  * the built binary against temp directories and asserts the scaffolded
  * output shape.
  */
@@ -11,11 +11,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const BIN = resolve(HERE, "..", "packages", "create-opencanvas", "dist", "index.js");
+const BIN = resolve(HERE, "..", "packages", "create-designjs", "dist", "index.js");
 
 if (!existsSync(BIN)) {
   process.stderr.write(
-    `smoke-create: binary not found at ${BIN}\n  run: pnpm -F create-opencanvas build\n`,
+    `smoke-create: binary not found at ${BIN}\n  run: pnpm -F create-designjs build\n`,
   );
   process.exit(1);
 }
@@ -56,7 +56,7 @@ cases.push({
     assert(existsSync(join(dir, "README.md")), "README.md present");
     const mcp = readJson(join(dir, ".mcp.json"));
     assertEqual(
-      mcp.mcpServers.opencanvas,
+      mcp.mcpServers.designjs,
       { command: "npx", args: ["-y", "@designjs/mcp-server"] },
       "mcp config points at @designjs/mcp-server",
     );
@@ -121,7 +121,7 @@ cases.push({
     const base = tmpBase();
     const res = run(base, ["--help"]);
     assertEqual(res.status, 0, "exits 0");
-    assert(/Usage: create-opencanvas/.test(res.stdout), "stdout shows usage");
+    assert(/Usage: create-designjs/.test(res.stdout), "stdout shows usage");
     // Help should NOT mention an error.
     assertEqual(res.stderr, "", "no stderr output");
     rmSync(base, { recursive: true });

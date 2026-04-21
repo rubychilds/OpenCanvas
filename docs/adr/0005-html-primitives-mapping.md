@@ -9,9 +9,9 @@
 
 ## Context
 
-OpenCanvas is HTML/CSS-native by design (PRD §5.1, ADR-0001 §"Why this stack"): every element on the canvas is a real HTML element with real CSS. Figma and Penpot are shape-native: their primitives are vector concepts (`Rectangle`, `Ellipse`, `Text`, `Group`, `Frame`, `Path`) stored as a discriminated-union shape model. The two foundations are architecturally different.
+DesignJS is HTML/CSS-native by design (PRD §5.1, ADR-0001 §"Why this stack"): every element on the canvas is a real HTML element with real CSS. Figma and Penpot are shape-native: their primitives are vector concepts (`Rectangle`, `Ellipse`, `Text`, `Group`, `Frame`, `Path`) stored as a discriminated-union shape model. The two foundations are architecturally different.
 
-But users coming to OpenCanvas from Figma or Penpot expect a **shape-shaped insertion vocabulary**: a Rectangle tool that produces "a rectangle," a Text tool that produces "a text," a Frame tool that produces "a frame." Today the InsertRail exposes Select / Frame / Text / Image / Button — half-aligned with Figma's vocabulary, missing Rectangle and Circle, and including "Button" which is a compound, not a primitive in any other tool.
+But users coming to DesignJS from Figma or Penpot expect a **shape-shaped insertion vocabulary**: a Rectangle tool that produces "a rectangle," a Text tool that produces "a text," a Frame tool that produces "a frame." Today the InsertRail exposes Select / Frame / Text / Image / Button — half-aligned with Figma's vocabulary, missing Rectangle and Circle, and including "Button" which is a compound, not a primitive in any other tool.
 
 A second, related complaint surfaced in the same review: the Text tool inserts `<p class="text-base">Text</p>`, which GrapesJS represents as a `<p>` Component with a `textnode` child Component. The textnode shows up as a stray "Box" row in the Layers tree (no `tagName` → default icon). That's an HTML-storage detail leaking into a shape-shaped UI surface.
 
@@ -54,7 +54,7 @@ Despite different storage models, both tools converge on a small primitive set: 
 
 ### 1. The mapping table
 
-OpenCanvas exposes these shape-shaped primitives. Each maps to a specific HTML/CSS pattern stored in GrapesJS. The mapping is the **only** way fresh primitives enter the canvas via the InsertRail; HTML paste and MCP `add_components` continue to accept arbitrary HTML.
+DesignJS exposes these shape-shaped primitives. Each maps to a specific HTML/CSS pattern stored in GrapesJS. The mapping is the **only** way fresh primitives enter the canvas via the InsertRail; HTML paste and MCP `add_components` continue to accept arbitrary HTML.
 
 | Concept | InsertRail tool | HTML / CSS template (TODO match exactly in code) | Layer icon (chrome-icons) | Default name | Notes |
 |---|---|---|---|---|---|

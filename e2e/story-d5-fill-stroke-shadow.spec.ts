@@ -3,7 +3,7 @@ import { test as base } from "./fixtures";
 
 async function waitForEditor(page: Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -12,8 +12,8 @@ async function waitForEditor(page: Page): Promise<void> {
 async function addAndSelect(page: Page, html: string): Promise<void> {
   await page.evaluate((h) => {
     const api = (window as unknown as {
-      __opencanvas: { addHtml: (s: string) => unknown; editor: { select: (c: unknown) => void } };
-    }).__opencanvas;
+      __designjs: { addHtml: (s: string) => unknown; editor: { select: (c: unknown) => void } };
+    }).__designjs;
     const added = api.addHtml(h) as Array<unknown>;
     api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
   }, html);
@@ -22,8 +22,8 @@ async function addAndSelect(page: Page, html: string): Promise<void> {
 async function readSelectedStyle(page: Page, key: string): Promise<string> {
   return page.evaluate((k) => {
     const ed = (window as unknown as {
-      __opencanvas: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
-    }).__opencanvas.editor;
+      __designjs: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
+    }).__designjs.editor;
     return ed.getSelected().getStyle()[k] ?? "";
   }, key);
 }
@@ -34,8 +34,8 @@ async function setSelectedStyle(
 ): Promise<void> {
   await page.evaluate((s) => {
     const ed = (window as unknown as {
-      __opencanvas: { editor: { getSelected: () => { addStyle: (s: Record<string, string>) => void } } };
-    }).__opencanvas.editor;
+      __designjs: { editor: { getSelected: () => { addStyle: (s: Record<string, string>) => void } } };
+    }).__designjs.editor;
     ed.getSelected().addStyle(s);
   }, styles);
 }
@@ -217,7 +217,7 @@ base.describe("D.5: Fill as a stack + Stroke + Shadow (per ADR-0003)", () => {
     await waitForEditor(page);
     await addAndSelect(page, `<div data-testid="rt-read">r</div>`);
 
-    // Seed the component's CSS directly as if it had come from .opencanvas.json
+    // Seed the component's CSS directly as if it had come from .designjs.json
     // reload — the FillSection must round-trip the written shape back into rows.
     await setSelectedStyle(page, {
       "background-image":

@@ -9,7 +9,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -18,8 +18,8 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
 async function frameIds(page: import("@playwright/test").Page): Promise<string[]> {
   return page.evaluate(() => {
     const ed = (window as unknown as {
-      __opencanvas: { editor: { Canvas: { getFrames: () => unknown[] } } };
-    }).__opencanvas.editor;
+      __designjs: { editor: { Canvas: { getFrames: () => unknown[] } } };
+    }).__designjs.editor;
     return ed.Canvas.getFrames().map((f) => {
       const g = (f as { getId?: () => string; cid?: string; id?: string });
       return String(g.getId?.() ?? g.cid ?? g.id ?? "");
@@ -59,14 +59,14 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     // is what we're verifying.
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: {
               getFrames: () => Array<{ get: (k: string) => unknown }>;
             };
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
         append: (h: string) => unknown;
       };
@@ -81,14 +81,14 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     // "does the model see the append?" from "does the React tree re-render?".
     const wrapperChildCount = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: {
               getFrames: () => Array<{ get: (k: string) => unknown }>;
             };
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
         components: () => { length: number };
       };
@@ -114,8 +114,8 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     // give us two top-level rows.
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { Canvas: { addFrame: (p: unknown) => unknown } } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { Canvas: { addFrame: (p: unknown) => unknown } } };
+      }).__designjs.editor;
       ed.Canvas.addFrame({ name: "Mobile", width: 375, height: 812, x: 1520, y: 0 });
     });
 
@@ -135,10 +135,10 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
 
     const selectedTag = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: { getSelected: () => { get: (k: string) => unknown } | null };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       return ed.getSelected()?.get("type") ?? null;
     });
     // The wrapper is the frame's root component — in GrapesJS its type is
@@ -161,10 +161,10 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
 
     const name = await page.evaluate((id) => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: { Canvas: { getFrames: () => unknown[] } };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const frames = ed.Canvas.getFrames();
       const match = frames.find((f) => {
         const g = (f as { getId?: () => string; cid?: string });
@@ -186,13 +186,13 @@ test.describe("ADR-0004: frames rendered as top-level layer tree roots", () => {
     expect(before.length).toBeGreaterThanOrEqual(1);
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> };
             select: (c: unknown) => void;
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component");
       ed.select(wrapper);
     });

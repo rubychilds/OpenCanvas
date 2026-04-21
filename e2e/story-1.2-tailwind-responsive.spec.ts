@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures";
 
 interface OpencanvasGlobal {
-  __opencanvas: {
+  __designjs: {
     addHtml: (html: string) => unknown;
   };
 }
@@ -22,7 +22,7 @@ test.describe("Story 1.2: Tailwind responsive prefixes", () => {
     freshApp: page,
   }) => {
     await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
+      (window as unknown as OpencanvasGlobal).__designjs.addHtml(
         `<div data-test="resp" class="block md:hidden lg:flex">resp</div>`,
       ),
     );
@@ -66,7 +66,7 @@ test.describe("Story 1.2: Tailwind responsive prefixes", () => {
 
   test("arbitrary-value utilities resolve in the iframe", async ({ freshApp: page }) => {
     await page.evaluate(() =>
-      (window as unknown as OpencanvasGlobal).__opencanvas.addHtml(
+      (window as unknown as OpencanvasGlobal).__designjs.addHtml(
         `<div data-test="arb" class="w-[317px] text-[#1a5276]">arbitrary</div>`,
       ),
     );

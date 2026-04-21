@@ -13,7 +13,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -30,12 +30,12 @@ async function readWrapperChildren(
 ): Promise<Array<{ id: string; shape: string; classes: string; tag: string; customName: string; type: string }>> {
   return page.evaluate(() => {
     const ed = (window as unknown as {
-      __opencanvas: {
+      __designjs: {
         editor: {
           Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> };
         };
       };
-    }).__opencanvas.editor;
+    }).__designjs.editor;
     const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
       components: () => { toArray: () => unknown[] };
     };
@@ -153,10 +153,10 @@ test.describe("ADR-0005: HTML primitives ↔ shape concepts", () => {
     // not coincidence).
     const childTypes = await page.evaluate((id) => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: { getWrapper: () => unknown };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const findById = (root: { getId?: () => string; components?: () => { toArray: () => unknown[] } }, target: string): unknown => {
         if (root.getId?.() === target) return root;
         const stack = root.components?.().toArray() ?? [];
@@ -187,8 +187,8 @@ test.describe("ADR-0005: HTML primitives ↔ shape concepts", () => {
     // Replace the default "Text" content with something distinct.
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
         components: () => { toArray: () => Array<{ getAttributes: () => Record<string, unknown>; empty?: () => void; append: (x: unknown) => void }> };
       };
@@ -205,8 +205,8 @@ test.describe("ADR-0005: HTML primitives ↔ shape concepts", () => {
     // content path is exercised.
     await page.evaluate((id) => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> } } };
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component") as {
         components: () => { toArray: () => Array<{ getId: () => string; set: (k: string, v: unknown) => void }> };
       };

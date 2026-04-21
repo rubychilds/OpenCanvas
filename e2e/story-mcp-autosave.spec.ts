@@ -34,7 +34,7 @@ test.describe("MCP writes trigger autosave (persist across reload)", () => {
 
     // GET the persisted project from the dev-server middleware.
     const persisted = await page.evaluate(async () => {
-      const res = await fetch("/__opencanvas/project");
+      const res = await fetch("/__designjs/project");
       return (await res.json()) as { exists: boolean; project?: unknown };
     });
     expect(persisted.exists).toBe(true);
@@ -74,7 +74,7 @@ test.describe("MCP writes trigger autosave (persist across reload)", () => {
       .poll(
         async () => {
           const res = await page.evaluate(async () => {
-            const r = await fetch("/__opencanvas/project");
+            const r = await fetch("/__designjs/project");
             return (await r.json()) as { project?: unknown };
           });
           return JSON.stringify(res.project ?? {});

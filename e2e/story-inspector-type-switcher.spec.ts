@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -11,13 +11,13 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
 async function selectFirstFrameWrapper(page: import("@playwright/test").Page): Promise<void> {
   await page.evaluate(() => {
     const ed = (window as unknown as {
-      __opencanvas: {
+      __designjs: {
         editor: {
           Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> };
           select: (c: unknown) => void;
         };
       };
-    }).__opencanvas.editor;
+    }).__designjs.editor;
     const wrapper = ed.Canvas.getFrames()[0]!.get("component");
     if (wrapper) ed.select(wrapper);
   });
@@ -41,11 +41,11 @@ test.describe("Inspector type switcher: Frame dropdown with device presets", () 
     await waitForEditor(page);
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           addHtml: (s: string) => unknown;
           editor: { select: (c: unknown) => void };
         };
-      }).__opencanvas;
+      }).__designjs;
       const added = api.addHtml(`<p data-testid="text-host">hi</p>`) as Array<unknown>;
       api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
     });
@@ -83,12 +83,12 @@ test.describe("Inspector type switcher: Frame dropdown with device presets", () 
 
     const dims = await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> };
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const f = ed.Canvas.getFrames()[0]!;
       return { width: Number(f.get("width") ?? 0), height: Number(f.get("height") ?? 0) };
     });

@@ -7,7 +7,7 @@ interface CanvasLike {
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -20,8 +20,8 @@ test.describe("Story 5.2: pan and zoom", () => {
     await waitForEditor(page);
 
     await page.evaluate(() => {
-      const w = window as unknown as { __opencanvas: { editor: { Canvas: CanvasLike } } };
-      w.__opencanvas.editor.Canvas.setZoom(75);
+      const w = window as unknown as { __designjs: { editor: { Canvas: CanvasLike } } };
+      w.__designjs.editor.Canvas.setZoom(75);
     });
     await expect(page.locator('[data-testid="oc-zoom-readout"]')).toContainText("75%");
 
@@ -35,8 +35,8 @@ test.describe("Story 5.2: pan and zoom", () => {
     await waitForEditor(page);
 
     await page.evaluate(() => {
-      const w = window as unknown as { __opencanvas: { editor: { Canvas: CanvasLike } } };
-      w.__opencanvas.editor.Canvas.setZoom(250);
+      const w = window as unknown as { __designjs: { editor: { Canvas: CanvasLike } } };
+      w.__designjs.editor.Canvas.setZoom(250);
     });
     await expect(page.locator('[data-testid="oc-zoom-readout"]')).toContainText("250%");
 
@@ -49,7 +49,7 @@ test.describe("Story 5.2: pan and zoom", () => {
   test("+ / − step buttons change zoom by 10% each click", async ({ freshApp: page }) => {
     await waitForEditor(page);
     await page.evaluate(() => {
-      (window as unknown as { __opencanvas: { editor: { Canvas: CanvasLike } } }).__opencanvas.editor.Canvas.setZoom(100);
+      (window as unknown as { __designjs: { editor: { Canvas: CanvasLike } } }).__designjs.editor.Canvas.setZoom(100);
     });
 
     await page.locator('[data-testid="oc-zoom-in"]').click();
@@ -67,8 +67,8 @@ test.describe("Story 5.2: pan and zoom", () => {
       await page.locator('[data-testid="oc-zoom-readout"]').click();
       await page.locator(`[data-testid="oc-zoom-${z}"]`).click();
       const actual = await page.evaluate(() => {
-        const w = window as unknown as { __opencanvas: { editor: { Canvas: CanvasLike } } };
-        return Math.round(w.__opencanvas.editor.Canvas.getZoom());
+        const w = window as unknown as { __designjs: { editor: { Canvas: CanvasLike } } };
+        return Math.round(w.__designjs.editor.Canvas.getZoom());
       });
       expect(actual).toBe(z);
     }

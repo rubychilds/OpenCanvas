@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke test for `opencanvas init` (Story 2.9):
+ * Smoke test for `designjs init` (Story 2.9):
  *   - no-IDE default writes .mcp.json
  *   - --ide claude-code writes .mcp.json
  *   - --ide cursor writes .cursor/mcp.json
@@ -43,7 +43,7 @@ function readJson(path) {
 const cases = [];
 
 function tmpProject() {
-  return mkdtempSync(join(tmpdir(), "opencanvas-init-"));
+  return mkdtempSync(join(tmpdir(), "designjs-init-"));
 }
 
 cases.push({
@@ -53,7 +53,7 @@ cases.push({
     const res = run(dir, ["init"]);
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}\n${res.stdout}`);
     const json = readJson(join(dir, ".mcp.json"));
-    assertEqual(json.mcpServers.opencanvas, { command: "npx", args: ["-y", "@designjs/mcp-server"] }, "default entry");
+    assertEqual(json.mcpServers.designjs, { command: "npx", args: ["-y", "@designjs/mcp-server"] }, "default entry");
     rmSync(dir, { recursive: true });
   },
 });
@@ -65,7 +65,7 @@ cases.push({
     const res = run(dir, ["init", "--ide", "cursor"]);
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}`);
     const json = readJson(join(dir, ".cursor/mcp.json"));
-    if (!json.mcpServers.opencanvas) throw new Error("opencanvas entry missing");
+    if (!json.mcpServers.designjs) throw new Error("designjs entry missing");
     rmSync(dir, { recursive: true });
   },
 });
@@ -78,7 +78,7 @@ cases.push({
     const res = run(dir, ["init"]);
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}`);
     const json = readJson(join(dir, ".vscode/mcp.json"));
-    if (!json.mcpServers.opencanvas) throw new Error("opencanvas entry missing from vscode config");
+    if (!json.mcpServers.designjs) throw new Error("designjs entry missing from vscode config");
     rmSync(dir, { recursive: true });
   },
 });
@@ -108,7 +108,7 @@ cases.push({
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}`);
     const json = readJson(join(dir, ".mcp.json"));
     assertEqual(json.mcpServers.existing, { command: "echo", args: ["hi"] }, "existing entry preserved");
-    if (!json.mcpServers.opencanvas) throw new Error("opencanvas entry not added");
+    if (!json.mcpServers.designjs) throw new Error("designjs entry not added");
     rmSync(dir, { recursive: true });
   },
 });
@@ -120,7 +120,7 @@ cases.push({
     const res = run(dir, ["init", "--ide", "claude-code", "--mcp-command", "pnpm mcp"]);
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}`);
     const json = readJson(join(dir, ".mcp.json"));
-    assertEqual(json.mcpServers.opencanvas, { command: "pnpm", args: ["mcp"] }, "command override");
+    assertEqual(json.mcpServers.designjs, { command: "pnpm", args: ["mcp"] }, "command override");
     rmSync(dir, { recursive: true });
   },
 });

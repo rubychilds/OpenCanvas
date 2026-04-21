@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const BRIDGE_PORT = 29170;
 export const BRIDGE_HOST = "127.0.0.1";
-export const BRIDGE_PATH = "/opencanvas-bridge";
+export const BRIDGE_PATH = "/designjs-bridge";
 
 export const BridgeRole = z.enum(["mcp-server", "canvas"]);
 export type BridgeRole = z.infer<typeof BridgeRole>;

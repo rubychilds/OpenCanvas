@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { randomUUID } from "node:crypto";
 
-const BRIDGE_URL = "ws://127.0.0.1:29170/opencanvas-bridge";
+const BRIDGE_URL = "ws://127.0.0.1:29170/designjs-bridge";
 
 interface Pending {
   resolve: (value: unknown) => void;
@@ -10,7 +10,7 @@ interface Pending {
 }
 
 /**
- * Connects to the OpenCanvas WebSocket bridge as role="mcp-server" and provides
+ * Connects to the DesignJS WebSocket bridge as role="mcp-server" and provides
  * a single `call(tool, params)` method that correlates responses by id.
  *
  * Unlike the production MCP server (which wraps stdio), this client talks to

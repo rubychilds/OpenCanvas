@@ -1,6 +1,6 @@
 import type { Editor, ProjectData } from "grapesjs";
 
-const ROUTE = "/__opencanvas/project";
+const ROUTE = "/__designjs/project";
 
 /**
  * The on-disk shape: GrapesJS ProjectData plus arbitrary sidecar fields
@@ -89,7 +89,7 @@ export function attachPersistence(editor: Editor, hooks: PersistenceHooks = {}):
   // happen in rapid succession (e.g. Claude building a pricing section
   // across a dozen add_components + update_styles calls). 30s was a
   // human-scale default and routinely lost agent-authored state on
-  // reload. Writes to .opencanvas.json are cheap (tens of KB) and the
+  // reload. Writes to .designjs.json are cheap (tens of KB) and the
   // save is skipped when nothing is dirty.
   const interval = window.setInterval(() => void doSave(), 5_000);
 

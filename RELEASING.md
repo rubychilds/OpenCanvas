@@ -1,14 +1,14 @@
-# Releasing OpenCanvas
+# Releasing DesignJS
 
-Maintainer-facing process for cutting a new release. OpenCanvas is a local-first tool, so "release" here means **publishing the npm packages** and **cutting a GitHub release**, not deploying a hosted service.
+Maintainer-facing process for cutting a new release. DesignJS is a local-first tool, so "release" here means **publishing the npm packages** and **cutting a GitHub release**, not deploying a hosted service.
 
 ## What gets published
 
 | Package | npm name | Purpose |
 |---------|----------|---------|
 | `packages/bridge` | `@designjs/bridge` | Shared protocol / tool schemas. Consumed by the canvas and the MCP server. Currently `private: true` — not published until v0.2. |
-| `packages/mcp-server` | `@designjs/mcp-server` | The `opencanvas-mcp` stdio binary that agents spawn. Will be published once the bridge is public. |
-| `packages/app` | *(not published)* | Served locally via `pnpm dev`. The `create-opencanvas` scaffolder (planned for v0.2) will pull this as a template. |
+| `packages/mcp-server` | `@designjs/mcp-server` | The `designjs-mcp` stdio binary that agents spawn. Will be published once the bridge is public. |
+| `packages/app` | *(not published)* | Served locally via `pnpm dev`. The `create-designjs` scaffolder (planned for v0.2) will pull this as a template. |
 
 > **v0.1 note:** all packages are still `private: true`. The release process below is the target workflow — it will go live when we flip `private` and publish the first version.
 
@@ -100,7 +100,7 @@ Merge the hotfix branch back into `main` afterwards.
 
 CI requires these repository secrets for publishing:
 
-- `NPM_TOKEN` — automation token with `publish` scope on the `@opencanvas` npm org
+- `NPM_TOKEN` — automation token with `publish` scope on the `@designjs` npm org
 - `GITHUB_TOKEN` — default `GITHUB_TOKEN` is sufficient for `gh release create`
 
 The release workflow (`.github/workflows/release.yml` — planned) will run `changeset publish` on tagged commits.

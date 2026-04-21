@@ -1,10 +1,10 @@
 {
-  "name": "create-opencanvas",
+  "name": "create-designjs",
   "version": "0.1.0-alpha.0",
-  "description": "Project scaffolder for OpenCanvas — creates a fresh directory wired up to the OpenCanvas MCP server so an AI agent can design in it.",
+  "description": "Project scaffolder for DesignJS — creates a fresh directory wired up to the DesignJS MCP server so an AI agent can design in it.",
   "type": "module",
   "bin": {
-    "create-opencanvas": "dist/index.js"
+    "create-designjs": "dist/index.js"
   },
   "files": [
     "dist",
@@ -22,7 +22,7 @@
     "typescript": "^6.0.3"
   },
   "keywords": [
-    "opencanvas",
+    "designjs",
     "scaffolder",
     "mcp",
     "model-context-protocol",
@@ -33,11 +33,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rubychilds/opencanvas.git",
-    "directory": "packages/create-opencanvas"
+    "url": "git+https://github.com/rubychilds/designjs.git",
+    "directory": "packages/create-designjs"
   },
-  "homepage": "https://github.com/rubychilds/opencanvas/tree/main/packages/create-opencanvas#readme",
-  "bugs": "https://github.com/rubychilds/opencanvas/issues",
+  "homepage": "https://github.com/rubychilds/designjs/tree/main/packages/create-designjs#readme",
+  "bugs": "https://github.com/rubychilds/designjs/issues",
   "publishConfig": {
     "access": "public"
   }

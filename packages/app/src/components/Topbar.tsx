@@ -38,7 +38,7 @@ export function Topbar({ connected, saveStatus, saveError, onSave, editor }: Top
       data-testid="oc-topbar"
     >
       <span className="text-sm font-semibold tracking-tight" data-testid="oc-topbar-title">
-        OpenCanvas
+        DesignJS
       </span>
       <span className="text-xs text-muted-foreground">v0.1-dev</span>
 

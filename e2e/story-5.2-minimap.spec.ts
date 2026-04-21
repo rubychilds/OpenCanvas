@@ -8,8 +8,8 @@ interface FrameLike {
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
     () => {
-      const w = window as unknown as { __opencanvas?: { editor: { Canvas: { getFrames(): FrameLike[] } } } };
-      return (w.__opencanvas?.editor.Canvas.getFrames().length ?? 0) > 0;
+      const w = window as unknown as { __designjs?: { editor: { Canvas: { getFrames(): FrameLike[] } } } };
+      return (w.__designjs?.editor.Canvas.getFrames().length ?? 0) > 0;
     },
     undefined,
     { timeout: 10_000 },

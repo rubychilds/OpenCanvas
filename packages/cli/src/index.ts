@@ -50,27 +50,27 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 function printHelp(): void {
-  console.log(`opencanvas — open-source MCP design canvas
+  console.log(`designjs — open-source MCP design canvas
 
 Usage:
-  opencanvas init [options]       Register the OpenCanvas MCP server with your
+  designjs init [options]       Register the DesignJS MCP server with your
                                   AI agent(s). Writes an .mcp.json-style file
                                   per detected IDE.
 
 Options:
   --ide <list>                    Comma-separated IDE targets: claude-code,
                                   cursor, vscode. Default: auto-detect.
-  --name <name>                   Server name to register. Default: opencanvas.
+  --name <name>                   Server name to register. Default: designjs.
   --mcp-command "<cmd>"           Override the server command string.
                                   Default: "npx -y @designjs/mcp-server".
   --dry-run                       Print the plan without writing files.
   -h, --help                      Show this help.
 
 Examples:
-  opencanvas init
-  opencanvas init --ide claude-code
-  opencanvas init --ide cursor,vscode --name my-canvas
-  opencanvas init --mcp-command "pnpm --dir /path mcp"
+  designjs init
+  designjs init --ide claude-code
+  designjs init --ide cursor,vscode --name my-canvas
+  designjs init --mcp-command "pnpm --dir /path mcp"
 `);
 }
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export type Theme = "light" | "dark";
 
-const STORAGE_KEY = "opencanvas:theme";
+const STORAGE_KEY = "designjs:theme";
 
 function readInitialTheme(): Theme {
   if (typeof window === "undefined") return "light";

@@ -1,4 +1,4 @@
-# ADR-0001: Frontend UI stack for the OpenCanvas editor shell
+# ADR-0001: Frontend UI stack for the DesignJS editor shell
 
 **Status:** Accepted
 **Date:** April 18, 2026
@@ -9,7 +9,7 @@
 
 ## Context
 
-OpenCanvas is a design tool. The canvas itself is the user's design — real HTML/CSS rendered inside a GrapesJS iframe. Everything *around* the canvas (the "chrome": layer tree, block palette, style panel, toolbars, inspector, command palette, modals, toasts) is the editor UI that frames and controls the canvas.
+DesignJS is a design tool. The canvas itself is the user's design — real HTML/CSS rendered inside a GrapesJS iframe. Everything *around* the canvas (the "chrome": layer tree, block palette, style panel, toolbars, inspector, command palette, modals, toasts) is the editor UI that frames and controls the canvas.
 
 PRD Story 1.3 commits to a layers / canvas / style three-pane editor shell in week 1 of v0.1. Without a decided UI component stack, that story cannot start without the risk of expensive rework when polish lands in v0.2 (Epic 7). We also need a stack answer to credibly match the visual quality bar set by Pencil and Paper, which is a stated competitive concern in PRD §4.3.
 
@@ -20,7 +20,7 @@ This ADR commits to a specific set of libraries so editor UI work can begin imme
 - **Aesthetic target:** the chrome should read as a design tool, not a SaaS dashboard. Reference points: Pencil, Figma, Linear, Paper. This means high information density, restrained neutral palette, dark-theme parity, tight type scale, muted borders, and specialized controls (numeric steppers, color pickers, popover-based inspectors) that general-purpose React libraries do not ship.
 - **Design-tool primitives do not exist in any single library.** No off-the-shelf React kit covers layer trees, resizable panels, color pickers, floating property popovers, and command palettes together. Some assembly is unavoidable.
 - **Canvas ≠ chrome.** GrapesJS handles the canvas (selection, drag, style editing, iframe rendering). This ADR is about the React SPA that surrounds it.
-- **MIT-compatible licensing.** OpenCanvas is MIT. Any dependency with copyleft licensing (AGPL, MPL for chrome libraries) is out.
+- **MIT-compatible licensing.** DesignJS is MIT. Any dependency with copyleft licensing (AGPL, MPL for chrome libraries) is out.
 - **Control over primitives, not just components.** Editor UIs routinely need density adjustments (12–13px UI, tight paddings, custom hit targets) that heavily-themed libraries fight against.
 - **Existing audience familiarity.** Dana (the PRD's primary persona) ships with Next.js + shadcn/ui + Tailwind. Choosing the same stack means contributors can read our code without ramping on a new system.
 
@@ -29,13 +29,13 @@ This ADR commits to a specific set of libraries so editor UI work can begin imme
 - React SPA on Vite (§5.1)
 - Local-first, no cloud dependencies (§5.2)
 - Ship v0.1 in 4 weeks, v0.2 in 8, v0.3 in 12
-- Must not bloat the installed footprint for `npm create opencanvas@latest`
+- Must not bloat the installed footprint for `npm create designjs@latest`
 
 ---
 
 ## Decision
 
-OpenCanvas will use the following frontend stack for the editor shell:
+DesignJS will use the following frontend stack for the editor shell:
 
 ### Core
 
@@ -94,7 +94,7 @@ These do not exist in shadcn/ui and must be added:
 
 ### Negative
 
-- **Aesthetic ceiling is also a floor — shadcn has a recognizable look.** If OpenCanvas is not carefully tuned (density, type scale, icon weight, spacing), it will look like "another shadcn app" rather than a professional design tool. Mitigation: the tokens.css density pass is not optional; it ships with Story 1.3.
+- **Aesthetic ceiling is also a floor — shadcn has a recognizable look.** If DesignJS is not carefully tuned (density, type scale, icon weight, spacing), it will look like "another shadcn app" rather than a professional design tool. Mitigation: the tokens.css density pass is not optional; it ships with Story 1.3.
 - **~8 additional dependencies** (`react-arborist`, `react-resizable-panels`, `react-colorful`, `cmdk`, `sonner`, `react-hotkeys-hook`, `@floating-ui/react`, `lucide-react`). All small, all MIT, but the scaffold footprint grows. Acceptable given what they replace (each would otherwise be weeks of custom code).
 - **Custom numeric stepper is net-new code.** No off-the-shelf component matches design-tool behavior. Budget ~1 day in Story 1.6 to build it properly the first time.
 - **Tailwind v4-only is a commitment.** If the Tailwind team shifts direction or the migration pain of v4 proves larger than expected in the ecosystem, we revisit.
@@ -117,7 +117,7 @@ Directory layout in `packages/app/src` (actual, post-Phase A):
 ```
 components/
   ui/              # shadcn components, copied in
-  editor/          # (planned) opencanvas-specific composites
+  editor/          # (planned) designjs-specific composites
                    #   LayerTree, BlockPalette, StylePanel, ArtboardToolbar,
                    #   ColorField, CommandPalette. Currently these live at the
                    #   top of components/ directly; refactor into editor/ as

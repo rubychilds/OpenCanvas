@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -11,8 +11,8 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
 async function addAndSelect(page: import("@playwright/test").Page, html: string): Promise<void> {
   await page.evaluate((h) => {
     const api = (window as unknown as {
-      __opencanvas: { addHtml: (s: string) => unknown; editor: { select: (c: unknown) => void } };
-    }).__opencanvas;
+      __designjs: { addHtml: (s: string) => unknown; editor: { select: (c: unknown) => void } };
+    }).__designjs;
     const added = api.addHtml(h) as Array<unknown>;
     api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
   }, html);
@@ -24,8 +24,8 @@ async function readSelectedStyle(
 ): Promise<string> {
   return page.evaluate((k) => {
     const ed = (window as unknown as {
-      __opencanvas: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
-    }).__opencanvas.editor;
+      __designjs: { editor: { getSelected: () => { getStyle: () => Record<string, string> } } };
+    }).__designjs.editor;
     return ed.getSelected().getStyle()[k] ?? "";
   }, key);
 }
@@ -75,11 +75,11 @@ test.describe("D.7: Effects section (per ADR-0003 #9)", () => {
     await waitForEditor(page);
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           addHtml: (h: string) => unknown;
           editor: { select: (c: unknown) => void };
         };
-      }).__opencanvas;
+      }).__designjs;
       const added = api.addHtml(`<div data-testid="compound-host">x</div>`) as Array<{
         addStyle: (s: Record<string, string>) => void;
       }>;

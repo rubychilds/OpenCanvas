@@ -1,14 +1,14 @@
 # __PROJECT_NAME__
 
-An OpenCanvas-powered design workspace. Claude Code, Cursor, and any MCP-compatible agent can read and write a live HTML/CSS canvas from this directory.
+An DesignJS-powered design workspace. Claude Code, Cursor, and any MCP-compatible agent can read and write a live HTML/CSS canvas from this directory.
 
 ## Prerequisites
 
-The OpenCanvas canvas app must be running locally. If you haven't set it up yet:
+The DesignJS canvas app must be running locally. If you haven't set it up yet:
 
 ```bash
-git clone https://github.com/rubychilds/opencanvas.git
-cd opencanvas
+git clone https://github.com/rubychilds/designjs.git
+cd designjs
 pnpm install
 pnpm dev
 ```
@@ -36,10 +36,10 @@ Then try a prompt like:
 ## Files
 
 - [`.mcp.json`](./.mcp.json) — MCP server config (Claude Code / Codex convention). Cursor reads `.cursor/mcp.json`; VS Code reads `.vscode/mcp.json`. Use `npx @designjs/cli init` to generate any of these.
-- [`CLAUDE.md`](./CLAUDE.md) — agent guidance: biases the agent toward the OpenCanvas MCP tools for visual work instead of writing files.
+- [`CLAUDE.md`](./CLAUDE.md) — agent guidance: biases the agent toward the DesignJS MCP tools for visual work instead of writing files.
 
 ## Learn more
 
-- OpenCanvas docs: <https://github.com/rubychilds/opencanvas-docs>
-- Tool reference (20 MCP tools): [`opencanvas-docs/mcp/`](https://github.com/rubychilds/opencanvas-docs/tree/main/mcp)
-- Source: <https://github.com/rubychilds/opencanvas>
+- DesignJS docs: <https://github.com/rubychilds/designjs-docs>
+- Tool reference (20 MCP tools): [`designjs-docs/mcp/`](https://github.com/rubychilds/designjs-docs/tree/main/mcp)
+- Source: <https://github.com/rubychilds/designjs>

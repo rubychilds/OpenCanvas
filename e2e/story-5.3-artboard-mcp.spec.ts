@@ -11,7 +11,7 @@ interface Artboard {
 }
 
 interface OpencanvasGlobal {
-  __opencanvas: {
+  __designjs: {
     addHtml: (html: string) => unknown;
   };
 }
@@ -130,7 +130,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     // unopinionated auto-frame may still be active at this point).
     await page.evaluate((id) => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: {
               getFrames: () => Array<{
@@ -141,7 +141,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
             };
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const frame = ed.Canvas.getFrames().find(
         (f) => String(f.cid ?? f.id ?? "") === id,
       )!;
@@ -201,7 +201,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     // above for why — active-frame ambiguity with the unopinionated auto-frame).
     await page.evaluate((id) => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: {
               getFrames: () => Array<{
@@ -212,7 +212,7 @@ test.describe("Story 5.3: artboard MCP tools", () => {
             };
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const frame = ed.Canvas.getFrames().find(
         (f) => String(f.cid ?? f.id ?? "") === id,
       )!;

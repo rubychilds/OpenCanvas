@@ -4,7 +4,7 @@ test.describe("Story 1.3: editor shell", () => {
   test("renders left + center columns; right panel hidden on empty selection", async ({
     freshApp: page,
   }) => {
-    await expect(page.locator('[data-testid="oc-topbar-title"]')).toHaveText("OpenCanvas");
+    await expect(page.locator('[data-testid="oc-topbar-title"]')).toHaveText("DesignJS");
     await expect(page.locator('[data-testid="oc-bridge-dot"]')).toBeVisible();
 
     await expect(page.locator("#oc-left")).toBeVisible();
@@ -27,7 +27,7 @@ test.describe("Story 1.3: editor shell", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -36,11 +36,11 @@ test.describe("Story 1.3: editor shell", () => {
 
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           addHtml: (h: string) => unknown;
           editor: { select: (c: unknown) => void };
         };
-      }).__opencanvas;
+      }).__designjs;
       const added = api.addHtml(`<div data-testid="sel-host">pick me</div>`) as Array<unknown>;
       api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
     });
@@ -48,8 +48,8 @@ test.describe("Story 1.3: editor shell", () => {
 
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { select: (c: unknown) => void } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { select: (c: unknown) => void } };
+      }).__designjs.editor;
       ed.select(undefined as unknown);
     });
     await expect(page.locator("#oc-right")).toHaveCount(0);
@@ -64,8 +64,8 @@ test.describe("Story 1.3: editor shell", () => {
 
   test("Cmd+D duplicates the selected component", async ({ freshApp: page }) => {
     await page.evaluate(() => {
-      const api = (window as unknown as { __opencanvas: { editor: unknown; addHtml: (h: string) => unknown } })
-        .__opencanvas;
+      const api = (window as unknown as { __designjs: { editor: unknown; addHtml: (h: string) => unknown } })
+        .__designjs;
       const added = api.addHtml(`<div id="target" class="p-4">only child</div>`) as unknown as
         | { at?: (i: number) => unknown }
         | Array<unknown>;
@@ -77,7 +77,7 @@ test.describe("Story 1.3: editor shell", () => {
     await page.keyboard.press("Meta+d");
 
     const count = await page.evaluate(() => {
-      const ed = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas
+      const ed = (window as unknown as { __designjs: { editor: unknown } }).__designjs
         .editor as { getWrapper: () => { components: () => { length: number } } };
       return ed.getWrapper().components().length;
     });
@@ -86,15 +86,15 @@ test.describe("Story 1.3: editor shell", () => {
 
   test("Cmd+Z undoes an add_components call", async ({ freshApp: page }) => {
     await page.evaluate(() => {
-      const api = (window as unknown as { __opencanvas: { addHtml: (h: string) => unknown } })
-        .__opencanvas;
+      const api = (window as unknown as { __designjs: { addHtml: (h: string) => unknown } })
+        .__designjs;
       api.addHtml(`<div class="p-4">undo-me</div>`);
     });
 
     await page.keyboard.press("Meta+z");
 
     const count = await page.evaluate(() => {
-      const ed = (window as unknown as { __opencanvas: { editor: unknown } }).__opencanvas
+      const ed = (window as unknown as { __designjs: { editor: unknown } }).__designjs
         .editor as { getWrapper: () => { components: () => { length: number } } };
       return ed.getWrapper().components().length;
     });

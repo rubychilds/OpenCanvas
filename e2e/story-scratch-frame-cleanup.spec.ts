@@ -14,7 +14,7 @@ test.describe("createArtboard: scratch-frame cleanup", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -23,8 +23,8 @@ test.describe("createArtboard: scratch-frame cleanup", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       mod.createArtboard(ed, { name: "Desktop", width: 1440, height: 900 });
       return mod.listArtboards(ed).map((a) => a.name);
     });
@@ -36,7 +36,7 @@ test.describe("createArtboard: scratch-frame cleanup", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -45,8 +45,8 @@ test.describe("createArtboard: scratch-frame cleanup", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       // Drop a child into the default Frame 1 wrapper.
       const frame1 = ed.Canvas.getFrames()[0]! as unknown as {
         get: (k: string) => unknown;
@@ -68,7 +68,7 @@ test.describe("createArtboard: scratch-frame cleanup", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -77,8 +77,8 @@ test.describe("createArtboard: scratch-frame cleanup", () => {
       const mod = (await import(
         "/src/canvas/artboards.ts"
       )) as typeof import("../packages/app/src/canvas/artboards.js");
-      const ed = (window as unknown as { __opencanvas: { editor: import("grapesjs").Editor } })
-        .__opencanvas.editor;
+      const ed = (window as unknown as { __designjs: { editor: import("grapesjs").Editor } })
+        .__designjs.editor;
       const frame1 = ed.Canvas.getFrames()[0]! as unknown as {
         set: (a: Record<string, unknown>) => void;
       };

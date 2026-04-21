@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -14,8 +14,8 @@ async function readRootVar(
 ): Promise<string> {
   return page.evaluate((k) => {
     const ed = (window as unknown as {
-      __opencanvas: { editor: { Canvas: { getDocument: () => Document } } };
-    }).__opencanvas.editor;
+      __designjs: { editor: { Canvas: { getDocument: () => Document } } };
+    }).__designjs.editor;
     const root = ed.Canvas.getDocument()?.documentElement;
     return (root?.style.getPropertyValue(k) ?? "").trim();
   }, key);

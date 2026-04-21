@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 
 async function waitForEditor(page: import("@playwright/test").Page): Promise<void> {
   await page.waitForFunction(
-    () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+    () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
     undefined,
     { timeout: 10_000 },
   );
@@ -11,8 +11,8 @@ async function waitForEditor(page: import("@playwright/test").Page): Promise<voi
 async function addAndSelect(page: import("@playwright/test").Page, html: string): Promise<void> {
   await page.evaluate((h) => {
     const api = (window as unknown as {
-      __opencanvas: { addHtml: (s: string) => unknown; editor: { select: (c: unknown) => void } };
-    }).__opencanvas;
+      __designjs: { addHtml: (s: string) => unknown; editor: { select: (c: unknown) => void } };
+    }).__designjs;
     const added = api.addHtml(h) as Array<unknown>;
     api.editor.select(Array.isArray(added) ? (added[0] as unknown) : (added as unknown));
   }, html);
@@ -40,8 +40,8 @@ test.describe("Story 7.1: Selection overlay — hover label + dimension badge", 
 
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: { editor: { select: (c: unknown) => void } };
-      }).__opencanvas.editor;
+        __designjs: { editor: { select: (c: unknown) => void } };
+      }).__designjs.editor;
       ed.select(null);
     });
     await expect(page.locator('[data-testid="oc-selection-dim-badge"]')).toHaveCount(0);
@@ -57,14 +57,14 @@ test.describe("Story 7.1: Selection overlay — hover label + dimension badge", 
     // from selection.
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           addHtml: (s: string) => unknown;
           editor: {
             select: (c: unknown) => void;
             trigger: (ev: string, ...args: unknown[]) => void;
           };
         };
-      }).__opencanvas;
+      }).__designjs;
       const first = api.addHtml(
         `<div id="hov-a" style="width: 100px; height: 50px;">a</div>`,
       ) as Array<unknown>;
@@ -90,14 +90,14 @@ test.describe("Story 7.1: Selection overlay — hover label + dimension badge", 
     await waitForEditor(page);
     await page.evaluate(() => {
       const api = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           addHtml: (s: string) => unknown;
           editor: {
             select: (c: unknown) => void;
             trigger: (ev: string, ...args: unknown[]) => void;
           };
         };
-      }).__opencanvas;
+      }).__designjs;
       const added = api.addHtml(
         `<div style="width: 60px; height: 60px;">self</div>`,
       ) as Array<unknown>;

@@ -31,7 +31,7 @@ async function copyText(value: string, key: CopyTarget, flash: (k: CopyTarget) =
     await navigator.clipboard.writeText(value);
     flash(key);
   } catch (err) {
-    console.warn("[opencanvas] clipboard copy failed:", err);
+    console.warn("[designjs] clipboard copy failed:", err);
   }
 }
 

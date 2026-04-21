@@ -145,7 +145,7 @@ function useSelectedComponent(): Component | null {
 export function StylesPanel() {
   // Open-by-default sectors; overwritten from localStorage per usePersistedState.
   const [openSectors, setOpenSectors] = usePersistedState<string[]>(
-    "opencanvas:styles:open-sectors",
+    "designjs:styles:open-sectors",
     ["Layout"],
   );
   const selected = useSelectedComponent();

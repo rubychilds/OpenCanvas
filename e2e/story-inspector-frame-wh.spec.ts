@@ -12,7 +12,7 @@ test.describe("Inspector: W/H for frame wrapper selection", () => {
     freshApp: page,
   }) => {
     await page.waitForFunction(
-      () => typeof (window as unknown as { __opencanvas?: unknown }).__opencanvas !== "undefined",
+      () => typeof (window as unknown as { __designjs?: unknown }).__designjs !== "undefined",
       undefined,
       { timeout: 10_000 },
     );
@@ -20,13 +20,13 @@ test.describe("Inspector: W/H for frame wrapper selection", () => {
     // Select the frame's wrapper component.
     await page.evaluate(() => {
       const ed = (window as unknown as {
-        __opencanvas: {
+        __designjs: {
           editor: {
             Canvas: { getFrames: () => Array<{ get: (k: string) => unknown }> };
             select: (c: unknown) => void;
           };
         };
-      }).__opencanvas.editor;
+      }).__designjs.editor;
       const wrapper = ed.Canvas.getFrames()[0]!.get("component");
       if (wrapper) ed.select(wrapper);
     });
