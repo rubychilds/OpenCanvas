@@ -57,8 +57,8 @@ cases.push({
     const mcp = readJson(join(dir, ".mcp.json"));
     assertEqual(
       mcp.mcpServers.opencanvas,
-      { command: "npx", args: ["-y", "@opencanvas/mcp-server"] },
-      "mcp config points at @opencanvas/mcp-server",
+      { command: "npx", args: ["-y", "@designjs/mcp-server"] },
+      "mcp config points at @designjs/mcp-server",
     );
     rmSync(base, { recursive: true });
   },

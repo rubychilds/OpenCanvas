@@ -22,7 +22,7 @@ import {
   SetTextInput,
   SetVariablesInput,
   UpdateStylesInput,
-} from "@opencanvas/bridge";
+} from "@designjs/bridge";
 import {
   createArtboard,
   findPlacement,

@@ -1,4 +1,4 @@
-# @opencanvas/mcp-server
+# @designjs/mcp-server
 
 The stdio [Model Context Protocol](https://modelcontextprotocol.io/) server for [OpenCanvas](https://github.com/rubychilds/opencanvas) — an open-source MCP design canvas that gives AI coding agents eyes on a live HTML/CSS canvas.
 
@@ -18,20 +18,20 @@ cd opencanvas && pnpm install && pnpm dev
 
 # 2. Register the MCP server in your project
 cd ~/your-project
-npx @opencanvas/cli init         # writes .mcp.json / .cursor/mcp.json / .vscode/mcp.json
+npx @designjs/cli init         # writes .mcp.json / .cursor/mcp.json / .vscode/mcp.json
 
 # 3. Open your agent and start prompting
 #    "Create a Desktop artboard, add a pricing section with 3 tier cards"
 ```
 
-The `init` command writes a config pointing at `npx -y @opencanvas/mcp-server`. If you'd rather configure manually, add this to your `.mcp.json`:
+The `init` command writes a config pointing at `npx -y @designjs/mcp-server`. If you'd rather configure manually, add this to your `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "opencanvas": {
       "command": "npx",
-      "args": ["-y", "@opencanvas/mcp-server"]
+      "args": ["-y", "@designjs/mcp-server"]
     }
   }
 }
@@ -51,13 +51,13 @@ Full per-tool docs with input/output schemas and example prompts live at [openca
 
 ```
 ┌───────────┐    stdio     ┌───────────────────┐    WebSocket    ┌──────────────┐
-│ Agent     │──(JSON-RPC)─▶│ @opencanvas/       │◄──(bridge)─────▶│ OpenCanvas   │
+│ Agent     │──(JSON-RPC)─▶│ @designjs/       │◄──(bridge)─────▶│ OpenCanvas   │
 │ (Claude,  │              │ mcp-server         │   127.0.0.1:    │ canvas app   │
 │  Cursor)  │              │ (this package)     │    29170        │ (pnpm dev)   │
 └───────────┘              └───────────────────┘                 └──────────────┘
 ```
 
-The MCP server is a thin translator: MCP requests in, bridge WebSocket messages out, canvas acknowledgements back, MCP responses out. Schemas are shared with `@opencanvas/bridge`.
+The MCP server is a thin translator: MCP requests in, bridge WebSocket messages out, canvas acknowledgements back, MCP responses out. Schemas are shared with `@designjs/bridge`.
 
 ## License
 

@@ -27,7 +27,7 @@ cursor .
 code .
 ```
 
-On first tool call, your agent will run `npx -y @opencanvas/mcp-server` (configured in `.mcp.json`) and connect to the canvas over its local WebSocket bridge. The bridge-connected indicator in the canvas Topbar will flip to green.
+On first tool call, your agent will run `npx -y @designjs/mcp-server` (configured in `.mcp.json`) and connect to the canvas over its local WebSocket bridge. The bridge-connected indicator in the canvas Topbar will flip to green.
 
 Then try a prompt like:
 
@@ -35,7 +35,7 @@ Then try a prompt like:
 
 ## Files
 
-- [`.mcp.json`](./.mcp.json) — MCP server config (Claude Code / Codex convention). Cursor reads `.cursor/mcp.json`; VS Code reads `.vscode/mcp.json`. Use `npx @opencanvas/cli init` to generate any of these.
+- [`.mcp.json`](./.mcp.json) — MCP server config (Claude Code / Codex convention). Cursor reads `.cursor/mcp.json`; VS Code reads `.vscode/mcp.json`. Use `npx @designjs/cli init` to generate any of these.
 - [`CLAUDE.md`](./CLAUDE.md) — agent guidance: biases the agent toward the OpenCanvas MCP tools for visual work instead of writing files.
 
 ## Learn more

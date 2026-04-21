@@ -65,7 +65,7 @@ npm create opencanvas@latest my-app
 cd my-app
 ```
 
-Drops a `.mcp.json`, `CLAUDE.md`, and `README.md` pointing at the published MCP server. If you already have a project directory and just want the MCP config, skip this step and use `npx @opencanvas/cli init` instead (writes `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json` based on which IDE config dirs it detects).
+Drops a `.mcp.json`, `CLAUDE.md`, and `README.md` pointing at the published MCP server. If you already have a project directory and just want the MCP config, skip this step and use `npx @designjs/cli init` instead (writes `.mcp.json` / `.cursor/mcp.json` / `.vscode/mcp.json` based on which IDE config dirs it detects).
 
 ### 3. Connect your agent
 
@@ -79,7 +79,7 @@ cursor .
 code .
 ```
 
-On the first tool call, the agent runs `npx -y @opencanvas/mcp-server` and connects. The bridge dot in the canvas Topbar flips to green. Prompt:
+On the first tool call, the agent runs `npx -y @designjs/mcp-server` and connects. The bridge dot in the canvas Topbar flips to green. Prompt:
 
 > "Create a Desktop artboard, then add a pricing section with three tier cards."
 
@@ -92,7 +92,7 @@ If you'd rather write the MCP config yourself, add this to your project's `.mcp.
   "mcpServers": {
     "opencanvas": {
       "command": "npx",
-      "args": ["-y", "@opencanvas/mcp-server"]
+      "args": ["-y", "@designjs/mcp-server"]
     }
   }
 }
@@ -103,9 +103,9 @@ If you'd rather write the MCP config yourself, add this to your project's `.mcp.
 | Package | npm name | Purpose |
 |---------|----------|---------|
 | [`packages/app`](./packages/app) | *(not published)* | Vite + React SPA hosting the GrapesJS canvas. Embeds a WebSocket hub (port 29170) that relays messages between the MCP server and the browser. |
-| [`packages/mcp-server`](./packages/mcp-server) | `@opencanvas/mcp-server` | Standalone stdio MCP server. Registers all tools, forwards calls over WebSocket to the canvas. This is what `npx -y @opencanvas/mcp-server` runs. |
-| [`packages/bridge`](./packages/bridge) | `@opencanvas/bridge` | Shared Zod schemas for the WS wire protocol and MCP tool I/O. Consumed by both halves. |
-| [`packages/cli`](./packages/cli) | `@opencanvas/cli` | `opencanvas init` — detects the installed IDE(s) and writes the right MCP config. |
+| [`packages/mcp-server`](./packages/mcp-server) | `@designjs/mcp-server` | Standalone stdio MCP server. Registers all tools, forwards calls over WebSocket to the canvas. This is what `npx -y @designjs/mcp-server` runs. |
+| [`packages/bridge`](./packages/bridge) | `@designjs/bridge` | Shared Zod schemas for the WS wire protocol and MCP tool I/O. Consumed by both halves. |
+| [`packages/cli`](./packages/cli) | `@designjs/cli` | `opencanvas init` — detects the installed IDE(s) and writes the right MCP config. |
 | [`packages/create-opencanvas`](./packages/create-opencanvas) | `create-opencanvas` | `npm create opencanvas@latest <dir>` scaffolder. Drops `.mcp.json` + `CLAUDE.md` into a fresh project. |
 
 ## MCP tools

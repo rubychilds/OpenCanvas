@@ -5,7 +5,7 @@ import {
   BridgeMessage,
   type RequestMessage,
   type ResponseMessage,
-} from "@opencanvas/bridge";
+} from "@designjs/bridge";
 
 export type ToolHandler = (params: unknown) => Promise<unknown> | unknown;
 

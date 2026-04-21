@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { TOOL_SCHEMAS, TOOL_DESCRIPTIONS, type ToolName } from "@opencanvas/bridge";
+import { TOOL_SCHEMAS, TOOL_DESCRIPTIONS, type ToolName } from "@designjs/bridge";
 import { BridgeClient } from "./bridge-client.js";
 
 const log = (msg: string) => process.stderr.write(`[opencanvas-mcp] ${msg}\n`);

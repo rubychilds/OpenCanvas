@@ -6,7 +6,7 @@ import {
   BRIDGE_PORT,
   BridgeMessage,
   type BridgeRole,
-} from "@opencanvas/bridge";
+} from "@designjs/bridge";
 
 interface Peer {
   role: BridgeRole;

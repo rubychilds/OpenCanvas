@@ -5,13 +5,13 @@
   "description": "Open-source MCP design canvas that gives AI coding agents eyes",
   "license": "MIT",
   "scripts": {
-    "dev": "pnpm --filter @opencanvas/bridge build && pnpm --filter @opencanvas/app dev",
-    "build": "pnpm --filter @opencanvas/bridge build && pnpm -r --filter '!@opencanvas/bridge' build",
+    "dev": "pnpm --filter @designjs/bridge build && pnpm --filter @designjs/app dev",
+    "build": "pnpm --filter @designjs/bridge build && pnpm -r --filter '!@designjs/bridge' build",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint",
-    "mcp": "pnpm --filter @opencanvas/bridge build && pnpm --filter @opencanvas/mcp-server start",
-    "smoke:bridge": "pnpm --filter @opencanvas/bridge build && node scripts/smoke-bridge.mjs",
-    "smoke:init": "pnpm --filter @opencanvas/cli build && node scripts/smoke-init.mjs",
+    "mcp": "pnpm --filter @designjs/bridge build && pnpm --filter @designjs/mcp-server start",
+    "smoke:bridge": "pnpm --filter @designjs/bridge build && node scripts/smoke-bridge.mjs",
+    "smoke:init": "pnpm --filter @designjs/cli build && node scripts/smoke-init.mjs",
     "smoke:create": "pnpm --filter create-opencanvas build && node scripts/smoke-create.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"

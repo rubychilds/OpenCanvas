@@ -1,5 +1,5 @@
 {
-  "name": "@opencanvas/mcp-server",
+  "name": "@designjs/mcp-server",
   "version": "0.1.0-alpha.0",
   "description": "stdio Model Context Protocol (MCP) server for OpenCanvas — lets Claude Code, Cursor, and any MCP-compatible agent read and write a live HTML/CSS design canvas.",
   "type": "module",
@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@opencanvas/bridge": "workspace:*",
+    "@designjs/bridge": "workspace:*",
     "ws": "^8.20.0",
     "zod": "^3.23.8"
   },

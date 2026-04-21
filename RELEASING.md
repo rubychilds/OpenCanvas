@@ -6,8 +6,8 @@ Maintainer-facing process for cutting a new release. OpenCanvas is a local-first
 
 | Package | npm name | Purpose |
 |---------|----------|---------|
-| `packages/bridge` | `@opencanvas/bridge` | Shared protocol / tool schemas. Consumed by the canvas and the MCP server. Currently `private: true` — not published until v0.2. |
-| `packages/mcp-server` | `@opencanvas/mcp-server` | The `opencanvas-mcp` stdio binary that agents spawn. Will be published once the bridge is public. |
+| `packages/bridge` | `@designjs/bridge` | Shared protocol / tool schemas. Consumed by the canvas and the MCP server. Currently `private: true` — not published until v0.2. |
+| `packages/mcp-server` | `@designjs/mcp-server` | The `opencanvas-mcp` stdio binary that agents spawn. Will be published once the bridge is public. |
 | `packages/app` | *(not published)* | Served locally via `pnpm dev`. The `create-opencanvas` scaffolder (planned for v0.2) will pull this as a template. |
 
 > **v0.1 note:** all packages are still `private: true`. The release process below is the target workflow — it will go live when we flip `private` and publish the first version.
@@ -58,7 +58,7 @@ For packages that are still `private: true` (all of them in v0.1), flip the flag
 
 ### 4. GitHub release
 
-`changeset publish` creates git tags (e.g. `@opencanvas/mcp-server@0.1.0`). Push them:
+`changeset publish` creates git tags (e.g. `@designjs/mcp-server@0.1.0`). Push them:
 
 ```bash
 git push --follow-tags
@@ -109,6 +109,6 @@ The release workflow (`.github/workflows/release.yml` — planned) will run `cha
 
 If a bad release ships:
 
-1. `npm deprecate @opencanvas/<pkg>@<version> "known issue, use <version-1>"` (do **not** `npm unpublish` unless it's within 72 hours and contains a secret)
+1. `npm deprecate @designjs/<pkg>@<version> "known issue, use <version-1>"` (do **not** `npm unpublish` unless it's within 72 hours and contains a secret)
 2. Open a GitHub issue linking the CHANGELOG entry + the breakage
 3. Cut a new patch release fixing the issue rather than reverting the bad version

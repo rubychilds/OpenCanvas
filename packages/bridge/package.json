@@ -1,5 +1,5 @@
 {
-  "name": "@opencanvas/bridge",
+  "name": "@designjs/bridge",
   "version": "0.1.0-alpha.0",
   "description": "Shared Zod schemas + WebSocket protocol constants for the OpenCanvas MCP server and canvas runtime.",
   "type": "module",

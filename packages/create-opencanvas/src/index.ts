@@ -37,7 +37,7 @@ function parseArgs(argv: string[]): ParsedArgs {
 const HELP_TEXT = `Usage: create-opencanvas <project-directory>
 
 Scaffold a new OpenCanvas-wired project. Drops:
-  .mcp.json     MCP config pointing at @opencanvas/mcp-server
+  .mcp.json     MCP config pointing at @designjs/mcp-server
   CLAUDE.md     agent guidance biasing toward the OpenCanvas tools
   README.md     quickstart + prerequisites
 

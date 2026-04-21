@@ -14,7 +14,7 @@ yarn create opencanvas my-app
 
 Creates `my-app/` with:
 
-- `.mcp.json` — wired to `@opencanvas/mcp-server` so Claude Code / Codex pick it up automatically
+- `.mcp.json` — wired to `@designjs/mcp-server` so Claude Code / Codex pick it up automatically
 - `CLAUDE.md` — biases the agent toward visual MCP tools instead of writing React files
 - `README.md` — quickstart + prerequisites
 

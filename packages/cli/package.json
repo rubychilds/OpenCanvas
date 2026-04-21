@@ -1,5 +1,5 @@
 {
-  "name": "@opencanvas/cli",
+  "name": "@designjs/cli",
   "version": "0.1.0-dev",
   "private": true,
   "type": "module",

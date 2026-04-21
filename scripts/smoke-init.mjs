@@ -19,7 +19,7 @@ const repoRoot = resolve(new URL(".", import.meta.url).pathname, "..");
 const cliDist = resolve(repoRoot, "packages/cli/dist/index.js");
 
 if (!existsSync(cliDist)) {
-  console.error(`CLI not built — run 'pnpm --filter @opencanvas/cli build' first`);
+  console.error(`CLI not built — run 'pnpm --filter @designjs/cli build' first`);
   process.exit(2);
 }
 
@@ -53,7 +53,7 @@ cases.push({
     const res = run(dir, ["init"]);
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}\n${res.stdout}`);
     const json = readJson(join(dir, ".mcp.json"));
-    assertEqual(json.mcpServers.opencanvas, { command: "npx", args: ["-y", "@opencanvas/mcp-server"] }, "default entry");
+    assertEqual(json.mcpServers.opencanvas, { command: "npx", args: ["-y", "@designjs/mcp-server"] }, "default entry");
     rmSync(dir, { recursive: true });
   },
 });

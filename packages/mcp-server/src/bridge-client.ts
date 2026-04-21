@@ -6,7 +6,7 @@ import {
   BRIDGE_PORT,
   BridgeMessage,
   type RequestMessage,
-} from "@opencanvas/bridge";
+} from "@designjs/bridge";
 
 interface Pending {
   resolve: (value: unknown) => void;
