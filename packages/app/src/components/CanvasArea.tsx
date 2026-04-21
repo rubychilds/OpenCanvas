@@ -12,11 +12,11 @@ export function CanvasArea() {
       <div className="flex-1 min-h-0 relative">
         <Canvas className="absolute inset-0" />
         <ArtboardTitleBars />
-        <div className="absolute left-3 top-3 z-10">
+        <div className="absolute left-3 top-3 z-30">
           <InsertRail />
         </div>
         <Minimap />
-        <div className="absolute bottom-3 right-3 z-10">
+        <div className="absolute bottom-3 right-3 z-30">
           <ZoomControl />
         </div>
         <SelectionOverlay />

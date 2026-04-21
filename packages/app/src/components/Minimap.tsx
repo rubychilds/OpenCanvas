@@ -109,7 +109,7 @@ export function Minimap() {
   return (
     <div
       ref={hostRef}
-      className="absolute bottom-3 left-3 rounded-md border border-border bg-surface/90 backdrop-blur-sm shadow-sm pointer-events-none"
+      className="absolute bottom-3 left-3 z-30 rounded-md border border-border bg-surface/90 backdrop-blur-sm shadow-sm pointer-events-none"
       style={{ width: WIDTH, height: HEIGHT }}
       data-testid="oc-minimap"
     >

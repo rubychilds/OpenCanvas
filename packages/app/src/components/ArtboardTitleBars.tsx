@@ -212,7 +212,7 @@ export function ArtboardTitleBars() {
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-20"
+      className="pointer-events-none fixed inset-0 z-20"
       data-testid="oc-artboard-title-bars"
     >
       {frames.map((f) => {
@@ -254,12 +254,16 @@ export function ArtboardTitleBars() {
               <button
                 type="button"
                 className={cn(
-                  "pointer-events-auto flex items-center h-[18px] max-w-full px-1 rounded-sm",
+                  "pointer-events-auto flex items-center h-[18px] w-full px-1 rounded-sm",
                   "text-[11px] font-medium whitespace-nowrap truncate select-none",
+                  // Transparent hit-surface across the whole title row so the
+                  // grab area matches the frame width, not just the text glyphs.
                   "text-muted-foreground hover:text-foreground",
+                  "bg-transparent hover:bg-background/40",
                   isDragging && "text-oc-accent cursor-grabbing",
                   !isDragging && "cursor-grab",
                 )}
+                style={{ touchAction: "none" }}
                 data-testid={`oc-artboard-title-${f.id}`}
                 data-frame-id={f.id}
                 aria-label={`Move frame ${f.name}`}
