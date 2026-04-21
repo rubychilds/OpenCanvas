@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEditorMaybe } from "@grapesjs/react";
 import type { Component } from "grapesjs";
-import { getFrameIdForComponent } from "../../canvas/artboards.js";
+import { getFrameIdForComponent, listArtboards } from "../../canvas/artboards.js";
 import {
   Accordion,
   AccordionContent,
@@ -78,10 +78,14 @@ export function SemanticInspector() {
   // non-modelled property is set via Raw CSS or pasted markup.
   const orphans = hasOrphanProperties(selected);
   const frameId = editor ? getFrameIdForComponent(editor, selected) : null;
+  const frameDims =
+    frameId && editor
+      ? listArtboards(editor).find((a) => a.id === frameId)
+      : undefined;
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between px-(--panel-padding) py-2 min-h-(--section-title-height) border-b border-border">
+      <div className="flex items-center justify-between gap-2 px-(--panel-padding) py-2 min-h-(--section-title-height) border-b border-border">
         {frameId && editor ? (
           <FrameTypeSwitcher editor={editor} frameId={frameId} />
         ) : (
@@ -92,6 +96,14 @@ export function SemanticInspector() {
             {typeLabel(selected)}
           </span>
         )}
+        {frameDims ? (
+          <span
+            className="text-[11px] tabular-nums text-muted-foreground shrink-0"
+            data-testid="oc-ins-frame-dims"
+          >
+            {Math.round(frameDims.width)} × {Math.round(frameDims.height)}
+          </span>
+        ) : null}
       </div>
       <PositionSection component={selected} />
       <LayoutSection component={selected} />
