@@ -1,4 +1,5 @@
 import { Canvas } from "@grapesjs/react";
+import { ArtboardTitleBars } from "./ArtboardTitleBars.js";
 import { InsertRail } from "./InsertRail.js";
 import { Minimap } from "./Minimap.js";
 import { PanZoomWire } from "./PanZoomWire.js";
@@ -10,6 +11,7 @@ export function CanvasArea() {
     <div className="flex flex-col h-full bg-canvas">
       <div className="flex-1 min-h-0 relative">
         <Canvas className="absolute inset-0" />
+        <ArtboardTitleBars />
         <div className="absolute left-3 top-3 z-10">
           <InsertRail />
         </div>
