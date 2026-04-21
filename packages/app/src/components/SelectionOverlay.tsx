@@ -9,9 +9,11 @@ import { cn } from "../lib/utils.js";
  * a small label anchored to each component's bounding rect.
  *
  * GrapesJS already draws the bounding box + resize handles for the selected
- * component (via `grapes.min.css`). This overlay adds the information label
- * — tagName and W×H — that Figma puts at the bottom-right of the selection
- * and Penpot puts above the top-left.
+ * component (via `grapes.min.css`). This overlay adds:
+ *   - a Figma-style dimension badge at bottom-center of the selection
+ *   - a Penpot-style hover label (tagName + W×H) above the hovered component
+ *   - Penpot/Figma-style smart guides + spacing pills whenever a different
+ *     component is hovered alongside a selection (aka "alt-hover distances")
  *
  * Bounding rects change with pan + zoom; the overlay re-reads them on every
  * RAF tick while any hint is visible. Cost is bounded because the RAF loop
@@ -56,6 +58,9 @@ function componentName(component: Component): string {
   return tag || "element";
 }
 
+/** Pixel threshold within which two edges/centers are treated as aligned. */
+const ALIGN_THRESHOLD = 1.5;
+
 export function SelectionOverlay() {
   const editor = useEditorMaybe();
   const [hovered, setHovered] = useState<Component | null>(null);
@@ -99,6 +104,17 @@ export function SelectionOverlay() {
   }, [editor, hovered, selected]);
 
   const showHoverLabel = hovered && hoveredRect && hovered !== selected;
+  // Spacing + alignment guides light up only when a *different* component is
+  // hovered alongside the selection — Penpot's "distances" pattern. Restrict
+  // to siblings to avoid ambiguous self-contained guides (hovering the parent
+  // wrapper while the child is selected always shows zero gap, which is noise).
+  const showSpacing =
+    selected &&
+    hovered &&
+    hovered !== selected &&
+    selectedRect &&
+    hoveredRect &&
+    areSiblings(selected, hovered);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-30" data-testid="oc-selection-overlay">
@@ -108,8 +124,17 @@ export function SelectionOverlay() {
       {selected && selectedRect ? (
         <DimensionBadge rect={selectedRect} dim={selectedRect} />
       ) : null}
+      {showSpacing ? (
+        <SmartGuides selectedRect={selectedRect!} hoveredRect={hoveredRect!} />
+      ) : null}
     </div>
   );
+}
+
+function areSiblings(a: Component, b: Component): boolean {
+  const parentOf = (c: Component) =>
+    (c as unknown as { parent?: () => Component | undefined }).parent?.();
+  return Boolean(parentOf(a) && parentOf(a) === parentOf(b));
 }
 
 function HoverLabel({
@@ -161,5 +186,203 @@ function DimensionBadge({ rect, dim }: { rect: Rect; dim: Rect }) {
         {Math.round(dim.width)} × {Math.round(dim.height)}
       </span>
     </div>
+  );
+}
+
+/**
+ * Renders spacing indicators (pills with pixel distance) between the selected
+ * and hovered components on each axis where they don't overlap, plus dashed
+ * alignment guides wherever the two rects share an edge or centerline.
+ *
+ * Overlap vs gap decision per axis:
+ *   - if sel.right ≤ hov.left          → horizontal gap, pill in between
+ *   - else if hov.right ≤ sel.left     → horizontal gap (other direction)
+ *   - else                              → axes overlap, no horizontal pill
+ * Same for vertical.
+ */
+function SmartGuides({
+  selectedRect: sel,
+  hoveredRect: hov,
+}: {
+  selectedRect: Rect;
+  hoveredRect: Rect;
+}) {
+  const selRight = sel.left + sel.width;
+  const selBottom = sel.top + sel.height;
+  const selCenterX = sel.left + sel.width / 2;
+  const selCenterY = sel.top + sel.height / 2;
+  const hovRight = hov.left + hov.width;
+  const hovBottom = hov.top + hov.height;
+  const hovCenterX = hov.left + hov.width / 2;
+  const hovCenterY = hov.top + hov.height / 2;
+
+  // Horizontal gap (sel to the left of hov, or vice versa).
+  let horizontal: { left: number; right: number; midY: number } | null = null;
+  if (selRight <= hov.left) {
+    horizontal = {
+      left: selRight,
+      right: hov.left,
+      midY: (Math.max(sel.top, hov.top) + Math.min(selBottom, hovBottom)) / 2,
+    };
+  } else if (hovRight <= sel.left) {
+    horizontal = {
+      left: hovRight,
+      right: sel.left,
+      midY: (Math.max(sel.top, hov.top) + Math.min(selBottom, hovBottom)) / 2,
+    };
+  }
+
+  // Vertical gap (sel above hov, or vice versa).
+  let vertical: { top: number; bottom: number; midX: number } | null = null;
+  if (selBottom <= hov.top) {
+    vertical = {
+      top: selBottom,
+      bottom: hov.top,
+      midX: (Math.max(sel.left, hov.left) + Math.min(selRight, hovRight)) / 2,
+    };
+  } else if (hovBottom <= sel.top) {
+    vertical = {
+      top: hovBottom,
+      bottom: sel.top,
+      midX: (Math.max(sel.left, hov.left) + Math.min(selRight, hovRight)) / 2,
+    };
+  }
+
+  // Alignment: edges + centers. `ALIGN_THRESHOLD` covers fp rounding.
+  const vAlignLines: number[] = [];
+  const hAlignLines: number[] = [];
+  const near = (a: number, b: number) => Math.abs(a - b) <= ALIGN_THRESHOLD;
+  if (near(sel.left, hov.left)) vAlignLines.push(sel.left);
+  if (near(selRight, hovRight)) vAlignLines.push(selRight);
+  if (near(selCenterX, hovCenterX)) vAlignLines.push(selCenterX);
+  if (near(sel.top, hov.top)) hAlignLines.push(sel.top);
+  if (near(selBottom, hovBottom)) hAlignLines.push(selBottom);
+  if (near(selCenterY, hovCenterY)) hAlignLines.push(selCenterY);
+
+  return (
+    <>
+      {horizontal ? (
+        <SpacingHorizontal
+          left={horizontal.left}
+          right={horizontal.right}
+          midY={horizontal.midY}
+        />
+      ) : null}
+      {vertical ? (
+        <SpacingVertical
+          top={vertical.top}
+          bottom={vertical.bottom}
+          midX={vertical.midX}
+        />
+      ) : null}
+      {vAlignLines.map((x, i) => (
+        <AlignLine key={`v${i}`} orientation="vertical" coord={x} testid={`oc-align-v-${i}`} />
+      ))}
+      {hAlignLines.map((y, i) => (
+        <AlignLine key={`h${i}`} orientation="horizontal" coord={y} testid={`oc-align-h-${i}`} />
+      ))}
+    </>
+  );
+}
+
+function SpacingPill({
+  left,
+  top,
+  value,
+  testid,
+}: {
+  left: number;
+  top: number;
+  value: number;
+  testid: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "absolute -translate-x-1/2 -translate-y-1/2 flex items-center h-4 px-1 rounded-sm",
+        "bg-oc-danger text-white text-[10px] tabular-nums",
+        "font-medium whitespace-nowrap shadow-sm pointer-events-none",
+      )}
+      style={{ left, top }}
+      data-testid={testid}
+    >
+      {Math.round(value)}
+    </div>
+  );
+}
+
+function SpacingHorizontal({
+  left,
+  right,
+  midY,
+}: {
+  left: number;
+  right: number;
+  midY: number;
+}) {
+  const width = right - left;
+  return (
+    <>
+      <div
+        className="absolute bg-oc-danger pointer-events-none"
+        style={{ left, top: midY - 0.5, width, height: 1 }}
+        data-testid="oc-spacing-h-line"
+      />
+      <SpacingPill
+        left={left + width / 2}
+        top={midY}
+        value={width}
+        testid="oc-spacing-h-label"
+      />
+    </>
+  );
+}
+
+function SpacingVertical({
+  top,
+  bottom,
+  midX,
+}: {
+  top: number;
+  bottom: number;
+  midX: number;
+}) {
+  const height = bottom - top;
+  return (
+    <>
+      <div
+        className="absolute bg-oc-danger pointer-events-none"
+        style={{ left: midX - 0.5, top, width: 1, height }}
+        data-testid="oc-spacing-v-line"
+      />
+      <SpacingPill
+        left={midX}
+        top={top + height / 2}
+        value={height}
+        testid="oc-spacing-v-label"
+      />
+    </>
+  );
+}
+
+function AlignLine({
+  orientation,
+  coord,
+  testid,
+}: {
+  orientation: "vertical" | "horizontal";
+  coord: number;
+  testid: string;
+}) {
+  const style: React.CSSProperties =
+    orientation === "vertical"
+      ? { left: coord - 0.5, top: 0, width: 1, height: "100%" }
+      : { top: coord - 0.5, left: 0, height: 1, width: "100%" };
+  return (
+    <div
+      className="absolute bg-oc-accent/70 pointer-events-none"
+      style={{ ...style, backgroundImage: "none" }}
+      data-testid={testid}
+    />
   );
 }
