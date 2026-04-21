@@ -30,23 +30,29 @@ interface Rect {
 function readRect(editor: Editor, component: Component): Rect | null {
   const el = (component as unknown as { getEl?: () => HTMLElement | null }).getEl?.() ?? null;
   if (!el) return null;
-  const canvasEl =
-    (editor.Canvas as unknown as { getFrameEl?: () => HTMLElement | null }).getFrameEl?.() ??
-    null;
-  // Fall back to the iframe's offsetParent chain if Canvas.getFrameEl is
-  // unavailable in this GrapesJS version.
-  const frameRect = canvasEl?.getBoundingClientRect();
+  // Components inside the iframe report bounding rects in iframe-local coords
+  // — unscaled by the host's canvas zoom/pan transform. To convert to host-
+  // document screen space:
+  //   1. locate the iframe element that owns this component's document
+  //   2. scale the iframe-local x/y/w/h by the host's zoom factor
+  //   3. translate by the iframe's own host-document position
+  // Using `ownerDocument.defaultView.frameElement` instead of
+  // `Canvas.getFrameEl()` picks the RIGHT iframe in the multi-frame world —
+  // getFrameEl always returns the active frame, which isn't necessarily the
+  // one containing the selected component.
+  const win = el.ownerDocument?.defaultView;
+  const iframeEl =
+    (win as unknown as { frameElement?: HTMLElement | null } | null)?.frameElement ?? null;
+  const frameRect = iframeEl?.getBoundingClientRect();
   const rect = el.getBoundingClientRect();
-  // Components inside the iframe report client coords relative to the iframe
-  // viewport. Translate them into the host-document coord space by adding
-  // the iframe's own top-left.
+  const zoom = (Number(editor.Canvas.getZoom?.() ?? 100) || 100) / 100;
   const offsetX = frameRect ? frameRect.left : 0;
   const offsetY = frameRect ? frameRect.top : 0;
   return {
-    left: rect.left + offsetX,
-    top: rect.top + offsetY,
-    width: rect.width,
-    height: rect.height,
+    left: offsetX + rect.left * zoom,
+    top: offsetY + rect.top * zoom,
+    width: rect.width * zoom,
+    height: rect.height * zoom,
   };
 }
 
