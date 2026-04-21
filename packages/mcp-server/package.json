@@ -1,6 +1,6 @@
 {
   "name": "@designjs/mcp-server",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "stdio Model Context Protocol (MCP) server for DesignJS — lets Claude Code, Cursor, and any MCP-compatible agent read and write a live HTML/CSS design canvas.",
   "type": "module",
   "main": "dist/index.js",
@@ -43,11 +43,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rubychilds/designjs.git",
+    "url": "git+https://github.com/rubychilds/DesignJS.git",
     "directory": "packages/mcp-server"
   },
-  "homepage": "https://github.com/rubychilds/designjs/tree/main/packages/mcp-server#readme",
-  "bugs": "https://github.com/rubychilds/designjs/issues",
+  "homepage": "https://github.com/rubychilds/DesignJS/tree/main/packages/mcp-server#readme",
+  "bugs": "https://github.com/rubychilds/DesignJS/issues",
   "publishConfig": {
     "access": "public"
   }

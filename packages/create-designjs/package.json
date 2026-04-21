@@ -1,6 +1,6 @@
 {
   "name": "create-designjs",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Project scaffolder for DesignJS — creates a fresh directory wired up to the DesignJS MCP server so an AI agent can design in it.",
   "type": "module",
   "bin": {
@@ -33,11 +33,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rubychilds/designjs.git",
+    "url": "git+https://github.com/rubychilds/DesignJS.git",
     "directory": "packages/create-designjs"
   },
-  "homepage": "https://github.com/rubychilds/designjs/tree/main/packages/create-designjs#readme",
-  "bugs": "https://github.com/rubychilds/designjs/issues",
+  "homepage": "https://github.com/rubychilds/DesignJS/tree/main/packages/create-designjs#readme",
+  "bugs": "https://github.com/rubychilds/DesignJS/issues",
   "publishConfig": {
     "access": "public"
   }

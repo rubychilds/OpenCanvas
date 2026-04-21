@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "pnpm --filter @designjs/bridge build && pnpm --filter @designjs/app dev",
     "build": "pnpm --filter @designjs/bridge build && pnpm -r --filter '!@designjs/bridge' build",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm --filter @designjs/bridge build && pnpm -r typecheck",
     "lint": "pnpm -r lint",
     "mcp": "pnpm --filter @designjs/bridge build && pnpm --filter @designjs/mcp-server start",
     "smoke:bridge": "pnpm --filter @designjs/bridge build && node scripts/smoke-bridge.mjs",
