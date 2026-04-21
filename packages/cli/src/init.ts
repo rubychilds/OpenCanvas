@@ -8,7 +8,7 @@ export interface InitOptions {
   cwd?: string;
   /** Explicit IDE targets. Defaults to everything we can auto-detect. */
   ides?: IdeId[];
-  /** Override the MCP server command. Defaults to `npx -y opencanvas-mcp`. */
+  /** Override the MCP server command. Defaults to `npx -y @opencanvas/mcp-server`. */
   command?: string[];
   /** Name to register the MCP server under. Defaults to "opencanvas". */
   name?: string;
@@ -54,7 +54,7 @@ export function planInit(options: InitOptions = {}): InitResult[] {
     return detected.length > 0 ? detected : (["claude-code"] as IdeId[]);
   })();
   const name = options.name ?? "opencanvas";
-  const command = options.command ?? ["npx", "-y", "opencanvas-mcp"];
+  const command = options.command ?? ["npx", "-y", "@opencanvas/mcp-server"];
 
   const results: InitResult[] = [];
   for (const ide of ides) {

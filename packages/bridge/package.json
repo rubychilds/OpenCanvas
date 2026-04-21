@@ -1,7 +1,7 @@
 {
   "name": "@opencanvas/bridge",
-  "version": "0.1.0-dev",
-  "private": true,
+  "version": "0.1.0-alpha.0",
+  "description": "Shared Zod schemas + WebSocket protocol constants for the OpenCanvas MCP server and canvas runtime.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,17 +11,36 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "prepare": "tsc"
+    "prepublishOnly": "tsc"
   },
   "dependencies": {
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "opencanvas",
+    "mcp",
+    "model-context-protocol",
+    "grapesjs",
+    "design-to-code",
+    "schema"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rubychilds/opencanvas.git",
+    "directory": "packages/bridge"
+  },
+  "homepage": "https://github.com/rubychilds/opencanvas/tree/main/packages/bridge#readme",
+  "bugs": "https://github.com/rubychilds/opencanvas/issues",
+  "publishConfig": {
+    "access": "public"
   }
 }

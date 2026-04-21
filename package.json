@@ -12,6 +12,7 @@
     "mcp": "pnpm --filter @opencanvas/bridge build && pnpm --filter @opencanvas/mcp-server start",
     "smoke:bridge": "pnpm --filter @opencanvas/bridge build && node scripts/smoke-bridge.mjs",
     "smoke:init": "pnpm --filter @opencanvas/cli build && node scripts/smoke-init.mjs",
+    "smoke:create": "pnpm --filter create-opencanvas build && node scripts/smoke-create.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

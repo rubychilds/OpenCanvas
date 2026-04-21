@@ -62,7 +62,7 @@ Options:
                                   cursor, vscode. Default: auto-detect.
   --name <name>                   Server name to register. Default: opencanvas.
   --mcp-command "<cmd>"           Override the server command string.
-                                  Default: "npx -y opencanvas-mcp".
+                                  Default: "npx -y @opencanvas/mcp-server".
   --dry-run                       Print the plan without writing files.
   -h, --help                      Show this help.
 

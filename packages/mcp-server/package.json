@@ -1,16 +1,21 @@
 {
   "name": "@opencanvas/mcp-server",
-  "version": "0.1.0-dev",
-  "private": true,
+  "version": "0.1.0-alpha.0",
+  "description": "stdio Model Context Protocol (MCP) server for OpenCanvas — lets Claude Code, Cursor, and any MCP-compatible agent read and write a live HTML/CSS design canvas.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "opencanvas-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -b",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "tsc -b"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -23,5 +28,27 @@
     "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "opencanvas",
+    "mcp",
+    "model-context-protocol",
+    "anthropic",
+    "claude",
+    "cursor",
+    "grapesjs",
+    "design-to-code",
+    "ai-agents"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rubychilds/opencanvas.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://github.com/rubychilds/opencanvas/tree/main/packages/mcp-server#readme",
+  "bugs": "https://github.com/rubychilds/opencanvas/issues",
+  "publishConfig": {
+    "access": "public"
   }
 }

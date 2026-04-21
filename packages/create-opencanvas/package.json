@@ -1,0 +1,44 @@
+{
+  "name": "create-opencanvas",
+  "version": "0.1.0-alpha.0",
+  "description": "Project scaffolder for OpenCanvas — creates a fresh directory wired up to the OpenCanvas MCP server so an AI agent can design in it.",
+  "type": "module",
+  "bin": {
+    "create-opencanvas": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "template",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "opencanvas",
+    "scaffolder",
+    "mcp",
+    "model-context-protocol",
+    "design-to-code",
+    "claude",
+    "cursor"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rubychilds/opencanvas.git",
+    "directory": "packages/create-opencanvas"
+  },
+  "homepage": "https://github.com/rubychilds/opencanvas/tree/main/packages/create-opencanvas#readme",
+  "bugs": "https://github.com/rubychilds/opencanvas/issues",
+  "publishConfig": {
+    "access": "public"
+  }
+}

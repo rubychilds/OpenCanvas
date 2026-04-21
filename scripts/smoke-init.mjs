@@ -53,7 +53,7 @@ cases.push({
     const res = run(dir, ["init"]);
     if (res.status !== 0) throw new Error(`init failed: ${res.stderr}\n${res.stdout}`);
     const json = readJson(join(dir, ".mcp.json"));
-    assertEqual(json.mcpServers.opencanvas, { command: "npx", args: ["-y", "opencanvas-mcp"] }, "default entry");
+    assertEqual(json.mcpServers.opencanvas, { command: "npx", args: ["-y", "@opencanvas/mcp-server"] }, "default entry");
     rmSync(dir, { recursive: true });
   },
 });
