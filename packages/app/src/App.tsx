@@ -18,6 +18,7 @@ import { BridgeClient } from "./bridge/client.js";
 import { buildHandlers } from "./bridge/handlers.js";
 import { Topbar, type SaveStatus } from "./components/Topbar.js";
 import { Shell } from "./components/Shell.js";
+import { CommandPalette } from "./components/CommandPalette.js";
 import { TooltipProvider } from "./components/ui/tooltip.js";
 
 export function App() {
@@ -233,6 +234,7 @@ export function App() {
           className="flex-1 min-h-0 flex"
         >
           <Shell />
+          <CommandPalette />
         </GjsEditor>
       </div>
     </TooltipProvider>
