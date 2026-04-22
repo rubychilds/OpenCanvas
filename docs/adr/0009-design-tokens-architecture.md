@@ -107,9 +107,19 @@ Verified from MCP schema: `get_variables(filePath) → { variables, themes }`; `
 
 Takeaway for us: Pencil ships the mode model we want, in a shape that's friendly to agents. Their `get_variables` returning *both* `variables` and `themes` in one call is worth mirroring.
 
-### Paper.design — **unverified**
+### Paper.design — verified 2026-04-22
 
-Research agent's WebFetch was denied; could not fetch [paper.design/docs](https://paper.design/docs) directly. What's documented publicly elsewhere: Paper emphasises **OKLCH** in its colour UI and has a design-tokens MCP surface — but whether the token data model stores `oklch(L C H)` as structured fields vs a CSS string is **unclear**, and the tool signatures are unverified. Flagged as Open Question #1. Does not block the decision for v0.3 since we're adopting DTCG either way; confirming Paper's shape matters for the Figma-relay narrative (ADR-0008) and for any future Paper ⇄ DesignJS agent workflows.
+Direct fetch of [paper.design/docs/mcp](https://paper.design/docs/mcp) succeeded (curl; WebFetch tool still denied but curl works through Bash). The `/docs` and `/manifesto` pages are client-rendered SPAs and exposed no token-model detail in raw HTML, but the MCP tools page rendered fully. Findings:
+
+- **No `get_variables` / `set_variables` tools.** Paper does *not* ship a structured token MCP surface.
+- **Tokens are CSS strings** applied via `update_styles` + `write_html`. OKLCH / LCH / LAB / Display P3 values are stored as raw CSS strings (e.g. `"oklch(72% 0.11 178)"`), not as structured `{L, C, H}` fields.
+- **No DTCG schema** exposed in the docs. No `$type` fields.
+- **No mode / theme primitive** in the MCP surface. Agents apply theming via CSS classes.
+- **No Figma Variables import endpoint.** Their documented workflow is *"paste a screenshot of the variables table and ask the agent"* — prompt-driven, not structured import. Export is `get_jsx` (React + Tailwind).
+
+**Implication for this ADR:** Paper went the opposite direction — pure CSS strings, zero schema. Our DTCG-first bet is architecturally more ambitious and more interoperable. That differentiation is worth retaining: DesignJS is the HTML/CSS-native canvas *with* typed interop (Figma Variables ⇄ DTCG ⇄ Style Dictionary round-trip). Paper is the HTML/CSS-native canvas *without* it. Neither is wrong; they target different tails of the market.
+
+No Paper ⇄ DesignJS token round-trip is possible at the structured level — there's nothing structured to round-trip with. An agent can always translate string ↔ DTCG via prompt, but there's no machine path. This simplifies ADR-0008's relay narrative: the relay imports Figma Variables (structured) via Figma's own Dev Mode MCP, and we don't need to mention Paper interop.
 
 ### Tailwind v4 `@theme`
 
@@ -300,7 +310,7 @@ Projects not migrated yet continue to work via the deprecated `get_variables` / 
 
 - **Interchange unlocks.** DesignJS gains tokens round-trip with Tokens Studio, Style Dictionary, and (via ADR-0008 relay) Figma Variables. Doesn't ship as a DesignJS feature we market — it's a platform primitive that future features assume.
 - **Tailwind utilities just work.** Users set a color token, get `bg-brand-primary` in the block palette and in agent-generated HTML without extra plumbing. The `@theme` emission is ~20-line runtime code; the value prop is disproportionate.
-- **MCP surface grows by 5 tools** (`get_tokens`, `set_tokens`, `resolve_alias`, `list_modes`, `set_mode`). From 20 tools → 25. Deprecated `get_variables` / `set_variables` still surface, bringing tool-count visible to agents to 27 during the transition window.
+- **MCP surface grows by 5 tools** (`get_tokens`, `set_tokens`, `resolve_alias`, `list_modes`, `set_mode`). From 20 tools → 25. Deprecated `get_variables` / `set_variables` still surface, bringing tool-count visible to agents to 27 during the transition window. Competitive context (verified 2026-04-22): Figma Dev Mode MCP ships 15, Pencil 13 (with two composite `batch_*` tools), Paper 21, Onlook no MCP. DesignJS post-v0.3 at ~27 tools puts us at the upper end of the design-tool MCP range — worth monitoring, not a crisis. Composite-tool consolidation (Pencil's pattern) is not the industry direction; MCP guidance discourages overloading single tools with operation-string dispatch. Governance captured as a separate open discussion item, not in this ADR.
 - **Assets panel in v0.3 can group by `$type`** per Story 6.2's open AC — the grouping key is the DTCG type field, not a separate "category" dimension we'd have to invent.
 - **Mode-switching UX is a small editor feature** — Topbar dropdown + a `data-designjs-mode` attribute + CSS attribute-selector overrides. Isolated concern; not coupled to the data model work.
 - **v0.3 scope grows by ~1 week** over the minimal "add grouping" option. Trading a 3-day schema band-aid (v0.3-early) for a 1-week schema-plus-emission effort (v0.3-mid) that doesn't need revisiting at v0.4 or v0.5.
@@ -311,7 +321,7 @@ Projects not migrated yet continue to work via the deprecated `get_variables` / 
 
 ## Open questions
 
-1. **Paper.design verification.** Research agent's WebFetch was denied; could not confirm Paper's token-model schema, MCP tool signatures, or OKLCH structural representation. Non-blocking for v0.3 (we're adopting DTCG regardless), but worth verifying before the relay docs ship — Paper is our closest architectural sibling and we want cross-tool agent workflows to round-trip if possible. Action: re-run the research agent once WebFetch is re-enabled, or consult Paper's OSS components repo directly.
+1. ~~**Paper.design verification.**~~ **Resolved 2026-04-22:** Paper does not ship a structured token MCP surface. Tokens are CSS strings applied via `update_styles`/`write_html`; no DTCG, no variable collections, no mode primitive. Our DTCG-first bet differentiates us (see §Survey → Paper.design). No cross-tool structured round-trip possible; agent prompt-translation is the only Paper ⇄ DesignJS path. *Left here as a record of the decision.*
 
 2. **Scope field — v0.4?** Figma's `scopes: ["ALL_FILLS", "CORNER_RADIUS", …]` prevents a spacing token from being applied to a fill. Not in DTCG core. Worth adopting as an `$extensions.designjs.scopes` string[] in v0.4 once the inspector can enforce it. Deferring for now.
 
