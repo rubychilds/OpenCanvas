@@ -1,6 +1,6 @@
 {
   "name": "create-designjs",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0",
   "description": "Project scaffolder for DesignJS — creates a fresh directory wired up to the DesignJS MCP server so an AI agent can design in it.",
   "type": "module",
   "bin": {
