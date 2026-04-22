@@ -113,7 +113,7 @@ Three delivery paths, ordered by cost:
 
 We ship the MCP relay documentation as the **primary Figma import story for v0.3**. Deliverables:
 
-- A docs page at `designjs-docs/guides/figma-import.mdx` with copy-pasteable `.mcp.json` showing both servers registered, a recommended first prompt (`"Import the selected Figma frame as HTML with Tailwind classes"`), and a brief on the quality ceiling (selection-scoped, not full-file; tokens via `get_variable_defs`; agent judgment required).
+- A docs page at `designjs-docs/guides/figma-import.mdx`. **First paragraph leads with the Figma Dev Mode requirement** ("Requires a Figma Dev Mode seat (paid tier) — the relay uses Figma's Dev Mode MCP server, which is gated to Dev Mode subscribers"). Then: copy-pasteable `.mcp.json` showing both servers registered, a recommended first prompt (`"Import the selected Figma frame as HTML with Tailwind classes"`), and a brief on the quality ceiling (selection-scoped, not full-file; tokens via `get_variable_defs`; agent judgment required).
 - A docs page at `designjs-docs/concepts/figma-relay.mdx` explaining *why* we chose the relay over a plugin and what the user's workflow looks like end-to-end.
 - An update to `packages/app/src/canvas/paste-import.ts`'s `designjs:paste-blocked` toast copy: link it at the new relay docs page with a "Try the MCP relay →" action. The existing refusal behavior stays unchanged.
 - One end-to-end e2e spec (pending MCP-test infra for dual-server scenarios — spec-new, may need a relaxed integration-test mode) verifying the relay round trip against a canned Figma API response.
@@ -175,7 +175,7 @@ Path B's AC is written when we commit to it (v0.3-late or v0.4 per §2 above).
 
 2. **Plugin naming + marketplace listing ownership.** If we go to Path B, is the plugin published under `rubychilds` or a dedicated DesignJS org account? Figma's marketplace review process takes 1-3 weeks; factor into v0.3-late vs v0.4 decision.
 
-3. **Dev Mode subscription gating.** Figma's Dev Mode MCP requires a Dev Mode seat, which is part of the Figma paid tiers. Users on the free tier hit Path A's ceiling immediately. Do we call this out in the docs up front, or soft-pedal it? Leaning call-out ("requires Figma Dev Mode") — sets honest expectations.
+3. ~~**Dev Mode subscription gating.**~~ **Resolved 2026-04-22:** lead the docs with the Dev Mode requirement. First paragraph of `guides/figma-import.mdx` and the `designjs:paste-blocked` toast copy both state *"Requires a Figma Dev Mode seat (paid tier)"* up front. Sets honest expectations; avoids frustration for free-tier users who'd otherwise hit a wall mid-setup. *Left here as a record of the decision.*
 
 4. **What's the minimum fixture-based e2e test worth writing?** A full-file walk of a realistic Figma payload (100+ nodes) against a canned Dev Mode MCP response? Or just the hello-world "one frame, one text node" case? Bigger fixtures catch more mapping bugs; maintenance cost scales. Leaning toward a single realistic fixture at `e2e/fixtures/figma-relay-sample.json` with a ~30-node landing-page layout.
 

@@ -20,7 +20,7 @@ Both items are blocked pending an ADR. This ADR picks the data model, the discov
 
 The decision is **entangled with our positioning**. DesignJS is HTML/CSS-native by design (ADR-0001, PRD §5.1). Paper shares that bet; Pencil ships a Figma-shape model in a `.pen` file; Onlook edits the user's existing React code directly; shadcn's registry format treats components as file-trees of TypeScript source. The wrong choice here burns our positioning.
 
-A secondary constraint — we want to ship ≥1 substantial component library in v0.3 so new users get something beyond the 25 primitives. The user directive is: ship **shadcn, Halo, Lunaris, Nitro, and Base UI** as built-in kits. Research reveals Halo / Lunaris / Nitro are Pencil-proprietary (no public schema, no source availability); confirming the list is an open question below.
+A secondary constraint — we want to ship ≥1 substantial component library in v0.3 so new users get something beyond the 25 primitives. The initial directive was to ship **shadcn, Halo, Lunaris, Nitro, and Base UI**. Research (§Survey below) established Halo / Lunaris / Nitro are Pencil-proprietary with no public schema or source, so the final kit list was resolved on 2026-04-22 as **shadcn, Base UI, Tremor, Park UI, and Magic UI** — five confirmed-OSS libraries covering primitives, dashboards, and animated components.
 
 ---
 
@@ -64,7 +64,7 @@ Per [docs.pencil.dev/core-concepts/design-libraries](https://docs.pencil.dev/cor
 
 - Library files use the `.lib.pen` suffix. `.pen` files are **encrypted binary** — only accessible through Pencil's MCP tools, no public schema.
 - Components are created by selecting any node and hitting ⌘⌥K (same pattern as Figma). Origin = magenta bounding box; instances = violet.
-- The user-directive names **Halo / Lunaris / Nitro** do not appear in Pencil's public docs. They are likely proprietary skins maintained in-house. Only **shadcn** is unambiguously OSS among the four Pencil built-ins.
+- The names **Halo / Lunaris / Nitro** do not appear in Pencil's public docs. They are likely proprietary skins maintained in-house. Only **shadcn** is unambiguously OSS among the four Pencil built-ins. The DesignJS kit list was swapped accordingly — see §Decision §2 and §Open questions §1 for the resolution.
 
 ### Paper — not publicly documented
 
@@ -116,7 +116,7 @@ export interface BlockDefinition {
   description?: string;
 
   /** Optional: kit id this block belongs to. null = built-in DesignJS primitive. */
-  kit?: "shadcn" | "baseui" | "halo" | "lunaris" | "nitro" | string;
+  kit?: "shadcn" | "baseui" | "tremor" | "parkui" | "magicui" | string;
 
   /** Optional: preview data-attrs to toggle in the inspector (Base UI style).
    *  Canvas preview applies these to the outermost element of the block on drop. */
@@ -139,17 +139,22 @@ What this does *not* include (and why):
 
 ### 2. Built-in kits shipped with v0.3
 
-Ship **shadcn** and **Base UI** as confirmed-OSS built-in kits. Treat **Halo / Lunaris / Nitro** as open questions (see §Open questions). Concrete inclusions:
+Ship **five confirmed-OSS kits** in v0.3: shadcn, Base UI, Tremor, Park UI, Magic UI — all MIT-licensed, all with public source + schemas. Halo / Lunaris / Nitro were rejected (see §Survey; resolved 2026-04-22). Concrete inclusions:
 
-| Kit | id | Blocks (target count) | Source basis |
+| Kit | id | Target count | Source basis |
 |---|---|---|---|
 | DesignJS primitives | *(no prefix, e.g. `layout/flex-row`)* | 25 (today's `DEFAULT_BLOCKS`) | Hand-written |
-| shadcn | `shadcn:…` | ~50 blocks across buttons, cards, form, dialog, navigation | Flatten from `https://ui.shadcn.com/r/styles/new-york/{name}.json` into HTML fragments; MIT licence |
-| Base UI | `baseui:…` | ~38 blocks, one per Base UI component (accordion, alert-dialog, button, combobox, dialog, menu, popover, select, …) | Flatten compound components to HTML with `data-*` state attrs preserved; MIT licence |
+| shadcn | `shadcn:…` | ~50 blocks across buttons, cards, form, dialog, navigation | Flatten from `https://ui.shadcn.com/r/styles/new-york/{name}.json` into HTML fragments; MIT |
+| Base UI | `baseui:…` | ~38 blocks, one per Base UI component (accordion, alert-dialog, button, combobox, dialog, menu, popover, select, …) | Flatten compound components to HTML with `data-*` state attrs preserved; MIT |
+| Tremor | `tremor:…` | ~40 blocks across dashboards, charts, KPI cards, data tables, form | Flatten from Tremor's React source; Apache 2.0 (`tremor.so`, `github.com/tremorlabs/tremor`) |
+| Park UI | `parkui:…` | ~35 blocks covering the Ark UI primitive set (accordion, combobox, date-picker, menu, number-input, popover, …) styled with Panda CSS recipes | Flatten from Ark UI primitives with Park UI's Panda recipes compiled to Tailwind utilities; MIT (`park-ui.com`, `github.com/cschroeter/park-ui`) |
+| Magic UI | `magicui:…` | ~60 blocks across animated backgrounds, text effects, marquees, buttons-with-effects | Flatten from Magic UI's React source; MIT (`magicui.design`, `github.com/magicuidesign/magicui`). Many components depend on Framer Motion — see Open Question #5 for the runtime-dependency implications |
 
-All three kits live at **build time** as TypeScript sources under `packages/app/src/kits/{kit}/` and are aggregated into `DEFAULT_BLOCKS` at startup, in that order (primitives → shadcn → baseui). Palette groups by `category`, which kit-prefix controls.
+All six kits live at **build time** as TypeScript sources under `packages/app/src/kits/{kit}/` and are aggregated into `DEFAULT_BLOCKS` at startup in that order (primitives → shadcn → baseui → tremor → parkui → magicui). Palette groups by `category`, which kit-prefix controls.
 
-Kit flattening is a build-time step, not a runtime React render. The flattening tool (`scripts/sync-kits.mjs`, new) reads shadcn's registry JSON and Base UI's `/react/components/` source, emits per-block `.ts` files under `src/kits/…`, and runs manually when we want to pull in registry updates. Versions are pinned per kit in a new top-level `kits.lock.json`.
+Kit flattening is a build-time step, not a runtime React render. The flattening tool (`scripts/sync-kits.mjs`, new) reads each kit's upstream source, emits per-block `.ts` files under `src/kits/…`, and runs manually when we want to pull in registry updates. Versions are pinned per kit in a new top-level `kits.lock.json`.
+
+Per-kit licensing notes live in `LICENSE.third-party.md`: shadcn MIT, Base UI MIT, Tremor Apache 2.0, Park UI MIT, Magic UI MIT. All five permit re-distribution of flattened HTML with attribution preserved in the per-block `source.ref` field.
 
 ### 3. User-extensibility — project-local blocks and kits
 
@@ -221,7 +226,7 @@ This is not persisted to `.designjs.json` — it's a preview aid, purely editor-
 
 ## Open questions
 
-1. **Halo / Lunaris / Nitro — confirm or swap.** Research could not find these as public OSS design systems; they appear to be Pencil-proprietary skins. Options: (a) pick confirmed OSS alternatives to fill the "5 kits out of the box" story — **Tremor** (dashboards, MIT), **Park UI** (Panda + Ark, MIT), **Magic UI** (animated components, MIT), **Aceternity UI** (effects, MIT), **HyperUI** (Tailwind blocks, MIT) are the most likely picks. (b) ship our own themed variants of shadcn under the Halo / Lunaris / Nitro names (trademark risk — need legal review). (c) drop them from v0.3 and ship just shadcn + Base UI. Decision owner: @rubychilds.
+1. ~~**Halo / Lunaris / Nitro — confirm or swap.**~~ **Resolved 2026-04-22:** option (a) selected — swap to **Tremor, Park UI, Magic UI** to fill the "5 kits out of the box" story. Final v0.3 kit list is shadcn + Base UI + Tremor + Park UI + Magic UI (plus the 25 DesignJS primitives). All five kits are MIT or Apache 2.0. See §Decision §2 for counts and sources. *Left here as a record of the decision, not an open question.*
 
 2. **`designjs.config.ts` vs `designjs.config.js`.** TS is nicer to type but requires transpilation on load (esbuild inside the Vite dev server). JS is simpler. Leaning TS since Vite is already running; happy to take a patch saying otherwise.
 
@@ -231,15 +236,27 @@ This is not persisted to `.designjs.json` — it's a preview aid, purely editor-
 
 5. **Per-block Tailwind plugins.** Some shadcn blocks use `tailwindcss-animate` / `tailwind-merge` utilities not in the core Tailwind v4 CDN. Options: bundle the plugins into our hosted Tailwind build (preferred), or document the caveat and skip blocks that depend on them. Leaning preferred — Tailwind v4 plugin loading inside the iframe CDN needs a spike.
 
-6. **Discovery precedence when a user has both `designjs.config.ts` AND `components.json` with `registries` set.** Proposed: both load, `designjs.config.ts` blocks take precedence on id collision. Flagged for review.
+6. **Magic UI runtime dependencies.** Many Magic UI components depend on **Framer Motion** (a JS runtime, not just CSS), and some use WebGL effects. Flattening to static HTML + Tailwind loses the animation. Three sub-options for the sync-kit flattener: (a) **CSS-only subset** — skip any component whose primary value is a Framer-Motion animation; ship only the static shells (roughly 40% of Magic UI). (b) **Inject Framer Motion into the iframe** alongside the Tailwind CDN — adds ~60 KB of JS to every canvas load, meaningful cost. (c) **Flatten where possible, ship a "preview image" fallback** for motion-heavy components so they render as a static screenshot on the canvas with a "play in final build" affordance. Leaning (a) for v0.3 — skip motion-heavy components, ship the static 60%. Revisit (b) or (c) if users ask.
+
+7. **Discovery precedence when a user has both `designjs.config.ts` AND `components.json` with `registries` set.** Proposed: both load, `designjs.config.ts` blocks take precedence on id collision. Flagged for review.
 
 ---
 
 ## References
 
+### Schemas + APIs
 - [shadcn/ui components.json schema](https://ui.shadcn.com/schema.json)
 - [shadcn/ui registry-item schema](https://ui.shadcn.com/schema/registry-item.json)
 - [Base UI components](https://base-ui.com/react/components)
 - [Figma ComponentNode Plugin API](https://developers.figma.com/docs/plugins/api/ComponentNode/)
-- [Pencil design libraries docs](https://docs.pencil.dev/core-concepts/design-libraries) — for the opaque `.lib.pen` model
+
+### Kit sources (v0.3)
+- **shadcn** — https://ui.shadcn.com (MIT)
+- **Base UI** — https://base-ui.com + https://github.com/mui/base-ui (MIT)
+- **Tremor** — https://tremor.so + https://github.com/tremorlabs/tremor (Apache 2.0)
+- **Park UI** — https://park-ui.com + https://github.com/cschroeter/park-ui (MIT); built on [Ark UI](https://ark-ui.com) primitives with [Panda CSS](https://panda-css.com)
+- **Magic UI** — https://magicui.design + https://github.com/magicuidesign/magicui (MIT); note Framer Motion runtime dependency (Open Q #6)
+
+### Not adopted (reference only)
+- [Pencil design libraries docs](https://docs.pencil.dev/core-concepts/design-libraries) — opaque `.lib.pen` model, closed-source
 - Onlook's shadcn-first discovery pattern: [packages/ui/src/components](https://github.com/onlook-dev/onlook/tree/main/packages/ui/src/components)
