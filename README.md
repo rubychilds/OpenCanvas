@@ -98,6 +98,27 @@ If you'd rather write the MCP config yourself, add this to your project's `.mcp.
 }
 ```
 
+## Known quirks in v0.1
+
+### One `.designjs.json` per canvas session, not per project
+
+The Vite dev server writes all canvas state to a single `.designjs.json` at the **root of the cloned DesignJS repo**, regardless of which user project an agent is operating in. A user who scaffolds `/tmp/my-app` via `create-designjs`, points Claude Code there, and starts designing will find the resulting `.designjs.json` inside the DesignJS clone — **not** inside `/tmp/my-app`.
+
+For v0.1 this is a known limitation. The practical workaround if you're designing for multiple projects:
+
+- Keep one `pnpm dev` session per project. Before switching projects, save (Cmd+S), copy `.designjs.json` out of the DesignJS clone into your project's directory, then `git restore .designjs.json` to reset the canvas.
+- Or commit the per-project design files somewhere inside your own project structure and pull them back into the DesignJS clone when you want to resume.
+
+A proper fix — per-project `.designjs.json` discovery via a `get_project_context` MCP handshake plus a Paper-style file switcher in the Topbar — is tracked as a v0.2 feature. It's the single biggest UX gap in v0.1.
+
+### Agent picks a competing design MCP instead of DesignJS
+
+If you have other design MCPs configured globally in `~/.claude.json` (`pencil`, `paper`, `figma`, etc.), Claude Code can pick any of them for a "design this" prompt. The `CLAUDE.md` that `create-designjs` drops tells agents to prefer DesignJS, but isn't foolproof — reinforce in-prompt ("use designjs, not pencil") or remove competing entries from your user config to isolate the test.
+
+### Stale `opencanvas` entry in Claude Code config
+
+Pre-rebrand users may have an `opencanvas` MCP server sitting in `~/.claude.json`'s `mcpServers` block pointing at `@opencanvas/mcp-server` (which doesn't exist on npm anymore). Claude Code retries the connection on every launch and reports `opencanvas · ✘ failed`. Open the file and delete that key — restart Claude Code and the error stops.
+
 ## Packages
 
 | Package | npm name | Purpose |
