@@ -6,7 +6,11 @@ interface VarsApi {
     getVariables: () => Record<string, string>;
     setVariables: (vars: Record<string, string>) => Record<string, string>;
     editor: {
-      Canvas: { getDocument: () => Document | undefined };
+      Canvas: {
+        // Multi-frame layout: getDocument() returns undefined in v0.1, the
+        // iframe docs live on each frame's view.getWindow().document.
+        getFrames: () => Array<{ view?: { getWindow?: () => Window | undefined } }>;
+      };
     };
   };
 }
@@ -37,8 +41,8 @@ test.describe("Story 6.2 (MCP): CSS variables", () => {
 
     // Variables actually applied to the iframe :root, not just stored in memory.
     const live = await page.evaluate(() => {
-      const doc = (window as unknown as VarsApi).__designjs.editor.Canvas.getDocument();
-      const root = doc?.documentElement;
+      const ed = (window as unknown as VarsApi).__designjs.editor;
+      const root = ed.Canvas.getFrames()[0]?.view?.getWindow?.()?.document?.documentElement;
       return {
         brand: root ? root.style.getPropertyValue("--brand-primary").trim() : "",
         gutter: root ? root.style.getPropertyValue("--space-gutter").trim() : "",
@@ -86,8 +90,9 @@ test.describe("Story 6.2 (MCP): CSS variables", () => {
 
     // Also verify it's actually live on the iframe :root post-reload.
     const live = await page.evaluate(() => {
-      const doc = (window as unknown as VarsApi).__designjs.editor.Canvas.getDocument();
-      return doc?.documentElement.style.getPropertyValue("--brand-primary").trim() ?? "";
+      const ed = (window as unknown as VarsApi).__designjs.editor;
+      const root = ed.Canvas.getFrames()[0]?.view?.getWindow?.()?.document?.documentElement;
+      return root?.style.getPropertyValue("--brand-primary").trim() ?? "";
     });
     expect(live).toBe("oklch(0.55 0.2 260)");
   });

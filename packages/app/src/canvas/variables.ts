@@ -9,12 +9,29 @@ import type { Editor } from "grapesjs";
  * Keys are full custom-property names including the leading `--` (e.g.
  * "--brand-primary"). Values are CSS strings.
  *
- * Multi-artboard note: setProperty is invoked on `editor.Canvas.getDocument()`
- * which returns the primary frame's document. Variables are NOT yet broadcast
- * across multiple artboard frames — Phase B can extend applyAll() to iterate
- * editor.Canvas.getFrames() once the multi-frame UI lands.
+ * Writes iterate every artboard frame's iframe :root via editor.Canvas
+ * .getFrames() — Canvas.getDocument() alone returns undefined under the
+ * multi-frame layout shipped in v0.1 and silently drops the write.
  */
 const store = new Map<string, string>();
+
+function frameDocs(editor: Editor): Document[] {
+  const docs: Document[] = [];
+  for (const frame of editor.Canvas.getFrames()) {
+    const view = (frame as unknown as {
+      view?: { getWindow?: () => Window | undefined };
+    }).view;
+    const doc = view?.getWindow?.()?.document;
+    if (doc) docs.push(doc);
+  }
+  // Fallback to the single-frame API in case getFrames() is empty (the initial
+  // boot path, or a test harness that never mounts an artboard).
+  if (docs.length === 0) {
+    const doc = editor.Canvas.getDocument();
+    if (doc) docs.push(doc);
+  }
+  return docs;
+}
 
 export function getVariables(): Record<string, string> {
   return Object.fromEntries(store.entries());
@@ -63,8 +80,9 @@ export function loadVariables(editor: Editor, vars: Record<string, string>): voi
  */
 export function deleteVariable(editor: Editor, key: string): Record<string, string> {
   store.delete(key);
-  const doc = editor.Canvas.getDocument();
-  doc?.documentElement?.style.removeProperty(key);
+  for (const doc of frameDocs(editor)) {
+    doc.documentElement?.style.removeProperty(key);
+  }
   return getVariables();
 }
 
@@ -78,11 +96,16 @@ export function resetVariablesStore(): void {
 }
 
 function applyAll(editor: Editor): boolean {
-  const doc = editor.Canvas.getDocument();
-  const root = doc?.documentElement;
-  if (!root) return false;
-  for (const [k, v] of store) {
-    root.style.setProperty(k, v);
+  const docs = frameDocs(editor);
+  if (docs.length === 0) return false;
+  let applied = false;
+  for (const doc of docs) {
+    const root = doc.documentElement;
+    if (!root) continue;
+    for (const [k, v] of store) {
+      root.style.setProperty(k, v);
+    }
+    applied = true;
   }
-  return true;
+  return applied;
 }

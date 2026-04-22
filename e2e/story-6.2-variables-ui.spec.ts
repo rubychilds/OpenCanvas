@@ -12,11 +12,21 @@ async function readRootVar(
   page: import("@playwright/test").Page,
   key: string,
 ): Promise<string> {
+  // Canvas.getDocument() returns undefined under the multi-frame layout; the
+  // iframe documents live on each frame's .view.getWindow() instead. Read the
+  // first frame so assertions match where applyAll() writes.
   return page.evaluate((k) => {
     const ed = (window as unknown as {
-      __designjs: { editor: { Canvas: { getDocument: () => Document } } };
+      __designjs: {
+        editor: {
+          Canvas: {
+            getFrames: () => Array<{ view?: { getWindow?: () => Window | undefined } }>;
+          };
+        };
+      };
     }).__designjs.editor;
-    const root = ed.Canvas.getDocument()?.documentElement;
+    const frame = ed.Canvas.getFrames()[0];
+    const root = frame?.view?.getWindow?.()?.document?.documentElement;
     return (root?.style.getPropertyValue(k) ?? "").trim();
   }, key);
 }
