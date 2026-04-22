@@ -22,7 +22,7 @@ body:
     id: proposal
     attributes:
       label: Proposed solution
-      description: What should OpenCanvas do? Sketch the UX or API surface.
+      description: What should DesignJS do? Sketch the UX or API surface.
     validations:
       required: true
 

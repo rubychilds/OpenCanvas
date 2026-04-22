@@ -30,19 +30,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build @opencanvas/bridge
-        run: pnpm --filter @opencanvas/bridge build
+      - name: Build @designjs/bridge
+        run: pnpm --filter @designjs/bridge build
 
       - name: Typecheck all packages
         run: pnpm -r typecheck
 
       - name: Build all packages
-        run: pnpm -r --filter '!@opencanvas/bridge' build
+        run: pnpm -r --filter '!@designjs/bridge' build
 
       - name: Bridge round-trip smoke test
         run: |
           set -m
-          pnpm --filter @opencanvas/app dev &
+          pnpm --filter @designjs/app dev &
           APP_PGID=$!
           # wait up to 20s for the bridge to come up
           for i in $(seq 1 20); do
@@ -58,9 +58,9 @@ jobs:
       - name: MCP stdio smoke test
         run: node scripts/smoke-mcp.mjs
 
-      - name: opencanvas init smoke test
+      - name: designjs init smoke test
         run: |
-          pnpm --filter @opencanvas/cli build
+          pnpm --filter @designjs/cli build
           node scripts/smoke-init.mjs
 
   e2e:
@@ -82,11 +82,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build @opencanvas/bridge
-        run: pnpm --filter @opencanvas/bridge build
+      - name: Build @designjs/bridge
+        run: pnpm --filter @designjs/bridge build
 
       - name: Build all packages
-        run: pnpm -r --filter '!@opencanvas/bridge' build
+        run: pnpm -r --filter '!@designjs/bridge' build
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium

@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in OpenCanvas isn't working as expected.
+description: Something in DesignJS isn't working as expected.
 title: "bug: "
 labels: ["bug", "triage"]
 body:
@@ -39,7 +39,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: OpenCanvas version / commit
+      label: DesignJS version / commit
       description: Output of `git rev-parse --short HEAD`, or the version from `package.json`.
       placeholder: e.g. 0.1.0-dev (commit abc1234)
     validations:
@@ -54,8 +54,8 @@ body:
         - Canvas / editor UI (`packages/app`)
         - MCP server / tools (`packages/mcp-server`)
         - Bridge / WebSocket (`packages/bridge`)
-        - CLI (`opencanvas init` / scaffolder)
-        - Persistence (`.opencanvas.json`)
+        - CLI (`designjs init` / scaffolder)
+        - Persistence (`.designjs.json`)
         - CI / build
         - Docs / README
     validations:
@@ -72,7 +72,7 @@ body:
     id: logs
     attributes:
       label: Logs / stack traces
-      description: Browser console, MCP server stderr (`process.stderr` lines from `[opencanvas-mcp]`), or Playwright trace if applicable.
+      description: Browser console, MCP server stderr (`process.stderr` lines from `[designjs-mcp]`), or Playwright trace if applicable.
       render: shell
 
   - type: textarea
