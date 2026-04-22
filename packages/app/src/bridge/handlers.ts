@@ -219,7 +219,15 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
         }
         if (!frameEl) throw new Error(`artboard ${input.artboardId} iframe not available`);
       } else {
-        frameEl = (editor.Canvas.getFrameEl() as HTMLIFrameElement | null) ?? undefined;
+        // Canvas.getFrameEl() returns a wrapper iframe under the multi-frame
+        // layout — its body is empty and toPng() hangs. Prefer the first real
+        // frame's iframe (same source the artboardId branch uses) and fall
+        // back to getFrameEl only if nothing's there.
+        const firstFrame = editor.Canvas.getFrames()[0];
+        if (firstFrame) frameEl = frameIframe(firstFrame);
+        if (!frameEl) {
+          frameEl = (editor.Canvas.getFrameEl() as HTMLIFrameElement | null) ?? undefined;
+        }
       }
       const doc = frameEl?.contentDocument;
       const body = doc?.body;
@@ -242,9 +250,11 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
     add_components: (params) => {
       const input = AddComponentsInput.parse(params);
       // Routing precedence: target (component id) > artboardId (frame id) >
-      // default (editor.addComponents, which lands in the first frame).
-      // target wins because it's the more-specific of the two — "append into
-      // this component" beats "put at the top of this frame".
+      // default (first frame's wrapper). target wins because it's the more-
+      // specific of the two. editor.addComponents alone does NOT render into
+      // a frame's iframe under the multi-frame layout shipped in v0.1 — the
+      // component lives in a detached tree with no mount — so we always land
+      // the content inside a frame's wrapper.
       let parent: Component | undefined;
       if (input.target) {
         parent = findById(editor, input.target);
@@ -259,6 +269,12 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
           throw new Error(`artboard ${input.artboardId} has no wrapper component`);
         }
         parent = wrapper;
+      } else {
+        const firstFrame = editor.Canvas.getFrames()[0];
+        const wrapper = (firstFrame as unknown as { get?: (k: string) => unknown })?.get?.(
+          "component",
+        ) as Component | undefined;
+        if (wrapper) parent = wrapper;
       }
       const added = parent
         ? parent.append(input.html)

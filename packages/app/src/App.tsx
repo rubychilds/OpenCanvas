@@ -120,7 +120,16 @@ export function App() {
 
     (window as unknown as { __designjs?: unknown }).__designjs = {
       editor,
-      addHtml: (html: string) => editor.addComponents(html),
+      addHtml: (html: string) => {
+        // Multi-frame: editor.addComponents lands the component in a detached
+        // tree with no iframe mount. Route into the first frame's wrapper so
+        // test/dev helpers that drive addHtml actually produce rendered DOM.
+        const firstFrame = editor.Canvas.getFrames()[0];
+        const wrapper = (firstFrame as unknown as { get?: (k: string) => unknown })?.get?.(
+          "component",
+        ) as { append?: (h: string) => unknown } | undefined;
+        return wrapper?.append ? wrapper.append(html) : editor.addComponents(html);
+      },
       getHtml: () => editor.getHtml(),
       getProjectData: () => editor.getProjectData(),
       save: () =>

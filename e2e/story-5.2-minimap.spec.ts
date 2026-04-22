@@ -35,6 +35,11 @@ test.describe("Story 5.2: minimap", () => {
     await waitForEditor(page);
     // InsertRail Frame button goes through createArtboard → emits
     // ARTBOARDS_CHANGED, which the Minimap subscribes to for refresh.
+    // createArtboard replaces the empty scratch "Frame 1" on the first named
+    // create (51ce020), so the first click yields 1 rect not 2. Click twice
+    // to exercise the refresh path past the scratch-replacement edge case.
+    await page.locator('[data-testid="oc-insert-frame"]').click();
+    await expect(page.locator('[data-testid^="oc-minimap-frame-"]')).toHaveCount(1);
     await page.locator('[data-testid="oc-insert-frame"]').click();
     await expect(page.locator('[data-testid^="oc-minimap-frame-"]')).toHaveCount(2);
   });

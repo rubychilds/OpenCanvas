@@ -19,8 +19,14 @@ test.describe("MCP: add_components routes into a specified artboardId", () => {
     mcp,
   }) => {
     await mcp.call("ping", {});
-    // Seed a second named frame. Default frame is index 0; the seeded one is
-    // index 1.
+    // Pre-seed the default frame so it's not "scratch" (empty "Frame 1"), or
+    // the next createArtboard will replace it (51ce020). With content inside,
+    // the default frame sticks around and we can prove routing doesn't leak
+    // into Desktop.
+    await mcp.call("add_components", {
+      html: `<div data-testid="default-frame-seed">seed</div>`,
+    });
+
     const { artboard } = (await mcp.call("create_artboard", {
       name: "Desktop",
       width: 1440,

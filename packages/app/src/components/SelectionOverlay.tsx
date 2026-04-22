@@ -28,7 +28,13 @@ interface Rect {
 }
 
 function readRect(editor: Editor, component: Component): Rect | null {
-  const el = (component as unknown as { getEl?: () => HTMLElement | null }).getEl?.() ?? null;
+  // component.getEl() returns null under GrapesJS v2's multi-frame layout; the
+  // primary view holds the rendered element reference instead. Fall back to
+  // getEl for safety when only a single legacy view exists.
+  const el =
+    ((component as unknown as { view?: { el?: HTMLElement } }).view?.el ??
+      (component as unknown as { getEl?: () => HTMLElement | null }).getEl?.()) ||
+    null;
   if (!el) return null;
   // Components inside the iframe report bounding rects in iframe-local coords
   // — unscaled by the host's canvas zoom/pan transform. To convert to host-

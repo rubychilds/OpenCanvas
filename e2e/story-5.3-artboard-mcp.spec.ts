@@ -64,8 +64,6 @@ test.describe("Story 5.3: artboard MCP tools", () => {
   }) => {
     await waitForBridge(page, mcp);
 
-    const before = await mcp.call<{ artboards: Artboard[] }>("list_artboards", {});
-
     const created = await mcp.call<{ artboard: Artboard }>("create_artboard", {
       name: "Mobile",
       width: 375,
@@ -76,8 +74,11 @@ test.describe("Story 5.3: artboard MCP tools", () => {
     expect(created.artboard.height).toBe(812);
     expect(typeof created.artboard.id).toBe("string");
 
+    // createArtboard replaces the empty scratch "Frame 1" the first time a
+    // named artboard appears (51ce020), so the count depends on whether the
+    // before-state was scratch-only. Assert presence-by-id — that's what
+    // "list_artboards reflects it" actually means.
     const after = await mcp.call<{ artboards: Artboard[] }>("list_artboards", {});
-    expect(after.artboards.length).toBe(before.artboards.length + 1);
     expect(after.artboards.find((a) => a.id === created.artboard.id)).toBeDefined();
   });
 

@@ -34,7 +34,11 @@ export function writeStyle(
  * Returns empty string when the component isn't rendered yet.
  */
 export function readComputedStyle(component: Component, key: string): string {
-  const el = (component as unknown as { getEl?: () => Element | null | undefined }).getEl?.();
+  // component.getEl() returns null under GrapesJS v2's multi-frame layout; the
+  // primary view holds the rendered element reference instead.
+  const el =
+    (component as unknown as { view?: { el?: Element } }).view?.el ??
+    (component as unknown as { getEl?: () => Element | null | undefined }).getEl?.();
   if (!el) return "";
   const view = el.ownerDocument?.defaultView;
   if (!view) return "";
