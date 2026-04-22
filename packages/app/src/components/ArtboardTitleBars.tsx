@@ -212,7 +212,11 @@ export function ArtboardTitleBars() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-20"
+      // clip-path excludes the Topbar region (--topbar-height) from this fixed
+      // overlay. Without it, the full-width pointer-events-auto title buttons
+      // (from d190a33) can silently swallow clicks on Topbar controls when a
+      // frame sits within ~22px of the top edge of the canvas viewport.
+      className="pointer-events-none fixed inset-0 z-20 [clip-path:inset(var(--topbar-height)_0_0_0)]"
       data-testid="oc-artboard-title-bars"
     >
       {frames.map((f) => {
