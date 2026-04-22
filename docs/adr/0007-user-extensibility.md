@@ -156,6 +156,20 @@ Kit flattening is a build-time step, not a runtime React render. The flattening 
 
 Per-kit licensing notes live in `LICENSE.third-party.md`: shadcn MIT, Base UI MIT, Tremor Apache 2.0, Park UI MIT, Magic UI MIT. All five permit re-distribution of flattened HTML with attribution preserved in the per-block `source.ref` field.
 
+### 2a. Each kit ships with a baseline token set
+
+Kit blocks reference semantic CSS custom properties — e.g., shadcn's `Button` uses `bg-primary`, `bg-background`, `text-foreground`, all of which resolve via Tailwind v4's `@theme` emission (ADR-0009 §5) *only if* the user has tokens named `color.primary` / `color.background` / `color.foreground`. A block dropped into a canvas with no matching tokens renders with broken utilities.
+
+To close that dependency, each kit ships a `{kit}.tokens.json` (DTCG-shaped, ADR-0009 §1) under `packages/app/src/kits/{kit}/tokens.json` — the kit's canonical default token set:
+
+- **shadcn** — the `--primary` / `--secondary` / `--background` / `--foreground` / `--muted` / `--accent` / `--destructive` / `--border` / `--input` / `--ring` / `--radius` set, matching [ui.shadcn.com/themes](https://ui.shadcn.com/themes) defaults.
+- **Base UI** — minimal; only tokens that Base UI's (few) default-styled demos consume.
+- **Tremor** — the chart colour palette + dashboard semantic tokens (`--tremor-brand` / `--tremor-background` / `--tremor-content` / …).
+- **Park UI** — Park's Panda recipe defaults reduced to DTCG tokens.
+- **Magic UI** — animation duration / easing curves.
+
+Merge semantics — a referenced-not-copied cascade (see ADR-0009 §7a for the full rule): kit baseline tokens form a lower cascade layer; user tokens in `.designjs.json#tokens` form an upper layer; user tokens win on name collision. **Kit tokens are never written into the user's `tokens.json`** — they load from the kit's bundled asset at CSS emission time and merge in memory only. A user's `tokens.json` stays project-scoped and clean; the kit tokens are implicit defaults that surface through the emitted CSS.
+
 ### 3. User-extensibility — project-local blocks and kits
 
 Two discovery paths, both depend on the v0.2 **Per-project design files** feature (`get_project_context` MCP handshake returns the user's `projectRoot`):
@@ -230,7 +244,7 @@ This is not persisted to `.designjs.json` — it's a preview aid, purely editor-
 
 2. **`designjs.config.ts` vs `designjs.config.js`.** TS is nicer to type but requires transpilation on load (esbuild inside the Vite dev server). JS is simpler. Leaning TS since Vite is already running; happy to take a patch saying otherwise.
 
-3. **What happens when a shadcn component block is dropped and the user's project *already uses shadcn*?** Two copies of `Button.tsx` might exist — one the user wrote, one DesignJS flattened. The canvas is HTML either way, but on `get_jsx` export the agent might emit `<button className="...">` instead of `<Button>`. Punted to ADR-0008 on code export semantics. v0.3 default: always emit raw HTML + Tailwind; users who want shadcn imports can prompt the agent for them.
+3. **What happens when a shadcn component block is dropped and the user's project *already uses shadcn*?** Two copies of `Button.tsx` might exist — one the user wrote, one DesignJS flattened. The canvas is HTML either way, but on `get_jsx` export the agent might emit `<button className="...">` instead of `<Button>`. Punted to a future ADR on code export semantics (ADR-0008 is Figma *import*, not code export — placeholder here for when the export ADR lands). v0.3 default: always emit raw HTML + Tailwind; users who want shadcn imports can prompt the agent for them.
 
 4. **Slot handling.** `{{children}}` is a literal text placeholder. If a block like `shadcn:card:with-header` has multiple slots (header / body / footer), we need `{{slot:header}}` / `{{slot:body}}` naming + an inspector affordance. Deferred — v0.3 ships single-slot blocks only; multi-slot is a v0.4 follow-up if users push back.
 

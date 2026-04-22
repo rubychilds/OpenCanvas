@@ -262,8 +262,22 @@ Pattern borrowed from Pencil: a single `get_tokens` response includes both the t
 Three surfaces, different priorities:
 
 - **DTCG JSON — ✅ ship in v0.3.** Drop a `tokens.json` at the project root; canvas picks it up on load. Write-back via Cmd+Shift+E → downloads a DTCG file. Matches Tokens Studio out of the box (they speak DTCG post v2).
-- **Figma Variables — ✅ ship in v0.3, via ADR-0008 relay.** Agent reads Figma's `get_variable_defs` (Dev Mode MCP server), translates, calls our `set_tokens`. The RGBA-to-CSS converter + mode-mapping happens in the agent step. Quality ceiling: tokens visible to Dev Mode MCP's selection scope. Relay docs (ADR-0008 Path A deliverable) get a "Importing Figma Variables" section.
+- **Figma Variables — ✅ ship in v0.3, via ADR-0008 relay.** Agent reads Figma's `get_variable_defs` (Dev Mode MCP server), translates, calls our `set_tokens`. The RGBA-to-CSS converter + mode-mapping happens in the agent step. Quality ceiling: tokens visible to Dev Mode MCP's selection scope. Relay docs (ADR-0008 Path A deliverable) get a "Importing Figma Variables" section. **Doc-drift note:** ADR-0008's relay docs as shipped in v0.3-early reference `set_variables` (the flat tool that existed at that moment). Once v0.3-mid lands this ADR's `set_tokens` typed tool, update ADR-0008's docs to reference `set_tokens` instead — the flat `set_variables` still works (deprecation alias) but `set_tokens` preserves type + mode fidelity through the relay.
 - **Style Dictionary emission — ⚠️ deferred to v0.4.** Our DTCG-shaped store is directly ingestible by Style Dictionary, so users who want Android / iOS / JS emission can just feed `tokens.json` to Style Dictionary themselves. No DesignJS-owned CLI in v0.3.
+
+### 7a. Kit baseline tokens cascade under user tokens
+
+ADR-0007 §2a introduces per-kit baseline token sets (e.g., shadcn's canonical `--primary`/`--secondary`/`--background` set) bundled under `packages/app/src/kits/{kit}/tokens.json`. These are **not** migrated into the user's `.designjs.json#tokens` on kit install — they remain kit assets.
+
+At CSS emission time (§5), the runtime merges token layers in this order (lowest to highest precedence):
+
+1. **Kit baseline tokens** for every kit currently contributing a block in `DEFAULT_BLOCKS` (shadcn + Base UI + Tremor + Park UI + Magic UI in v0.3).
+2. **User tokens** from `.designjs.json#tokens` (migrated from the old `cssVariables` flat map on first load, or authored fresh via the Topbar popover / `set_tokens` MCP).
+3. **User tokens from `tokens.json`** at project root, if present — same precedence as `.designjs.json#tokens` (the file is the canonical authoring surface; `.designjs.json#tokens` is the canvas's runtime copy). Collision between the two is resolved by most-recently-written-wins.
+
+Alias resolution walks the merged tree — a user alias `{color.brand.primary}` can point at a kit baseline token that the user hasn't overridden. No special handling.
+
+Rationale — referenced-not-copied (vs. copy-on-kit-install): keeps the user's `tokens.json` project-scoped and diff-clean; no "where did these 60 tokens come from" moments after installing shadcn; progressive disclosure (the user only sees the tokens they've chosen to override); kit upgrades propagate cleanly without stomping overrides. Trade-off: slightly more complex runtime merge (three layers to resolve at CSS emission). Acceptable — the merge is ~30 lines and runs once per token-tree change, not per paint.
 
 ### 8. Migration from the flat `cssVariables` sidecar
 
@@ -291,7 +305,7 @@ Projects not migrated yet continue to work via the deprecated `get_variables` / 
 - **Mode-switching UX is a small editor feature** — Topbar dropdown + a `data-designjs-mode` attribute + CSS attribute-selector overrides. Isolated concern; not coupled to the data model work.
 - **v0.3 scope grows by ~1 week** over the minimal "add grouping" option. Trading a 3-day schema band-aid (v0.3-early) for a 1-week schema-plus-emission effort (v0.3-mid) that doesn't need revisiting at v0.4 or v0.5.
 - **Composite types missed in v0.3** — shadow / gradient / typography tokens fall back to `$type: "string"` until v0.4. Tokens Studio files that use composite types ingest as strings, which is lossy but not broken (values still render correctly via the CSS emitter; they just don't participate in the type system).
-- **The `tokens.json` project-root file overlaps `designjs.theme.css`** (ADR-0007). Resolved: `tokens.json` is the source of truth; `designjs.theme.css` is the emitted / generated artefact. Users who edit `designjs.theme.css` by hand get their changes preserved *only* if they're outside the `@theme` block we manage. The block comments itself: `/* auto-generated from tokens.json — do not edit */`.
+- **`tokens.json` and `designjs.theme.css` (ADR-0007) coexist at different layers.** `tokens.json` is the source of truth for *structured* tokens; its emission is a **runtime `<style>` injected into each frame's iframe `<head>`** (never written to disk, never touches the user's files). `designjs.theme.css` remains the user-authored file ADR-0007 describes — untyped Tailwind directives, `@layer` overrides, `@import` pulls from `app/globals.css` — and is injected into the iframe as-is. Neither mechanism overwrites the other: the token-derived `<style>` and the user-authored `<style>` are siblings in the iframe `<head>`, loaded in that order so user `designjs.theme.css` rules can override token-emitted ones by specificity. Users who want token-scoped control edit `tokens.json`; users who want raw CSS escape-hatch edit `designjs.theme.css`.
 
 ---
 
