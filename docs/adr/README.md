@@ -17,6 +17,7 @@ The **Implementation** column lists the commit(s) that landed each ADR. For ADRs
 | [0005](./0005-html-primitives-mapping.md) | HTML primitives ↔ design-tool shape concepts | Accepted (2026-04-19) | `df7e87b` (primitives module), `a357bd3` (LayersPanel), `f6b7541` (InsertRail), `8d02b6e` (E2E), `d391bd7` (status flip + addendum). |
 | [0006](./0006-sizing-auto-layout-canvas-model.md) | Sizing modes, auto-layout taxonomy, canvas model, and the Raw CSS exit path | Proposed (2026-04-19) | — |
 | [0007](./0007-user-extensibility.md) | Block data model, built-in UI kits, and user-extensibility | Proposed (2026-04-22) | — |
+| [0008](./0008-figma-import-strategy.md) | Figma → DesignJS import strategy (MCP relay + first-party plugin) | Proposed (2026-04-22) | — |
 
 ## Adding a new ADR
 
