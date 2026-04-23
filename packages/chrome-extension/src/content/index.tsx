@@ -143,6 +143,74 @@ function stopCapture(): void {
   walker = null;
 }
 
+/**
+ * Whole-page capture — skips the hover walker and serializes the full
+ * `<body>`. The overlay is mounted at `document.documentElement` so it
+ * isn't nested inside body and won't pollute the capture.
+ *
+ * Raises the payload cap to 2MB — whole pages routinely exceed the 500KB
+ * default that's tuned for element selection.
+ */
+const PAGE_CAPTURE_HARD_LIMIT = 2 * 1024 * 1024;
+
+function capturePage(): void {
+  if (walker) {
+    walker.stop();
+    walker = null;
+  }
+  const root = document.body;
+  if (!root) {
+    window.postMessage(
+      { type: "designjs:capture:result", ok: false, error: "empty-input" },
+      "*",
+    );
+    return;
+  }
+  const result = serialize(root, { hardLimit: PAGE_CAPTURE_HARD_LIMIT });
+  if ("error" in result) {
+    window.postMessage(
+      {
+        type: "designjs:capture:result",
+        ok: false,
+        error: result.error,
+        nodeCount: result.nodeCount,
+        byteCount: result.byteCount,
+      },
+      "*",
+    );
+    return;
+  }
+  window.postMessage(
+    {
+      type: "designjs:capture:progress",
+      phase: "sending",
+      nodeCount: result.nodeCount,
+      byteCount: result.byteCount,
+    },
+    "*",
+  );
+  chrome.runtime.sendMessage(
+    {
+      type: "capture:send",
+      html: result.html,
+      nodeCount: result.nodeCount,
+      byteCount: result.byteCount,
+    },
+    (bgResponse: { ok: boolean; error?: string } | undefined) => {
+      window.postMessage(
+        {
+          type: "designjs:capture:result",
+          ok: bgResponse?.ok === true,
+          error: bgResponse?.ok === false ? bgResponse.error : undefined,
+          nodeCount: result.nodeCount,
+          byteCount: result.byteCount,
+        },
+        "*",
+      );
+    },
+  );
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Wiring
 // ────────────────────────────────────────────────────────────────────
@@ -151,6 +219,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === "toggle-overlay") toggleOverlay();
   if (msg?.type === "capture:start") startCapture();
   if (msg?.type === "capture:stop") stopCapture();
+  if (msg?.type === "capture:page") capturePage();
 });
 
 // The overlay's Start/Stop button posts via window.postMessage (simpler
@@ -160,4 +229,5 @@ window.addEventListener("message", (ev) => {
   if (ev.source !== window) return;
   if (ev.data?.type === "designjs:capture:start") startCapture();
   if (ev.data?.type === "designjs:capture:stop") stopCapture();
+  if (ev.data?.type === "designjs:capture:page") capturePage();
 });

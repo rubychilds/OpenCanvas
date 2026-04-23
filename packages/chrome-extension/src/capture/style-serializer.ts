@@ -31,8 +31,15 @@ export interface SerializeError {
   byteCount: number;
 }
 
-const PAYLOAD_SOFT_LIMIT = 400 * 1024;
-const PAYLOAD_HARD_LIMIT = 500 * 1024;
+export interface SerializeOptions {
+  /** Hard abort threshold in bytes. Defaults to 500KB (element selection). Whole-page captures pass a larger cap. */
+  hardLimit?: number;
+  /** Soft warning threshold. Defaults to 80% of hardLimit. */
+  softLimit?: number;
+}
+
+const DEFAULT_SOFT_LIMIT = 400 * 1024;
+const DEFAULT_HARD_LIMIT = 500 * 1024;
 
 /**
  * Properties we always inline on every element — layout/dimension/
@@ -213,11 +220,19 @@ function buildInlineStyle(
   return parts.join(";");
 }
 
+interface Counters {
+  nodes: number;
+  bytes: number;
+  warnings: string[];
+  softLimit: number;
+  hardLimit: number;
+}
+
 function stripAndInline(
   clone: Element,
   src: Element,
   parentSrc: Element | null,
-  counters: { nodes: number; bytes: number; warnings: string[] },
+  counters: Counters,
 ): boolean {
   counters.nodes += 1;
 
@@ -241,10 +256,10 @@ function stripAndInline(
   // recompute properly from outerHTML at the end).
   counters.bytes += 48 + style.length;
 
-  if (counters.bytes > PAYLOAD_HARD_LIMIT) return false;
-  if (counters.bytes > PAYLOAD_SOFT_LIMIT && counters.warnings.length === 0) {
+  if (counters.bytes > counters.hardLimit) return false;
+  if (counters.bytes > counters.softLimit && counters.warnings.length === 0) {
     counters.warnings.push(
-      `Payload crossed ${PAYLOAD_SOFT_LIMIT / 1024}KB — capture may get close to the ${PAYLOAD_HARD_LIMIT / 1024}KB cap.`,
+      `Payload crossed ${Math.round(counters.softLimit / 1024)}KB — capture may get close to the ${Math.round(counters.hardLimit / 1024)}KB cap.`,
     );
   }
 
@@ -268,18 +283,30 @@ function stripAndInline(
   return true;
 }
 
-export function serialize(root: Element): SerializeResult | SerializeError {
+export function serialize(
+  root: Element,
+  opts: SerializeOptions = {},
+): SerializeResult | SerializeError {
   if (!root) {
     return { error: "empty-input", nodeCount: 0, byteCount: 0 };
   }
 
-  const clone = root.cloneNode(true) as Element;
-  const counters = { nodes: 0, bytes: 0, warnings: [] as string[] };
+  const hardLimit = opts.hardLimit ?? DEFAULT_HARD_LIMIT;
+  const softLimit = opts.softLimit ?? Math.min(DEFAULT_SOFT_LIMIT, Math.floor(hardLimit * 0.8));
 
   // If the root itself is a dropped element type, bail immediately.
   if (DROP_ELEMENTS.has(root.tagName)) {
     return { error: "empty-input", nodeCount: 0, byteCount: 0 };
   }
+
+  const clone = root.cloneNode(true) as Element;
+  const counters: Counters = {
+    nodes: 0,
+    bytes: 0,
+    warnings: [],
+    softLimit,
+    hardLimit,
+  };
 
   const ok = stripAndInline(clone, root, root.parentElement, counters);
   if (!ok) {
@@ -293,12 +320,12 @@ export function serialize(root: Element): SerializeResult | SerializeError {
   const html = (clone as HTMLElement).outerHTML;
   const byteCount = new Blob([html]).size;
 
-  if (byteCount > PAYLOAD_HARD_LIMIT) {
+  if (byteCount > hardLimit) {
     return { error: "too-large", nodeCount: counters.nodes, byteCount };
   }
-  if (byteCount > PAYLOAD_SOFT_LIMIT && counters.warnings.length === 0) {
+  if (byteCount > softLimit && counters.warnings.length === 0) {
     counters.warnings.push(
-      `Final payload is ${(byteCount / 1024).toFixed(0)}KB — near the ${PAYLOAD_HARD_LIMIT / 1024}KB cap.`,
+      `Final payload is ${(byteCount / 1024).toFixed(0)}KB — near the ${Math.round(hardLimit / 1024)}KB cap.`,
     );
   }
 

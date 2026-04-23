@@ -119,6 +119,11 @@ export function App({ onDismiss }: AppProps = {}) {
     window.postMessage({ type: "designjs:capture:stop" }, "*");
   };
 
+  const capturePage = () => {
+    setCapture({ kind: "sending", nodeCount: 0, byteCount: 0 });
+    window.postMessage({ type: "designjs:capture:page" }, "*");
+  };
+
   const disconnected = status !== "connected";
   const capturing = capture.kind === "capturing";
   const statusLabel =
@@ -177,18 +182,29 @@ export function App({ onDismiss }: AppProps = {}) {
           </p>
         )}
 
-        <Button
-          onClick={capturing ? stop : start}
-          disabled={disconnected || capture.kind === "sending"}
-          fullWidth
-          variant={capturing ? "outline" : "default"}
-        >
-          {capture.kind === "sending"
-            ? "Sending…"
-            : capturing
-              ? "Stop capture"
-              : "Start capture"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={capturing ? stop : start}
+            disabled={disconnected || capture.kind === "sending"}
+            fullWidth
+            variant={capturing ? "outline" : "default"}
+          >
+            {capture.kind === "sending"
+              ? "Sending…"
+              : capturing
+                ? "Stop capture"
+                : "Start capture"}
+          </Button>
+          <Button
+            onClick={capturePage}
+            disabled={disconnected || capturing || capture.kind === "sending"}
+            fullWidth
+            variant="outline"
+            title="Capture the entire page"
+          >
+            Capture page
+          </Button>
+        </div>
 
         {capturing && (
           <p className="text-[var(--text-xs)] text-muted-foreground leading-relaxed m-0">

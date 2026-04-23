@@ -52,7 +52,12 @@ When the user captures a selected subtree, the serializer walks the tree from ro
 
 The hybrid is the Goldilocks option — easier to implement than Option B but tighter than Option A on realistic pages where typography inheritance dominates. Estimated payload reduction vs. full inline: **30–50%** on typical marketing pages, enough to sit comfortably under 500KB.
 
-**Size budget watchdog:** the serializer tracks cumulative payload size as it walks. At 400KB it logs a warning; at 500KB it refuses to continue and returns `{ error: "Selection too large", nodeCount, byteCount }` to the popup. User sees "Too big — try capturing a smaller section."
+**Size budget watchdog:** the serializer tracks cumulative payload size as it walks. The caps are configurable via `serialize(root, { hardLimit, softLimit })`:
+
+- **Element selection** (default): soft 400KB, hard 500KB. At 400KB the serializer pushes a warning; at 500KB it aborts and returns `{ error: "too-large", nodeCount, byteCount }`. User sees "Selection too large — try capturing a smaller section."
+- **Whole-page capture**: hard 2MB (soft auto-derived at 80%). Real pages routinely hit 800KB–1.5MB once fonts + hero imagery + inline SVG are inlined; the 500KB element cap is too strict for intentional whole-page captures. The 2MB ceiling protects the WebSocket/canvas from pathological pages while giving most marketing sites room.
+
+**Whole-page capture:** the overlay exposes a "Capture page" button alongside element selection. It serializes `document.body` directly (skipping the hover walker) with the relaxed 2MB cap. The overlay is mounted at `document.documentElement` (not `<body>`) so it's not nested inside the capture root — it naturally stays out of the serialized payload without needing explicit filtering.
 
 **Custom-property scope:** inherited-diff also skips `var(--…)` references — if parent resolves `--primary` to `#ff3366` and child inherits the same value, child doesn't need any declaration.
 
