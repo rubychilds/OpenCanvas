@@ -89,28 +89,24 @@ export function App({ onDismiss }: AppProps = {}) {
       aria-label="DesignJS capture"
     >
       <header className="flex h-9 items-center justify-between px-3 border-b border-border">
-        <h1
-          className="font-semibold tracking-tight whitespace-nowrap leading-none"
-          style={{ fontSize: "12px" }}
+        <div
+          className="font-semibold tracking-tight whitespace-nowrap"
+          style={{ fontSize: "11px", lineHeight: "1" }}
         >
           DesignJS capture
-        </h1>
-        <div className="flex items-center gap-2">
-          <span className="text-[var(--text-xs)] text-muted-foreground">
-            v0.1
-          </span>
-          {onDismiss && (
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="text-muted-foreground hover:text-foreground text-sm w-5 h-5 inline-flex items-center justify-center rounded-sm hover:bg-accent transition-colors"
-              aria-label="Close"
-              title="Close (Esc)"
-            >
-              ×
-            </button>
-          )}
         </div>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="text-muted-foreground hover:text-foreground w-5 h-5 inline-flex items-center justify-center rounded-sm hover:bg-accent transition-colors"
+            style={{ fontSize: "14px", lineHeight: "1" }}
+            aria-label="Close"
+            title="Close (Esc)"
+          >
+            ×
+          </button>
+        )}
       </header>
 
       <div className="px-4 py-3 space-y-3">
