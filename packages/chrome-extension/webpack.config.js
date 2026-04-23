@@ -26,7 +26,12 @@ module.exports = {
           options: {
             presets: [
               '@babel/preset-env',
-              '@babel/preset-react',
+              // `runtime: 'automatic'` tells Babel to emit JSX via the React 17+
+              // automatic runtime (importSource: 'react'). Without this, Babel
+              // emits React.createElement() calls and requires `import React`
+              // in every .tsx file, which silently overrides tsconfig's
+              // `jsx: "react-jsx"` setting.
+              ['@babel/preset-react', { runtime: 'automatic' }],
               '@babel/preset-typescript',
             ],
           },
