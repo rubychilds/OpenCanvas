@@ -38,10 +38,33 @@ chrome.action.onClicked.addListener((tab) => {
     });
 });
 
+/**
+ * Land a capture on the canvas. When `newArtboard` is set (whole-page
+ * capture), first create the artboard and then append the HTML into it
+ * — this is the only way to guarantee an artboard exists (element
+ * capture's "append to first frame" path crashes when the user has
+ * deleted every artboard).
+ */
+async function relayCapture(msg: {
+  html: string;
+  newArtboard?: { name?: string; width: number; height: number };
+}): Promise<unknown> {
+  if (msg.newArtboard) {
+    const { artboard } = (await bridge.send({
+      tool: "create_artboard",
+      params: msg.newArtboard,
+    })) as { artboard: { id: string } };
+    return bridge.send({
+      tool: "add_components",
+      params: { html: msg.html, artboardId: artboard.id },
+    });
+  }
+  return bridge.send({ tool: "add_components", params: { html: msg.html } });
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "capture:send") {
-    bridge
-      .send({ tool: "add_components", params: { html: msg.html } })
+    relayCapture(msg)
       .then((result) => sendResponse({ ok: true, result }))
       .catch((err: Error) => sendResponse({ ok: false, error: err.message }));
     return true; // async response

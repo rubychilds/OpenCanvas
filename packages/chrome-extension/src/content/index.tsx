@@ -190,6 +190,17 @@ function capturePage(): void {
   // wrapper component — the content lands in a detached tree. Swap the outer
   // tag for <div> so the inlined styles still apply but the nesting is legal.
   const html = result.html.replace(/^<body\b/, "<div").replace(/<\/body>$/, "</div>");
+
+  // Whole-page capture always lands in its own fresh artboard — a page is
+  // conceptually its own canvas, not content to append to whatever frame
+  // happens to exist (which may be nothing, if the user deleted them all).
+  const width = Math.min(document.documentElement.scrollWidth || window.innerWidth, 3840);
+  const height = Math.min(
+    document.documentElement.scrollHeight || window.innerHeight,
+    20000,
+  );
+  const name = document.title || new URL(window.location.href).hostname;
+
   window.postMessage(
     {
       type: "designjs:capture:progress",
@@ -203,6 +214,7 @@ function capturePage(): void {
     {
       type: "capture:send",
       html,
+      newArtboard: { name, width, height },
       nodeCount: result.nodeCount,
       byteCount: result.byteCount,
     },
