@@ -75,7 +75,10 @@ export function bridgeServerPlugin(): Plugin {
         const me = peers.get(socket);
         if (!me) return;
 
-        if (msg.data.type === "request" && me.role === "mcp-server") {
+        if (
+          msg.data.type === "request" &&
+          (me.role === "mcp-server" || me.role === "browser-extension")
+        ) {
           const canvas = peerByRole("canvas");
           if (!canvas) {
             const error = {

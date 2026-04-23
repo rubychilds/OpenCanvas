@@ -41,8 +41,8 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "capture:send") {
     bridge
-      .send({ type: "add_components", html: msg.html })
-      .then(() => sendResponse({ ok: true }))
+      .send({ tool: "add_components", params: { html: msg.html } })
+      .then((result) => sendResponse({ ok: true, result }))
       .catch((err: Error) => sendResponse({ ok: false, error: err.message }));
     return true; // async response
   }

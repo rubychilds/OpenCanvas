@@ -4,7 +4,7 @@ export const BRIDGE_PORT = 29170;
 export const BRIDGE_HOST = "127.0.0.1";
 export const BRIDGE_PATH = "/designjs-bridge";
 
-export const BridgeRole = z.enum(["mcp-server", "canvas"]);
+export const BridgeRole = z.enum(["mcp-server", "canvas", "browser-extension"]);
 export type BridgeRole = z.infer<typeof BridgeRole>;
 
 export const HelloMessage = z.object({
