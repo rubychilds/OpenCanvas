@@ -166,8 +166,11 @@ function capturePage(): void {
     );
     return;
   }
+  const t0 = performance.now();
   const result = serialize(root, { hardLimit: PAGE_CAPTURE_HARD_LIMIT });
+  const t1 = performance.now();
   if ("error" in result) {
+    console.warn("[designjs] page serialize failed:", result);
     window.postMessage(
       {
         type: "designjs:capture:result",
@@ -180,6 +183,13 @@ function capturePage(): void {
     );
     return;
   }
+  console.log(
+    `[designjs] page captured: ${result.nodeCount} nodes, ${(result.byteCount / 1024).toFixed(0)}KB, serialized in ${Math.round(t1 - t0)}ms`,
+  );
+  // GrapesJS' HTML parser filters <body> when it appears inside another body's
+  // wrapper component — the content lands in a detached tree. Swap the outer
+  // tag for <div> so the inlined styles still apply but the nesting is legal.
+  const html = result.html.replace(/^<body\b/, "<div").replace(/<\/body>$/, "</div>");
   window.postMessage(
     {
       type: "designjs:capture:progress",
@@ -192,11 +202,14 @@ function capturePage(): void {
   chrome.runtime.sendMessage(
     {
       type: "capture:send",
-      html: result.html,
+      html,
       nodeCount: result.nodeCount,
       byteCount: result.byteCount,
     },
     (bgResponse: { ok: boolean; error?: string } | undefined) => {
+      if (bgResponse?.ok !== true) {
+        console.error("[designjs] bridge rejected page capture:", bgResponse);
+      }
       window.postMessage(
         {
           type: "designjs:capture:result",

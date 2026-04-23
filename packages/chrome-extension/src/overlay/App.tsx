@@ -26,7 +26,7 @@ type CaptureState =
   | { kind: "capturing" }
   | { kind: "sending"; nodeCount: number; byteCount: number }
   | { kind: "sent"; nodeCount: number; byteCount: number }
-  | { kind: "error"; error: CaptureError };
+  | { kind: "error"; error: CaptureError; detail?: string };
 
 function StatusDot({ status }: { status: BridgeStatus }) {
   return (
@@ -94,9 +94,22 @@ export function App({ onDismiss }: AppProps = {}) {
           });
           window.setTimeout(() => setCapture({ kind: "idle" }), 2500);
         } else {
+          const raw = data.error ?? "unknown";
+          const known = new Set<CaptureError>([
+            "too-large",
+            "bridge-disconnected",
+            "empty-input",
+            "cancelled",
+            "unknown",
+          ]);
+          const knownMatch = known.has(raw as CaptureError)
+            ? (raw as CaptureError)
+            : "unknown";
+          console.error("[designjs] capture failed:", raw, data);
           setCapture({
             kind: "error",
-            error: (data.error as CaptureError) ?? "unknown",
+            error: knownMatch,
+            detail: knownMatch === "unknown" ? raw : undefined,
           });
         }
       }
@@ -248,7 +261,9 @@ export function App({ onDismiss }: AppProps = {}) {
                   ? "Nothing captured. Try selecting a different element."
                   : capture.error === "cancelled"
                     ? "Capture cancelled."
-                    : "Something went wrong. Check the extension logs."}
+                    : capture.detail
+                      ? `Canvas rejected the capture: ${capture.detail}`
+                      : "Something went wrong. Check the extension logs."}
           </div>
         )}
       </div>

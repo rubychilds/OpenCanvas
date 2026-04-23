@@ -2,13 +2,22 @@
  * DesignJS capture overlay — styles scoped to the injected container.
  *
  * Because we render inside the HOST PAGE's DOM (not a browser-action
- * popup), CSS from the page can cascade into our overlay. Everything
- * visual lives under #designjs-capture-root, and we `all: initial`
- * the root to reset host-page inheritance before Tailwind classes
- * apply.
+ * popup), CSS leaks go BOTH ways: host CSS can cascade into our
+ * overlay, and our CSS can cascade into the host. `all: initial` at
+ * the container handles the inbound direction.
+ *
+ * For the outbound direction we skip Tailwind's preflight layer — its
+ * global resets (`*, ::before, ::after { box-sizing: border-box }`,
+ * `h1-h6 { font-size: inherit }`, `html, :host { line-height: 1.5 }`,
+ * etc.) would otherwise restyle every site the extension runs on. We
+ * keep theme (CSS variables — host pages don't reference our vars so
+ * no visible effect) and utilities (class-scoped — only our elements
+ * carry the classes).
  */
 
-@import "tailwindcss";
+@layer theme, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 @import "./theme.css";
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
