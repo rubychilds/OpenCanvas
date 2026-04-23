@@ -36,4 +36,20 @@
     font-family: inherit;
     box-sizing: border-box;
   }
+
+  /* Neutralise heading user-agent defaults. Chrome ships h1 as
+     `font-size: 2em; font-weight: bold; margin: 0.67em 0` — inside our
+     320px overlay that renders the "DesignJS capture" title at ~26px
+     and on two lines. We render our own typography via Tailwind classes,
+     so reset here and let the class utilities drive sizing. */
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+    margin: 0;
+  }
+
+  /* Same cleanup for p / code / kbd — avoids host-page margins creeping in. */
+  p, code, kbd, pre {
+    margin: 0;
+  }
 }
