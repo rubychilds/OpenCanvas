@@ -105,6 +105,86 @@ function shouldDropAttr(name: string): boolean {
   return false;
 }
 
+/**
+ * srcset entries are comma-separated `"<url> <descriptor>"` pairs; URLs
+ * may be relative. Rewrite each to absolute.
+ */
+function resolveSrcset(srcset: string, baseURI: string): string {
+  return srcset
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const match = entry.match(/^(\S+)(?:\s+(.+))?$/);
+      if (!match) return entry;
+      const [, url, descriptor] = match;
+      try {
+        const abs = new URL(url!, baseURI).href;
+        return descriptor ? `${abs} ${descriptor}` : abs;
+      } catch {
+        return entry;
+      }
+    })
+    .join(", ");
+}
+
+/**
+ * Images / video / audio / anchors can carry relative URLs that resolve
+ * against the host page's document base. On the DesignJS canvas (a
+ * different origin entirely) those paths would 404. Resolve to absolute
+ * URLs before emission — the DOM properties (img.src, a.href, etc.)
+ * return the absolute-resolved value, unlike getAttribute which
+ * returns the as-authored string.
+ *
+ * Computed-style URLs (background-image, list-style-image, cursor, etc.)
+ * already resolve to absolute in getComputedStyle's return value, so no
+ * extra handling needed for those — buildInlineStyle picks up the
+ * resolved form naturally.
+ */
+function normalizeMediaAttrs(clone: Element, src: Element): void {
+  const baseURI = document.baseURI;
+
+  if (src instanceof HTMLImageElement && clone instanceof HTMLImageElement) {
+    if (src.src) clone.setAttribute("src", src.src);
+    if (src.srcset) clone.setAttribute("srcset", resolveSrcset(src.srcset, baseURI));
+    return;
+  }
+  if (src instanceof HTMLSourceElement && clone instanceof HTMLSourceElement) {
+    if (src.src) clone.setAttribute("src", src.src);
+    if (src.srcset) clone.setAttribute("srcset", resolveSrcset(src.srcset, baseURI));
+    return;
+  }
+  if (src instanceof HTMLVideoElement && clone instanceof HTMLVideoElement) {
+    if (src.src) clone.setAttribute("src", src.src);
+    if (src.poster) {
+      try {
+        clone.setAttribute("poster", new URL(src.poster, baseURI).href);
+      } catch {
+        /* keep as-is */
+      }
+    }
+    return;
+  }
+  if (src instanceof HTMLAudioElement && clone instanceof HTMLAudioElement) {
+    if (src.src) clone.setAttribute("src", src.src);
+    return;
+  }
+  if (src instanceof HTMLAnchorElement && clone instanceof HTMLAnchorElement) {
+    if (src.href) clone.setAttribute("href", src.href);
+    return;
+  }
+  if (src instanceof SVGImageElement && clone instanceof SVGImageElement) {
+    const href = src.href?.baseVal || src.getAttribute("xlink:href");
+    if (href) {
+      try {
+        clone.setAttribute("href", new URL(href, baseURI).href);
+      } catch {
+        /* keep as-is */
+      }
+    }
+  }
+}
+
 function buildInlineStyle(
   computed: CSSStyleDeclaration,
   parentComputed: CSSStyleDeclaration | null,
@@ -152,6 +232,10 @@ function stripAndInline(
   for (const attr of Array.from(clone.attributes)) {
     if (shouldDropAttr(attr.name)) clone.removeAttribute(attr.name);
   }
+
+  // Rewrite relative src/srcset/href on media elements to absolute URLs
+  // so the canvas (different origin) can actually load them.
+  normalizeMediaAttrs(clone, src);
 
   // Rough running-size estimate — conservative but cheap (we
   // recompute properly from outerHTML at the end).

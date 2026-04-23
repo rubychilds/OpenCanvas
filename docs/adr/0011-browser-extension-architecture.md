@@ -73,7 +73,9 @@ The hybrid is the Goldilocks option — easier to implement than Option B but ti
 
 1. **Capture scope — subtree or just the selected element?** Story 8.1 AC says "captures the selected element and its entire subtree" — that's the decision. But "subtree" can mean "DOM descendants" or "visual descendants" (some off-screen / `display:none` children skipped). v0.3 ships "DOM descendants, skip `display:none`." Users who want everything can capture the parent explicitly.
 
-2. **`<img>` handling.** Image URLs on the captured page are cross-origin. Options: (a) leave the `src` as-is — fails to load on canvas unless the origin allows it; (b) fetch + base64-encode at capture time — bloats payload; (c) upload to the `.designjs.json`'s `assets` array via data-url. Leaning (a) for v0.3 with a "broken image" placeholder and a docs note; (c) for v0.4.
+2. ~~**`<img>` handling.**~~ **Resolved 2026-04-23 (partial — option (a) shipped).** Media URLs (`img.src`, `img.srcset`, `<source>`, `<video src>` / `poster`, `<audio src>`, `<a href>`, `<SVGImage href>`) are now rewritten to absolute URLs via the DOM-property side (`img.src` returns the resolved absolute URL, unlike `getAttribute("src")` which returns the as-authored relative string). Computed-style URLs (`background-image`, `list-style-image`, `cursor`, etc.) already resolve to absolute via `getComputedStyle` and emit correctly through `buildInlineStyle`. `srcset` is parsed + each entry's URL resolved individually.
+
+   **Remaining gap for v0.4:** cross-origin hotlink protection — sites that block `<img>` requests based on `Referer` will still show broken images on canvas. Option (b) (fetch + base64-encode at capture time) or option (c) (upload to `.designjs.json` assets) can close the gap but bloats payload. Deferred; docs currently say "some sites with hotlink protection may show broken images."
 
 3. **SVG inline vs. external.** Inline `<svg>` captures cleanly. `<img src="*.svg">` or `background-image: url(*.svg)` hit the cross-origin problem above. Same resolution as images.
 
