@@ -88,8 +88,11 @@ export function App({ onDismiss }: AppProps = {}) {
       role="dialog"
       aria-label="DesignJS capture"
     >
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h1 className="text-xs font-semibold tracking-tight whitespace-nowrap">
+      <header className="flex h-9 items-center justify-between px-3 border-b border-border">
+        <h1
+          className="font-semibold tracking-tight whitespace-nowrap leading-none"
+          style={{ fontSize: "12px" }}
+        >
           DesignJS capture
         </h1>
         <div className="flex items-center gap-2">
