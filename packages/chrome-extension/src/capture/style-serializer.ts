@@ -226,6 +226,17 @@ interface Counters {
   warnings: string[];
   softLimit: number;
   hardLimit: number;
+  /**
+   * Shared rule → auto-generated class cache. Every unique style string
+   * gets exactly one class; elements that share a style share the class.
+   * This is load-bearing — GrapesJS' parser strips properties not in
+   * each component type's `stylable` allowlist from `style=""` attrs
+   * (wrapper only keeps 7 background props; h1/p/section etc. strip
+   * display/flex/grid/width/height/etc.), so we MUST write styles via
+   * classes + a hoisted <style> block to survive the parse.
+   */
+  styleToClass: Map<string, string>;
+  classCounter: { n: number };
 }
 
 function stripAndInline(
@@ -236,12 +247,22 @@ function stripAndInline(
 ): boolean {
   counters.nodes += 1;
 
-  // Apply computed style inline.
+  // Compute the element's style and attach it as a class (never as
+  // style="..."). See Counters.styleToClass for why.
   const computed = window.getComputedStyle(src);
   const parentComputed = parentSrc ? window.getComputedStyle(parentSrc) : null;
   const style = buildInlineStyle(computed, parentComputed);
-  if (style) (clone as HTMLElement).setAttribute("style", style);
-  else (clone as HTMLElement).removeAttribute("style");
+  if (style) {
+    let className = counters.styleToClass.get(style);
+    if (!className) {
+      className = `_dj${(counters.classCounter.n++).toString(36)}`;
+      counters.styleToClass.set(style, className);
+    }
+    (clone as HTMLElement).classList.add(className);
+  }
+  // Always drop any pre-existing style attribute — it came from the
+  // source page and our class covers the same ground (or more).
+  (clone as HTMLElement).removeAttribute("style");
 
   // Strip dangerous attributes from the clone.
   for (const attr of Array.from(clone.attributes)) {
@@ -306,6 +327,8 @@ export function serialize(
     warnings: [],
     softLimit,
     hardLimit,
+    styleToClass: new Map(),
+    classCounter: { n: 0 },
   };
 
   const ok = stripAndInline(clone, root, root.parentElement, counters);
@@ -316,6 +339,20 @@ export function serialize(
       byteCount: counters.bytes,
     };
   }
+
+  // Emit a <style> block with one rule per unique computed-style signature.
+  // Prepended inside the clone so GrapesJS' parser finds it via parseCss and
+  // registers the rules in the canvas cascade — classes on elements resolve
+  // against these rules just like regular class-based CSS.
+  const cssRules: string[] = [];
+  for (const [style, className] of counters.styleToClass) {
+    cssRules.push(`.${className}{${style}}`);
+  }
+  const cssText = cssRules.join("");
+  const styleEl = clone.ownerDocument.createElement("style");
+  styleEl.setAttribute("data-designjs-capture", "");
+  styleEl.textContent = cssText;
+  (clone as HTMLElement).insertBefore(styleEl, (clone as HTMLElement).firstChild);
 
   const html = (clone as HTMLElement).outerHTML;
   const byteCount = new Blob([html]).size;
