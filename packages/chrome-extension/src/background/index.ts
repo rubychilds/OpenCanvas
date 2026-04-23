@@ -6,20 +6,36 @@
  *   (ws://127.0.0.1:29170/designjs-bridge), identifying as a
  *   `browser-extension` peer.
  * - Relays capture payloads from the content script → canvas.
- * - Reports connection status back to the popup.
+ * - On extension-icon click, asks the active tab's content script to
+ *   toggle the injected overlay. No browser-action popup is used —
+ *   see ADR-0011 §UX and packages/chrome-ext-orbis for the reference
+ *   pattern.
  *
- * Kept deliberately thin — the heavy lifting (DOM walk, style serializer,
- * user-facing UI) lives in the content script + popup.
+ * Kept deliberately thin — the heavy lifting (DOM walk, style
+ * serializer, overlay rendering) lives in the content script.
  */
 
 import { connectToBridge, type BridgeStatus } from "../transport/ws-client.js";
 
 const bridge = connectToBridge({
   onStatus: (status: BridgeStatus) => {
+    // Broadcast to any content scripts / overlays that are listening.
+    // No tab id — the runtime delivers to all extension views.
     chrome.runtime.sendMessage({ type: "bridge-status", status }).catch(() => {
-      // Popup not open — ignore.
+      // No listeners — ignore.
     });
   },
+});
+
+chrome.action.onClicked.addListener((tab) => {
+  if (!tab.id) return;
+  chrome.tabs
+    .sendMessage(tab.id, { type: "toggle-overlay" })
+    .catch(() => {
+      // Content script not injected on this tab (e.g. chrome:// pages,
+      // the Chrome Web Store, new-tab pages). Nothing we can do — the
+      // content-script matcher excludes these by default.
+    });
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -28,7 +44,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .send({ type: "add_components", html: msg.html })
       .then(() => sendResponse({ ok: true }))
       .catch((err: Error) => sendResponse({ ok: false, error: err.message }));
-    return true; // async
+    return true; // async response
   }
   if (msg?.type === "bridge-status:request") {
     sendResponse({ status: bridge.currentStatus() });

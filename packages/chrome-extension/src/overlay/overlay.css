@@ -1,0 +1,39 @@
+/*
+ * DesignJS capture overlay — styles scoped to the injected container.
+ *
+ * Because we render inside the HOST PAGE's DOM (not a browser-action
+ * popup), CSS from the page can cascade into our overlay. Everything
+ * visual lives under #designjs-capture-root, and we `all: initial`
+ * the root to reset host-page inheritance before Tailwind classes
+ * apply.
+ */
+
+@import "tailwindcss";
+@import "./theme.css";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+#designjs-capture-root {
+  /* Reset host-page inheritance so only our styles matter. */
+  all: initial;
+
+  /* Float in the top-right of the viewport — Orbis-corner pattern. */
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2147483647;
+  width: 320px;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-foreground);
+  line-height: 1.45;
+  pointer-events: auto;
+
+  /* Force the font on every descendant so host-page font-family doesn't
+     leak through. Tailwind utilities override where relevant. */
+  *,
+  *::before,
+  *::after {
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+}

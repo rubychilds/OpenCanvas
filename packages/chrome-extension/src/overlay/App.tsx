@@ -1,22 +1,18 @@
 /**
- * Extension popup — capture UI.
+ * DesignJS capture overlay — React component rendered into an
+ * injected DOM container on the host page (not a browser-action
+ * popup). See content/index.tsx for the injector.
  *
- * Single-view: status indicator (bridge connected / disconnected),
- * "Start capture" / "Stop capture" toggle, and an error banner for
- * "DesignJS not running" or "selection too large". Uses the shared
- * DesignJS editor-chrome token palette (see theme.css) so the popup
- * feels continuous with the canvas.
- *
- * Intentionally tiny — the active capture UX lives in the content
- * script's DOM overlay, not in the popup.
+ * Uses the DesignJS editor-chrome token palette (theme.css) for
+ * visual continuity with the canvas. Ships with full rounded corners
+ * + shadow since we control the container — no browser-popup
+ * square-backdrop issue.
  */
 
-import { createRoot } from "react-dom/client";
 import { useEffect, useState } from "react";
 import type { BridgeStatus } from "../transport/ws-client.js";
 import { Button } from "./components/ui/button.js";
 import { cn } from "../lib/utils.js";
-import "./popup.css";
 
 type CaptureError = "too-large" | "bridge-disconnected" | "unknown";
 
@@ -36,22 +32,11 @@ function StatusDot({ status }: { status: BridgeStatus }) {
   );
 }
 
-function StatusLine({ status }: { status: BridgeStatus }) {
-  const label =
-    status === "connected"
-      ? "Connected to canvas"
-      : status === "connecting"
-        ? "Connecting…"
-        : "DesignJS not running";
-  return (
-    <div className="flex items-center gap-2 text-[var(--text-sm)] text-foreground">
-      <StatusDot status={status} />
-      <span>{label}</span>
-    </div>
-  );
+export interface AppProps {
+  onDismiss?: () => void;
 }
 
-function App() {
+export function App({ onDismiss }: AppProps = {}) {
   const [status, setStatus] = useState<BridgeStatus>("disconnected");
   const [capturing, setCapturing] = useState(false);
   const [error, setError] = useState<CaptureError | null>(null);
@@ -75,42 +60,72 @@ function App() {
   const start = async () => {
     setError(null);
     setCapturing(true);
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (tab?.id) await chrome.tabs.sendMessage(tab.id, { type: "capture:start" });
+    window.postMessage({ type: "designjs:capture:start" }, "*");
   };
 
   const stop = async () => {
     setCapturing(false);
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (tab?.id) await chrome.tabs.sendMessage(tab.id, { type: "capture:stop" });
+    window.postMessage({ type: "designjs:capture:stop" }, "*");
   };
 
   const disconnected = status !== "connected";
+  const statusLabel =
+    status === "connected"
+      ? "Connected to canvas"
+      : status === "connecting"
+        ? "Connecting…"
+        : "DesignJS not running";
 
   return (
-    <div className="rounded-lg border border-border bg-card shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
+    <div
+      className={cn(
+        "designjs-popup-container",
+        "flex flex-col overflow-hidden",
+        "bg-card text-foreground",
+        "rounded-xl border border-border",
+        "shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]",
+      )}
+      role="dialog"
+      aria-label="DesignJS capture"
+    >
       <header className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h1 className="text-[var(--text-base)] font-semibold tracking-tight">
+        <h1 className="text-[var(--text-base)] font-semibold tracking-tight m-0">
           DesignJS capture
         </h1>
-        <span className="text-[var(--text-xs)] text-muted-foreground">
-          v0.1
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[var(--text-xs)] text-muted-foreground">
+            v0.1
+          </span>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="text-muted-foreground hover:text-foreground text-sm w-5 h-5 inline-flex items-center justify-center rounded-sm hover:bg-accent transition-colors"
+              aria-label="Close"
+              title="Close (Esc)"
+            >
+              ×
+            </button>
+          )}
+        </div>
       </header>
+
       <div className="px-4 py-3 space-y-3">
-        <StatusLine status={status} />
+        <div className="flex items-center gap-2 text-[var(--text-sm)]">
+          <StatusDot status={status} />
+          <span>{statusLabel}</span>
+        </div>
+
         {disconnected && (
-          <p className="text-[var(--text-xs)] text-muted-foreground leading-relaxed">
-            Run <code className="px-1 py-0.5 rounded-sm bg-muted text-foreground font-mono text-[10px]">pnpm dev</code>{" "}
-            in the DesignJS repo, then reopen this popup.
+          <p className="text-[var(--text-xs)] text-muted-foreground leading-relaxed m-0">
+            Run{" "}
+            <code className="px-1 py-0.5 rounded-sm bg-muted text-foreground font-mono text-[10px]">
+              pnpm dev
+            </code>{" "}
+            in the DesignJS repo, then reopen this overlay.
           </p>
         )}
+
         <Button
           onClick={capturing ? stop : start}
           disabled={disconnected}
@@ -119,6 +134,7 @@ function App() {
         >
           {capturing ? "Stop capture" : "Start capture"}
         </Button>
+
         {error && (
           <div className="rounded-sm border border-destructive/30 bg-destructive/5 px-2.5 py-2 text-[var(--text-xs)] text-destructive">
             {error === "too-large"
@@ -129,13 +145,14 @@ function App() {
           </div>
         )}
       </div>
-      <footer className="px-4 py-2.5 bg-muted/50 text-[var(--text-xs)] text-muted-foreground text-center">
-        Hover a web element and press <kbd className="px-1 py-0.5 rounded-sm bg-background border border-border font-mono text-[10px]">Enter</kbd>{" "}
+
+      <footer className="px-4 py-2.5 bg-muted/50 text-[var(--text-xs)] text-muted-foreground text-center border-t border-border">
+        Hover a web element and press{" "}
+        <kbd className="px-1 py-0.5 rounded-sm bg-background border border-border font-mono text-[10px]">
+          Enter
+        </kbd>{" "}
         to capture.
       </footer>
     </div>
   );
 }
-
-const container = document.getElementById("root");
-if (container) createRoot(container).render(<App />);

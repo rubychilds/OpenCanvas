@@ -7,8 +7,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 module.exports = {
   entry: {
     background: './src/background/index.ts',
-    popup: './src/popup/index.tsx',
-    capture: './src/content/capture.ts',
+    content: './src/content/index.tsx',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -53,7 +52,6 @@ module.exports = {
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'icons/*', to: 'icons/[name][ext]' },
-        { from: 'src/popup/popup.html', to: 'popup.html' },
       ],
     }),
   ],
