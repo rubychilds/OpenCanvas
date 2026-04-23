@@ -54,5 +54,12 @@ module.exports = {
   ],
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx'],
+    // ESM convention: .ts files import each other with .js extensions (matches
+    // what tsconfig's `moduleResolution: "bundler"` expects). Tell webpack to
+    // try .ts/.tsx when it sees a .js/.jsx import specifier.
+    extensionAlias: {
+      '.js': ['.ts', '.js'],
+      '.jsx': ['.tsx', '.jsx'],
+    },
   },
 };
