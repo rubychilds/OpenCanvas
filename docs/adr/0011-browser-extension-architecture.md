@@ -3,7 +3,9 @@
 **Status:** Proposed
 **Date:** April 22, 2026
 **Owner:** Architecture
-**Related:** [ADR-0001](./0001-frontend-ui-stack.md) (WebSocket bridge on `127.0.0.1:29170`); PRD Story 8.1 (element selection + capture), Story 8.2 (style serialization), Story 8.3 (send to DesignJS)
+**Related:** [ADR-0001](./0001-frontend-ui-stack.md) (WebSocket bridge on `127.0.0.1:29170`); PRD Story 8.1 (element selection + capture), Story 8.2 (style serialization), Story 8.3 (send to DesignJS); **extended by [ADR-0012](./0012-capture-fidelity-evolution.md)** (v0.3.5 hybrid screenshot backplate + v0.4 CDP pivot + three-tool split + author/computed hybrid modes)
+
+> **Post-implementation note (2026-04-23):** Several Open Questions below are resolved or superseded by ADR-0012. In particular: Q2/Q3 (cross-origin images / SVGs) become tractable via CDP's `Network.getResponseBody`; Q4 (Shadow DOM) becomes tractable via CDP's `DOM.getDocument` which pierces shadow roots natively. Status annotations inline below. The v0.3 decisions in this ADR (direct WS transport, content-script capture as the default, hybrid inline / inherited-diff serialization) continue to ship; ADR-0012 evolves the *capture* half of the design without reversing it.
 
 ---
 
@@ -82,9 +84,15 @@ The hybrid is the Goldilocks option — easier to implement than Option B but ti
 
    **Remaining gap for v0.4:** cross-origin hotlink protection — sites that block `<img>` requests based on `Referer` will still show broken images on canvas. Option (b) (fetch + base64-encode at capture time) or option (c) (upload to `.designjs.json` assets) can close the gap but bloats payload. Deferred; docs currently say "some sites with hotlink protection may show broken images."
 
+   **Resolved 2026-04-23 (direction only):** [ADR-0012 §2](./0012-capture-fidelity-evolution.md#2-v04--cdp-based-capture-via-chromedebugger) — v0.4 CDP pivot exposes `Network.getResponseBody` which can fetch authed / hotlink-protected assets in the user's browser session and base64-inline them at capture time. Closes the gap without needing a separate upload pipeline.
+
 3. **SVG inline vs. external.** Inline `<svg>` captures cleanly. `<img src="*.svg">` or `background-image: url(*.svg)` hit the cross-origin problem above. Same resolution as images.
 
+   **Resolved 2026-04-23 (direction only):** Same path as Q2 — CDP `Network.getResponseBody` via [ADR-0012 §2](./0012-capture-fidelity-evolution.md#2-v04--cdp-based-capture-via-chromedebugger).
+
 4. **Shadow DOM.** Many modern sites use web components with shadow DOM. The capture walker has to choose: pierce shadow roots (heavier, more complete) or skip them (lighter, may miss critical styling). Leaning skip for v0.3; log a warning to the popup.
+
+   **Resolved 2026-04-23 (direction only):** [ADR-0012 §2](./0012-capture-fidelity-evolution.md#2-v04--cdp-based-capture-via-chromedebugger) — CDP's `DOM.getDocument` / `DOM.resolveNode` traverse shadow roots natively. The v0.4 CDP capture path removes the lighter-vs-complete tradeoff; content-script fallback retains the v0.3 skip behavior.
 
 5. **Position scoping on capture.** If the captured element uses `position: absolute` relative to an ancestor that's not captured, the positioning loses its anchor on the canvas. Safest: convert captured-root's `position: absolute` to `position: relative` or drop positioning entirely. Needs an ADR-level call once we've seen real captures — flagged for the implementation spike.
 

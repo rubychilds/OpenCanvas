@@ -19,7 +19,8 @@ The **Implementation** column lists the commit(s) that landed each ADR. For ADRs
 | [0007](./0007-user-extensibility.md) | Block data model, built-in UI kits, and user-extensibility | Proposed (2026-04-22) | — |
 | [0008](./0008-figma-import-strategy.md) | Figma → DesignJS import strategy (MCP relay + first-party plugin) | Proposed (2026-04-22) | — |
 | [0009](./0009-design-tokens-architecture.md) | Design tokens — data model (DTCG), modes, CSS emission (Tailwind v4 `@theme`), agent surface | Proposed (2026-04-22) | — |
-| [0011](./0011-browser-extension-architecture.md) | Browser extension — transport (direct WS) + style serialization (hybrid inline / inherited-diff) | Proposed (2026-04-22) | — |
+| [0011](./0011-browser-extension-architecture.md) | Browser extension — transport (direct WS) + style serialization (hybrid inline / inherited-diff) | Proposed (2026-04-22); extended by [ADR-0012](./0012-capture-fidelity-evolution.md) | `3ad3214` (whole-page capture), `36d2df2` (CSS-leak fix + body→div swap), `e1a38fd` (artboard per whole-page), `341ee77` (fit_artboard chain), `959331d` (class-hoist fix — load-bearing). Full chain tracked in [`epic-8-followups.md`](../epic-8-followups.md). |
+| [0012](./0012-capture-fidelity-evolution.md) | Capture fidelity evolution — hybrid screenshot backplate + CDP pivot + three-tool split + author/computed hybrid | Proposed (2026-04-23) | — |
 
 ## Adding a new ADR
 
