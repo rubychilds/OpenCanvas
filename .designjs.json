@@ -1,54 +1,12 @@
 {
   "dataSources": [],
   "assets": [],
-  "styles": [
-    {
-      "selectors": [
-        "#ixog"
-      ],
-      "style": {
-        "margin": "0",
-        "padding": "0",
-        "background": "#ffffff",
-        "width": "1280px",
-        "height": "800px"
-      }
-    }
-  ],
+  "styles": [],
   "pages": [
     {
-      "frames": [
-        {
-          "width": 1280,
-          "height": 800,
-          "component": {
-            "type": "wrapper",
-            "stylable": [
-              "background",
-              "background-color",
-              "background-image",
-              "background-repeat",
-              "background-attachment",
-              "background-position",
-              "background-size"
-            ],
-            "attributes": {
-              "id": "ixog"
-            },
-            "head": {
-              "type": "head"
-            },
-            "docEl": {
-              "tagName": "html"
-            }
-          },
-          "name": "Frame 1",
-          "components": "",
-          "id": "sMACEdNxFWTmC4zz"
-        }
-      ],
+      "frames": [],
       "type": "main",
-      "id": "MlKUVA51y0wja4kv"
+      "id": "C13N5zLhJnwxcoI5"
     }
   ],
   "symbols": [],
