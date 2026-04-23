@@ -63,7 +63,10 @@ module.exports = {
     // what tsconfig's `moduleResolution: "bundler"` expects). Tell webpack to
     // try .ts/.tsx when it sees a .js/.jsx import specifier.
     extensionAlias: {
-      '.js': ['.ts', '.js'],
+      // `.js` specifiers may target either .ts sources (plain modules) or
+      // .tsx sources (components — importing from "./button.js" when the
+      // real file is button.tsx). Webpack tries each in order.
+      '.js': ['.ts', '.tsx', '.js'],
       '.jsx': ['.tsx', '.jsx'],
     },
   },

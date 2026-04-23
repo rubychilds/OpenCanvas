@@ -1,0 +1,55 @@
+/*
+ * DesignJS chrome-extension theme — mirrors the editor-chrome token palette
+ * at packages/app/src/styles/tokens.css (trimmed to what the popup needs).
+ *
+ * Kept as a local copy rather than an import so the extension can ship
+ * independently of the main canvas package. Revisit if drift becomes a
+ * maintenance burden.
+ */
+
+@theme {
+  /* Neutrals — Pencil-leaning greyscale, matches the canvas chrome */
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(0.985 0 0);
+
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+
+  /* Status accents shared with the canvas */
+  --color-oc-accent: oklch(0.55 0.2 260);
+  --color-oc-success: oklch(0.58 0.18 145);
+  --color-oc-warning: oklch(0.72 0.18 75);
+  --color-oc-danger: oklch(0.58 0.22 25);
+
+  /* Radius / type scale */
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 10px;
+
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 14px;
+
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}

@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+/* Load Inter from Google Fonts so the popup renders with the DesignJS type
+   stack even when the user's system font differs. Chrome extensions are
+   allowed to load fonts from CDNs via their CSP. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 320px;
+  min-height: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  line-height: 1.45;
+}
+
+#root {
+  width: 100%;
+}
