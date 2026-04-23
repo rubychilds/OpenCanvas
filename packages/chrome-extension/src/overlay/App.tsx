@@ -14,7 +14,19 @@ import type { BridgeStatus } from "../transport/ws-client.js";
 import { Button } from "./components/ui/button.js";
 import { cn } from "../lib/utils.js";
 
-type CaptureError = "too-large" | "bridge-disconnected" | "unknown";
+type CaptureError =
+  | "too-large"
+  | "bridge-disconnected"
+  | "empty-input"
+  | "cancelled"
+  | "unknown";
+
+type CaptureState =
+  | { kind: "idle" }
+  | { kind: "capturing" }
+  | { kind: "sending"; nodeCount: number; byteCount: number }
+  | { kind: "sent"; nodeCount: number; byteCount: number }
+  | { kind: "error"; error: CaptureError };
 
 function StatusDot({ status }: { status: BridgeStatus }) {
   return (
@@ -38,37 +50,77 @@ export interface AppProps {
 
 export function App({ onDismiss }: AppProps = {}) {
   const [status, setStatus] = useState<BridgeStatus>("disconnected");
-  const [capturing, setCapturing] = useState(false);
-  const [error, setError] = useState<CaptureError | null>(null);
+  const [capture, setCapture] = useState<CaptureState>({ kind: "idle" });
 
   useEffect(() => {
     chrome.runtime.sendMessage({ type: "bridge-status:request" }, (res) => {
       if (res?.status) setStatus(res.status);
     });
-    const listener = (msg: {
-      type: string;
-      status?: BridgeStatus;
-      error?: CaptureError;
-    }) => {
+    const bgListener = (msg: { type: string; status?: BridgeStatus }) => {
       if (msg.type === "bridge-status" && msg.status) setStatus(msg.status);
-      if (msg.type === "capture:error") setError(msg.error ?? "unknown");
     };
-    chrome.runtime.onMessage.addListener(listener);
-    return () => chrome.runtime.onMessage.removeListener(listener);
+    chrome.runtime.onMessage.addListener(bgListener);
+
+    const winListener = (ev: MessageEvent) => {
+      if (ev.source !== window) return;
+      const data = ev.data as
+        | {
+            type: "designjs:capture:progress";
+            phase: "sending";
+            nodeCount: number;
+            byteCount: number;
+          }
+        | {
+            type: "designjs:capture:result";
+            ok: boolean;
+            error?: string;
+            nodeCount?: number;
+            byteCount?: number;
+          };
+      if (data?.type === "designjs:capture:progress" && data.phase === "sending") {
+        setCapture({
+          kind: "sending",
+          nodeCount: data.nodeCount,
+          byteCount: data.byteCount,
+        });
+        return;
+      }
+      if (data?.type === "designjs:capture:result") {
+        if (data.ok) {
+          setCapture({
+            kind: "sent",
+            nodeCount: data.nodeCount ?? 0,
+            byteCount: data.byteCount ?? 0,
+          });
+          window.setTimeout(() => setCapture({ kind: "idle" }), 2500);
+        } else {
+          setCapture({
+            kind: "error",
+            error: (data.error as CaptureError) ?? "unknown",
+          });
+        }
+      }
+    };
+    window.addEventListener("message", winListener);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(bgListener);
+      window.removeEventListener("message", winListener);
+    };
   }, []);
 
-  const start = async () => {
-    setError(null);
-    setCapturing(true);
+  const start = () => {
+    setCapture({ kind: "capturing" });
     window.postMessage({ type: "designjs:capture:start" }, "*");
   };
 
-  const stop = async () => {
-    setCapturing(false);
+  const stop = () => {
+    setCapture({ kind: "idle" });
     window.postMessage({ type: "designjs:capture:stop" }, "*");
   };
 
   const disconnected = status !== "connected";
+  const capturing = capture.kind === "capturing";
   const statusLabel =
     status === "connected"
       ? "Connected to canvas"
@@ -127,20 +179,60 @@ export function App({ onDismiss }: AppProps = {}) {
 
         <Button
           onClick={capturing ? stop : start}
-          disabled={disconnected}
+          disabled={disconnected || capture.kind === "sending"}
           fullWidth
           variant={capturing ? "outline" : "default"}
         >
-          {capturing ? "Stop capture" : "Start capture"}
+          {capture.kind === "sending"
+            ? "Sending…"
+            : capturing
+              ? "Stop capture"
+              : "Start capture"}
         </Button>
 
-        {error && (
+        {capturing && (
+          <p className="text-[var(--text-xs)] text-muted-foreground leading-relaxed m-0">
+            Hover any element on the page.{" "}
+            <kbd className="px-1 py-0.5 rounded-sm bg-background border border-border font-mono text-[10px]">
+              ↑↓←→
+            </kbd>{" "}
+            to navigate the tree,{" "}
+            <kbd className="px-1 py-0.5 rounded-sm bg-background border border-border font-mono text-[10px]">
+              Enter
+            </kbd>{" "}
+            to capture,{" "}
+            <kbd className="px-1 py-0.5 rounded-sm bg-background border border-border font-mono text-[10px]">
+              Esc
+            </kbd>{" "}
+            to exit.
+          </p>
+        )}
+
+        {capture.kind === "sent" && (
+          <div
+            className="rounded-sm border px-2.5 py-2 text-[var(--text-xs)]"
+            style={{
+              borderColor: "color-mix(in oklch, var(--color-oc-success) 30%, transparent)",
+              background: "color-mix(in oklch, var(--color-oc-success) 5%, transparent)",
+              color: "var(--color-oc-success)",
+            }}
+          >
+            Sent to canvas — {capture.nodeCount} nodes,{" "}
+            {(capture.byteCount / 1024).toFixed(1)} KB
+          </div>
+        )}
+
+        {capture.kind === "error" && (
           <div className="rounded-sm border border-destructive/30 bg-destructive/5 px-2.5 py-2 text-[var(--text-xs)] text-destructive">
-            {error === "too-large"
+            {capture.error === "too-large"
               ? "Selection too large. Try capturing a smaller section."
-              : error === "bridge-disconnected"
+              : capture.error === "bridge-disconnected"
                 ? "Lost connection to DesignJS. Check that pnpm dev is still running."
-                : "Something went wrong. Check the extension logs."}
+                : capture.error === "empty-input"
+                  ? "Nothing captured. Try selecting a different element."
+                  : capture.error === "cancelled"
+                    ? "Capture cancelled."
+                    : "Something went wrong. Check the extension logs."}
           </div>
         )}
       </div>

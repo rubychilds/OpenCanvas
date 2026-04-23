@@ -85,24 +85,55 @@ function startCapture(): void {
     onCommit: (el) => {
       const result = serialize(el);
       if ("error" in result) {
-        chrome.runtime.sendMessage({
-          type: "capture:error",
-          error: result.error,
-          nodeCount: result.nodeCount,
-          byteCount: result.byteCount,
-        });
-        stopCapture();
+        window.postMessage(
+          {
+            type: "designjs:capture:result",
+            ok: false,
+            error: result.error,
+            nodeCount: result.nodeCount,
+            byteCount: result.byteCount,
+          },
+          "*",
+        );
+        walker = null;
         return;
       }
-      chrome.runtime.sendMessage({
-        type: "capture:send",
-        html: result.html,
-        nodeCount: result.nodeCount,
-        byteCount: result.byteCount,
-      });
-      stopCapture();
+      // Tell the overlay we're sending — state: "sending"
+      window.postMessage(
+        {
+          type: "designjs:capture:progress",
+          phase: "sending",
+          nodeCount: result.nodeCount,
+          byteCount: result.byteCount,
+        },
+        "*",
+      );
+      chrome.runtime.sendMessage(
+        {
+          type: "capture:send",
+          html: result.html,
+          nodeCount: result.nodeCount,
+          byteCount: result.byteCount,
+        },
+        (bgResponse: { ok: boolean; error?: string } | undefined) => {
+          window.postMessage(
+            {
+              type: "designjs:capture:result",
+              ok: bgResponse?.ok === true,
+              error: bgResponse?.ok === false ? bgResponse.error : undefined,
+              nodeCount: result.nodeCount,
+              byteCount: result.byteCount,
+            },
+            "*",
+          );
+        },
+      );
+      walker = null;
     },
-    onExit: () => stopCapture(),
+    onExit: () => {
+      walker = null;
+      window.postMessage({ type: "designjs:capture:result", ok: false, error: "cancelled" }, "*");
+    },
   });
   walker.start();
 }
