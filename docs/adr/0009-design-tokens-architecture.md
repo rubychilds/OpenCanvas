@@ -107,6 +107,8 @@ Verified from MCP schema: `get_variables(filePath) → { variables, themes }`; `
 
 Takeaway for us: Pencil ships the mode model we want, in a shape that's friendly to agents. Their `get_variables` returning *both* `variables` and `themes` in one call is worth mirroring.
 
+**Hierarchy** (verified 2026-04-24): `.pen format` page documents variables stored at the document level under a `variables` object, keyed by **dot-notation strings** (`"color.background"`, `"text.title"`). No "Collection" primitive in storage; grouping is conveyed through the dot-notation. Themes are an **orthogonal axis**, not a hierarchy level. Effectively a 2-level flat model with logical grouping via dotted keys — confirms our hybrid storage choice (§1).
+
 ### Paper.design — verified 2026-04-22
 
 Direct fetch of [paper.design/docs/mcp](https://paper.design/docs/mcp) succeeded (curl; WebFetch tool still denied but curl works through Bash). The `/docs` and `/manifesto` pages are client-rendered SPAs and exposed no token-model detail in raw HTML, but the MCP tools page rendered fully. Findings:
@@ -120,6 +122,10 @@ Direct fetch of [paper.design/docs/mcp](https://paper.design/docs/mcp) succeeded
 **Implication for this ADR:** Paper went the opposite direction — pure CSS strings, zero schema. Our DTCG-first bet is architecturally more ambitious and more interoperable. That differentiation is worth retaining: DesignJS is the HTML/CSS-native canvas *with* typed interop (Figma Variables ⇄ DTCG ⇄ Style Dictionary round-trip). Paper is the HTML/CSS-native canvas *without* it. Neither is wrong; they target different tails of the market.
 
 No Paper ⇄ DesignJS token round-trip is possible at the structured level — there's nothing structured to round-trip with. An agent can always translate string ↔ DTCG via prompt, but there's no machine path. This simplifies ADR-0008's relay narrative: the relay imports Figma Variables (structured) via Figma's own Dev Mode MCP, and we don't need to mention Paper interop.
+
+**Hierarchy** (verified 2026-04-24): zero. Paper has no native token model; tokens are CSS variables in the user's stylesheet, organised however the user organises their CSS. Our hybrid choice (§1) is more structured than Paper's, less rigid than Figma's — a conscious middle ground.
+
+**Color storage** (verified 2026-04-24): Paper's MCP `update_styles` accepts raw CSS strings, so OKLCH round-trips losslessly through their canvas (inferred — not empirically tested). Aligns with our OKLCH-canonical decision (§2).
 
 ### Tailwind v4 `@theme`
 
@@ -182,6 +188,8 @@ Switch the `cssVariables` sidecar from flat map to **DTCG-shaped nested JSON** (
 
 Stored at a new `tokens` key in `.designjs.json` (the existing `cssVariables` field becomes deprecated — see §8 for migration). Authoritative format on disk, in memory, and over the MCP wire.
 
+**Hybrid hierarchy — flat-with-dot-notation storage, three-level UI projection.** Storage follows DTCG's natural nested-object shape (effectively flat: `color.brand.primary` is a path through nested keys, not a rigid Collection/Group structure). The UI (§9) projects this onto Figma's familiar three-level Collection → Group → Variable presentation: the topmost object key in `tokens` is the Collection, intermediate keys are Groups, the leaf is the Variable. Permissive on disk (a user can flatten or restructure without breaking emission), familiar in UX (Figma vocabulary). Matches Pencil.dev's dot-notation grouping pattern at the storage layer; matches Tailwind v4's `--color-brand-primary` flat-with-prefix at the emission layer.
+
 ### 2. Type system — primitives in v0.3, composites in v0.4
 
 v0.3 ships **7 primitive DTCG types**: `color` · `dimension` · `number` · `duration` · `cubicBezier` · `fontFamily` · `fontWeight`. Ships enough for colour / spacing / typography tokens — which covers Story 6.2's open AC group list ("colors, spacing, typography, shadows, borders") for four of five categories.
@@ -189,7 +197,7 @@ v0.3 ships **7 primitive DTCG types**: `color` · `dimension` · `number` · `du
 **`strokeStyle`** (DTCG primitive) ships in v0.4 alongside the composites. The full DTCG composite set — `border` · `transition` · `shadow` · `gradient` · `typography` — ships in v0.4 so shadow and border groups work in the Assets panel. Until then, shadow and border values can be stored as `$type: "string"` (escape hatch) with a linter warning.
 
 Typed values for v0.3:
-- `color` — accepts hex, `rgb()`, `rgba()`, `hsl()`, `hsla()`, `oklch()`, `lab()`. Round-trips through Figma Variables' `RGBA` struct via a CSS-string ⇄ RGBA converter on the relay edge.
+- `color` — **OKLCH canonical**, with a `$extensions.designjs.colorSpace` field per token (`"oklch" | "srgb" | "p3"`) so non-OKLCH inputs round-trip without lossy normalisation. The picker accepts hex / `rgb()` / `rgba()` / `hsl()` / `hsla()` / `lab()` / `oklch()` and converts to OKLCH on store with a one-way conversion log to `console.info` for non-OKLCH inputs. **Why OKLCH:** Tailwind v4 (our emission target, §5) ships its default palette in OKLCH and treats it as the canonical form; perceptual uniformity matters for designed colour scales; CSS Color Module 4 supports OKLCH natively in target browsers. Figma stores sRGB (verified 2026-04-24); ADR-0008 relay does the OKLCH ⇄ sRGB conversion at the import/export edge — lossy on the OKLCH-to-sRGB direction (gamut clamp), lossless on sRGB-to-OKLCH. Flagged in the relay docs for users.
 - `dimension` — accepts `px`, `rem`, `em`, `%`, `vh`, `vw`, `fr`. Stored as CSS string; validation on write.
 - `duration` — `ms` / `s`; `cubicBezier` — 4-value array.
 
@@ -308,15 +316,16 @@ Projects not migrated yet continue to work via the deprecated `get_variables` / 
 
 The data model (§§1–7a) determines what's stored. This section determines what users see. Patterns lifted, adapted, and rejected from a 2026-04-24 Figma Variables UX audit (full research notes in `DesignJS-Notes/figma-variables-ux-research.md`):
 
-**Two surfaces, not one:**
+**Three surfaces** — each tuned to a different user state:
 
-- **Quick popover (existing)** — `packages/app/src/components/VariablesPopover.tsx`. Stays as the topbar entry-point for fast apply. Becomes a flat list with type filter; not the authoring surface.
-- **Variables view (new)** — full-width modal launched from the popover, from a left-rail entry, or via the keyboard. Bulk authoring, mode columns, alias editing all live here. The popover cannot scale to multi-collection × multi-mode without losing the "quick" property.
+- **Topbar popover (existing)** — `packages/app/src/components/VariablesPopover.tsx`. Always-accessible quick CRUD for the "I want to add or tweak one variable fast" mental model. Stays as a flat list with type filter; the existing affordance our users already know.
+- **Deselected-state right-sidebar section (new)** — when nothing is selected on the canvas, the inspector right-sidebar shows a "Local variables" section: most-recently-used variables and an "Open variables" button. Contextual; appears only in the deselected state, matching Figma's pattern. Quick "let me peek at what's defined" without committing to the modal.
+- **Full modal "Variables view" (new)** — launched from the popover, the sidebar section's "Open variables" button, or a keyboard shortcut. Bulk authoring lives here: modes-as-columns table, multi-collection switcher, alias editing. The popover and sidebar cannot scale to multi-collection × multi-mode without losing the "quick" property.
 
 **Browse / authoring layout:**
 
 - **Table with one column per mode**, leftmost = default. Variable name on the left; one cell per mode. This is the single most distinctive Figma pattern and matches our DTCG mode-extension shape exactly.
-- **Three-level hierarchy**: `Collection → Group → Variable`. Collection switcher in the modal's left sidebar; groups are nested object keys in the underlying JSON (DTCG already does this).
+- **Three-level hierarchy in the UI** (Collection → Group → Variable), **flat-with-dot-notation in storage** (§1). Collection switcher in the modal's left sidebar; group folders in the variable tree; variable rows in the table. The UI projects three rigid levels onto a permissive flat-with-dots data shape — users get Figma's familiar vocabulary; storage stays DTCG-natural and Tailwind-emission-friendly.
 - **Type filter** ("Sizing" / "Color" / "Typography" / "Effect"). DTCG distinguishes `dimension` / `color` / `fontFamily` / `duration` / `cubicBezier` etc. — keep those as explicit `$type`s (Figma collapses them all into `Number`; we do not, because CSS emission needs unit information). Picker groups by family so the surface still feels scannable.
 - **Visually collapse identical-across-modes rows** — Figma renders them as repeated values, which is noise at scale. We render a single span when all modes resolve to the same value.
 
@@ -368,9 +377,9 @@ The data model (§§1–7a) determines what's stored. This section determines wh
 
 2. **Scope field — v0.4?** Figma's `scopes: ["ALL_FILLS", "CORNER_RADIUS", …]` prevents a spacing token from being applied to a fill. Not in DTCG core. Worth adopting as an `$extensions.designjs.scopes` string[] in v0.4 once the inspector can enforce it. Deferring for now.
 
-3. **OKLCH / lab / Display P3.** v0.3 stores colours as CSS strings — `oklch(72% 0.11 178)` is a valid `$value` for `$type: "color"`. Tailwind v4 also supports OKLCH natively. Good enough. Follow-up Q: when we eventually round-trip with Figma Variables (which stores `RGBA`), do we lose OKLCH precision on export? Likely yes — flag it in the relay docs: "OKLCH values may be clamped to sRGB when exporting to Figma." Non-blocking.
+3. ~~**OKLCH / lab / Display P3.**~~ **Resolved 2026-04-24:** §2 promotes OKLCH to canonical with a `$extensions.designjs.colorSpace` field for graceful degradation. Driven by Tailwind v4 being our emission target (canonical OKLCH there); Figma uses sRGB and the ADR-0008 relay does the conversion at the import/export edge. OKLCH-to-sRGB is lossy on Figma export (gamut clamp); flagged in relay docs. *Left here as a record.*
 
-4. **Token-set composition (Tokens Studio's richer model) — v0.5?** Modes cover the 80% case. Token sets (layered files, `"theme": "Brand A + Dark"`) are a v0.5 advanced feature for users with multi-brand workflows. Deferred.
+4. ~~**Token-set composition (Tokens Studio's richer model) — v0.5?**~~ **Deferred to a future ADR (post-v0.3).** Modes cover the 80% case for v0.3. Token sets (layered files, `"theme": "Brand A + Dark"`) require their own design pass — composition rules, conflict resolution, UI for layering — and are not in scope this cycle. Re-open if multi-brand users push back. *Left here as a record.*
 
 5. **Deprecation timeline.** `get_variables` / `set_variables` removal in v0.5. Is that aggressive or lenient? Depends on external agent proliferation — if third-party clients rely on the flat shape, a longer deprecation window is kinder. Default to v0.5; revisit if user feedback suggests longer.
 
