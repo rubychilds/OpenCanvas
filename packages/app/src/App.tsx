@@ -5,7 +5,7 @@ import type { Component, Editor } from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 
 import { editorOptions, PRIMITIVE_BASE_CSS } from "./canvas/editor-options.js";
-import { ensureDefaultArtboard } from "./canvas/artboards.js";
+import { ensureDefaultArtboard, ensurePageRoot } from "./canvas/artboards.js";
 import { attachPasteImport, importPastedHtml } from "./canvas/paste-import.js";
 import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
 import {
@@ -102,6 +102,13 @@ export function App() {
     // boot shows *something*. Idempotent — no-op when the first frame is
     // already named (saved-project restore path).
     ensureDefaultArtboard(editor);
+
+    // Stamp the page-root marker on whichever frame is the page (idempotent
+    // if a saved project already carries it). Closes ADR-0006 Open Q §1 —
+    // before this, getPageRootWrapper relied on first-frame-in-document-
+    // order, which was fragile to drag-reorder / deletion / non-
+    // deterministic load order.
+    ensurePageRoot(editor);
 
     // Fit the viewport to all frames after boot so the default 1280×800
     // frame (or whatever the saved project has) is visible from the first

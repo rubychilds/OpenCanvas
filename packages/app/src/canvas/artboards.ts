@@ -593,6 +593,50 @@ const DEFAULT_FIRST_FRAME = {
  * height stays at 0), so we route through the verified `addFrame` path
  * that `createArtboard` uses for every other frame-creation call site.
  */
+/**
+ * Boolean attribute set on the wrapper Component of the frame that is
+ * the "Page root" — the implicit canvas container that loose-canvas
+ * primitives attach to (ADR-0006 §4). Stored as a Component attribute
+ * so it round-trips through `loadProjectData` / `getProjectData`.
+ *
+ * Only one frame should carry this at a time; `ensurePageRoot` is the
+ * single writer. Readers (`getPageRootWrapper` in primitives.ts) prefer
+ * the marked frame, falling back to first-frame-in-document-order for
+ * legacy projects without the marker.
+ */
+export const PAGE_ROOT_ATTR = "data-designjs-page-root";
+
+/**
+ * Idempotent — closes ADR-0006 Open Question §1 (was: "first frame in
+ * document order" was load-bearing but fragile to drag-reorder /
+ * deletion / non-deterministic load order).
+ *
+ * If any frame's wrapper already carries the {@link PAGE_ROOT_ATTR},
+ * does nothing. Otherwise stamps the attribute on the first frame so
+ * the page-root identity survives reorders, deletions of subsequent
+ * frames, and round-trips through saved projects.
+ */
+export function ensurePageRoot(editor: Editor): void {
+  const frames = editor.Canvas.getFrames?.() ?? [];
+  if (frames.length === 0) return;
+  for (const f of frames) {
+    const wrapper = (f as unknown as { get?: (k: string) => unknown }).get?.(
+      "component",
+    ) as
+      | { getAttributes?: () => Record<string, unknown> }
+      | undefined;
+    const attrs = wrapper?.getAttributes?.() ?? {};
+    if (attrs[PAGE_ROOT_ATTR] != null) return;
+  }
+  const first = frames[0]!;
+  const wrapper = (first as unknown as { get?: (k: string) => unknown }).get?.(
+    "component",
+  ) as
+    | { addAttributes?: (a: Record<string, string>) => void }
+    | undefined;
+  wrapper?.addAttributes?.({ [PAGE_ROOT_ATTR]: "" });
+}
+
 export function ensureDefaultArtboard(editor: Editor): void {
   const frames = editor.Canvas.getFrames();
   if (frames.length === 0) {

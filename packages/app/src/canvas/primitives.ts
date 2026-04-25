@@ -1,5 +1,5 @@
 import type { Component, Editor } from "grapesjs";
-import { createArtboard } from "./artboards.js";
+import { createArtboard, PAGE_ROOT_ATTR } from "./artboards.js";
 
 /**
  * Per ADR-0005: shape-shaped primitive vocabulary mapped to HTML/CSS storage.
@@ -150,13 +150,32 @@ export function createPrimitive(
 }
 
 /**
- * Page-root wrapper lookup — the first frame's wrapper Component. Per
- * ADR-0006 the first frame on the canvas is semantically "the page"; loose
- * primitives attach there instead of the currently-active frame.
+ * Page-root wrapper lookup — the wrapper Component of the frame marked
+ * with {@link PAGE_ROOT_ATTR}. Per ADR-0006 the page-root frame is
+ * semantically "the page"; loose primitives attach there instead of the
+ * currently-active frame.
+ *
+ * Closes ADR-0006 Open Question §1 — the previous "first frame in
+ * document order" rule was fragile to drag-reorder / deletion / non-
+ * deterministic load order. {@link ensurePageRoot} is the single writer
+ * of the marker; this is the reader, with a first-frame fallback for
+ * legacy projects whose saved data predates the flag.
  */
 function getPageRootWrapper(editor: Editor): Component | null {
   const frames = editor.Canvas.getFrames?.() ?? [];
   if (frames.length === 0) return null;
+  for (const f of frames) {
+    const wrapper = (f as unknown as { get?: (k: string) => unknown }).get?.(
+      "component",
+    ) as
+      | (Component & { getAttributes?: () => Record<string, unknown> })
+      | undefined;
+    const attrs = wrapper?.getAttributes?.() ?? {};
+    if (attrs[PAGE_ROOT_ATTR] != null) return wrapper ?? null;
+  }
+  // Legacy fallback — pre-`ensurePageRoot` projects don't carry the
+  // marker. Treat the first frame in document order as the page root,
+  // matching the original behaviour.
   const first = frames[0] as unknown as { get?: (k: string) => unknown };
   const wrapper = first.get?.("component");
   return (wrapper as Component | undefined) ?? null;
