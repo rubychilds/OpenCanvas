@@ -181,11 +181,17 @@ What shipped:
 
 Notes:
 
-- **The dedicated "Source screenshot backplate" inspector toggle** the
-  Decision §1 sketches is **deferred to a follow-up.** v0.3.5 users
-  reach the opacity slider via the existing generic Appearance →
-  Opacity control after selecting the backplate img. The marker
-  attributes are forward-compatible for a dedicated control later.
+- **The dedicated "Source screenshot backplate" inspector toggle —
+  resolved 2026-04-24 in `d4dcf43`.** AppearanceSection gains a
+  labelled "Source screenshot backplate" subsection that renders only
+  when the selected component carries `data-designjs-backplate` (the
+  img marker) or `data-designjs-backplate-wrapper` (the wrapper
+  marker). Single opacity slider 0-100% reading/writing the selected
+  component's `opacity` style; a slider value matching the class-CSS
+  default (15% on the img, 100% on the wrapper) clears the inline
+  override and reverts to the class baseline. E2E coverage in
+  `e2e/story-backplate-inspector.spec.ts` — both the hidden case (no
+  backplate selected) and the rendered+writes case green.
 - **§3 / §4 prep stubs from epic-8-followups (§4.1 `data-dj-uid`, §4.2
   `mode` param)** landed separately on `adr-0011-prep-stubs` (`bb916ae`)
   — referenced from the ADR-0011 addendum. §1 has no remaining

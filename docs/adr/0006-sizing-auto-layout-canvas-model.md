@@ -275,12 +275,17 @@ Three notes worth recording:
 - **The overflow-popover trigger renders only when at least one of the
   Min/Max handlers is supplied.** Backward-compatible — consumers that
   don't yet wire the clamps see no visual change.
-- **The Open Questions §1 (`isPageRoot` flag) is still open** — the
-  current `getPageRootWrapper` walks `editor.Canvas.getFrames()[0]`,
-  which is the "first frame in document order" check the ADR flagged
-  as fragile. Not blocking: no incident yet. Revisit if a user-flow
-  emerges where the first frame is rearranged or deleted in a way that
-  breaks loose-canvas inserts.
+- **Open Question §1 (`isPageRoot` flag) — resolved 2026-04-24 in
+  `c96f3f7`.** The flag now lives on the page-root frame's wrapper
+  Component as the boolean attribute `data-designjs-page-root`,
+  exported as `PAGE_ROOT_ATTR` from `packages/app/src/canvas/
+  artboards.ts`. New `ensurePageRoot(editor)` is the single writer
+  (idempotent — stamps the first frame on init only when nothing else
+  carries it); wired into `App.tsx` `handleReady` after
+  `ensureDefaultArtboard`. `getPageRootWrapper` reads via the marker
+  with first-frame fallback for legacy projects whose saved data
+  predates the flag. E2E coverage in
+  `e2e/story-page-root-flag.spec.ts` (2 specs, both green).
 
 ---
 

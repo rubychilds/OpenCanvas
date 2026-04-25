@@ -143,6 +143,23 @@ The remaining followups items (§3.3 fit_artboard retry-window bump,
 three-tool split, author/computed/hybrid modes) are tracked in their
 respective documents.
 
+Tier-1 follow-up landing (2026-04-24):
+
+- `520d5b4` — epic-8-followups §3.3, fit_artboard retry deadline
+  1500ms → 3000ms in `packages/app/src/bridge/handlers.ts`. Now that
+  `b1e0d0b`'s Google Fonts hoist landed, `@font-face` loading delays
+  text layout past the prior budget; large captures + screenshot
+  backplate (ADR-0012 §1) settle slower too. The followups doc gated
+  this bump on §3.1 shipping first; that's now done.
+- `2725778` — epic-8-followups §3.4, conservative wrapper flattening.
+  Post-process pass in `serialize()` unwraps pass-through `<div>`s
+  whose class CSS is purely default-block declarations and which have
+  exactly one element child + no text + no significant attributes.
+  Allowlist-based — false negatives acceptable, zero false positives.
+  9 vitest specs covering structural-safety negatives. Targets the
+  Next.js / React framework-injected wrapper bloat (15-30% payload
+  reduction expected on marketing pages).
+
 ---
 
 *End of ADR-0011.*
