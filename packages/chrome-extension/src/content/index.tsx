@@ -21,7 +21,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { App } from "../overlay/App.js";
 import "../overlay/overlay.css";
 import { createWalker } from "../capture/dom-walker.js";
-import { serialize } from "../capture/style-serializer.js";
+import { collectFontLinks, serialize } from "../capture/style-serializer.js";
 
 const ROOT_ID = "designjs-capture-root";
 
@@ -189,7 +189,17 @@ function capturePage(): void {
   // GrapesJS' HTML parser filters <body> when it appears inside another body's
   // wrapper component — the content lands in a detached tree. Swap the outer
   // tag for <div> so the inlined styles still apply but the nesting is legal.
-  const html = result.html.replace(/^<body\b/, "<div").replace(/<\/body>$/, "</div>");
+  const swapped = result.html.replace(/^<body\b/, "<div").replace(/<\/body>$/, "</div>");
+
+  // Inject allowlisted font-CDN <link> tags right after the outer <div>'s
+  // opening tag so the canvas iframe loads them before the captured text
+  // renders — closes the system-fallback-font gap (epic-8-followups §3.1).
+  const fontLinks = collectFontLinks(document.head);
+  const openTagEnd = swapped.indexOf(">");
+  const html =
+    openTagEnd >= 0 && fontLinks
+      ? swapped.slice(0, openTagEnd + 1) + fontLinks + swapped.slice(openTagEnd + 1)
+      : swapped;
 
   // Whole-page capture always lands in its own fresh artboard — a page is
   // conceptually its own canvas, not content to append to whatever frame

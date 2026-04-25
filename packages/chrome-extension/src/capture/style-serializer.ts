@@ -116,6 +116,25 @@ const INHERITED_DIFF: readonly string[] = [
 const DROP_ELEMENTS = new Set(["SCRIPT", "NOSCRIPT", "STYLE", "LINK"]);
 const DROP_ATTRS_PREFIX = ["on"] as const;
 
+/**
+ * Hostnames known to serve `@font-face` CSS for web fonts. We re-emit
+ * matching `<link rel="stylesheet">` tags into the captured HTML so the
+ * canvas iframe can fetch them and register the font-face rules — without
+ * this, captured text falls back to system fonts even though the
+ * computed `font-family` is correct (epic-8-followups §3.1).
+ *
+ * Allowlist deliberately narrow: only services that exclusively ship
+ * font CSS. Adding `cdn.jsdelivr.net` etc. would pull arbitrary
+ * stylesheets into the canvas, which is exactly what the LINK strip
+ * was protecting against.
+ */
+const FONT_LINK_HOSTS: readonly string[] = [
+  "fonts.googleapis.com",
+  "fonts.bunny.net",
+  "use.typekit.net",
+  "p.typekit.net",
+];
+
 function shouldDropAttr(name: string): boolean {
   if (name === "style") return true; // replaced by our computed style
   if (name === "class") return false; // keep — useful for debugging on canvas
@@ -412,4 +431,49 @@ export function serialize(
     byteCount,
     warnings: counters.warnings,
   };
+}
+
+/**
+ * Walk the source page's `<head>` for `<link rel="stylesheet">` whose
+ * URL hostname is in {@link FONT_LINK_HOSTS}, and emit a deduplicated
+ * sequence of clean `<link>` tags as HTML.
+ *
+ * Caller injects the result inside the captured page's outer wrapper
+ * (post `<body>` → `<div>` swap) so the canvas iframe fetches them and
+ * registers `@font-face` rules — closes epic-8-followups §3.1 (text
+ * rendering in system fallback fonts instead of the source page's
+ * fonts).
+ *
+ * Returns the empty string when there's nothing to emit; callers can
+ * always splice the result in unconditionally.
+ */
+export function collectFontLinks(head: HTMLHeadElement | null | undefined): string {
+  if (!head) return "";
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const el of Array.from(head.querySelectorAll('link[rel~="stylesheet"]'))) {
+    const href = (el as HTMLLinkElement).href;
+    if (!href) continue;
+    let url: URL;
+    try {
+      url = new URL(href);
+    } catch {
+      continue;
+    }
+    if (!FONT_LINK_HOSTS.includes(url.hostname)) continue;
+    if (seen.has(url.href)) continue;
+    seen.add(url.href);
+    out.push(
+      `<link rel="stylesheet" href="${escapeAttr(url.href)}" crossorigin="anonymous">`,
+    );
+  }
+  return out.join("");
+}
+
+function escapeAttr(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
