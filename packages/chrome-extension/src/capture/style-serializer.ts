@@ -399,6 +399,11 @@ export function serialize(
     };
   }
 
+  // Conservative wrapper flattening — collapses pass-through <div>s
+  // (framework-injected layout artifacts with no styling and a single
+  // child). epic-8-followups §3.4. Idempotent within a single capture.
+  flattenPassThroughWrappers(clone, counters.styleToClass);
+
   // Emit a <style> block with one rule per unique computed-style signature.
   // Prepended inside the clone so GrapesJS' parser finds it via parseCss and
   // registers the rules in the canvas cascade — classes on elements resolve
@@ -476,4 +481,171 @@ function escapeAttr(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+/**
+ * Allowlist of `property:value` pairs that, taken together, render as
+ * "no visible change vs the unstyled browser default for a block
+ * element." Used by {@link flattenPassThroughWrappers} to detect divs
+ * that are pure framework artifacts (Next.js / React injects them by
+ * the hundreds for layout, accessibility, and data-attribute wiring).
+ *
+ * Conservative by design: ANY unknown declaration → not pass-through →
+ * div preserved. This produces false negatives (some genuinely-empty
+ * wrappers stay) but zero false positives (no div with meaningful
+ * styling gets collapsed).
+ *
+ * Per epic-8-followups §3.4 — MEDIUM impact (15–30% payload size on
+ * marketing pages), unblocks shallower component trees in the canvas
+ * inspector.
+ */
+const PASS_THROUGH_DECLS = new Set([
+  "display:block",
+  "position:static",
+  "top:0px",
+  "right:0px",
+  "bottom:0px",
+  "left:0px",
+  "z-index:auto",
+  "margin-top:0px",
+  "margin-right:0px",
+  "margin-bottom:0px",
+  "margin-left:0px",
+  "padding-top:0px",
+  "padding-right:0px",
+  "padding-bottom:0px",
+  "padding-left:0px",
+  "border-top-width:0px",
+  "border-right-width:0px",
+  "border-bottom-width:0px",
+  "border-left-width:0px",
+  "border-top-left-radius:0px",
+  "border-top-right-radius:0px",
+  "border-bottom-left-radius:0px",
+  "border-bottom-right-radius:0px",
+  "background-color:rgba(0, 0, 0, 0)",
+  "background-color:transparent",
+  "background-image:none",
+  "background-repeat:repeat",
+  "background-position:0% 0%",
+  "background-size:auto",
+  "background-attachment:scroll",
+  "background-clip:border-box",
+  "background-origin:padding-box",
+  "box-shadow:none",
+  "opacity:1",
+  "transform:none",
+  "transform-origin:50% 50%",
+  "filter:none",
+  "backdrop-filter:none",
+  "mix-blend-mode:normal",
+  "overflow:visible",
+  "overflow-x:visible",
+  "overflow-y:visible",
+  "visibility:visible",
+  "float:none",
+  "clear:none",
+  "aspect-ratio:auto",
+  "box-sizing:content-box",
+  "flex-grow:0",
+  "flex-shrink:1",
+  "flex-basis:auto",
+  "order:0",
+]);
+
+export function isPassThroughStyle(style: string): boolean {
+  if (style === "") return true;
+  const parts = style.split(";");
+  for (const part of parts) {
+    if (!part) continue;
+    if (!PASS_THROUGH_DECLS.has(part.trim())) return false;
+  }
+  return true;
+}
+
+/**
+ * Walk the cloned tree and unwrap pass-through `<div>` wrappers in-
+ * place. A div is unwrappable iff:
+ *
+ *   - tag is `<div>` (no other elements — `<section>` / `<article>` /
+ *     etc. carry semantic weight even when visually empty)
+ *   - has exactly one element child and zero text-node children
+ *   - has no attributes besides `class` (no id, no `data-*`, no
+ *     `aria-*`, no role, no event handlers — those are stripped, but
+ *     `data-dj-uid` we just stamped IS preserved on the survivor)
+ *   - its class's CSS rule is pass-through per
+ *     {@link isPassThroughStyle}
+ *
+ * Survivor inherits the unwrapped div's `data-dj-uid` so re-capture
+ * addressing still resolves to a stable id at this position in the
+ * tree (UID is reserved for ADR-0012 §3 — survivor's choice is
+ * arbitrary today).
+ *
+ * Idempotent — runs in passes until a full walk produces zero
+ * changes, since each unwrap can expose a new pass-through wrapper one
+ * level up.
+ */
+function flattenPassThroughWrappers(
+  root: Element,
+  styleToClass: Map<string, string>,
+): void {
+  const classToStyle = new Map<string, string>();
+  for (const [style, cls] of styleToClass) classToStyle.set(cls, style);
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const candidates: Element[] = [];
+    collectFlattenCandidates(root, candidates);
+    for (const div of candidates) {
+      // The candidate may have been removed in a prior iteration of this
+      // pass — skip if no longer attached.
+      if (!div.parentNode) continue;
+      const cls = (div as HTMLElement).getAttribute("class") ?? "";
+      const style = cls ? classToStyle.get(cls.trim()) ?? "" : "";
+      if (!isPassThroughStyle(style)) continue;
+
+      const child = div.firstElementChild;
+      if (!child) continue;
+
+      // Preserve the unwrapped div's data-dj-uid on the survivor — pick
+      // the ancestor's id, since that's what callers will have observed
+      // on the first capture.
+      const uid = (div as HTMLElement).getAttribute("data-dj-uid");
+      if (uid != null && !(child as HTMLElement).hasAttribute("data-dj-uid")) {
+        (child as HTMLElement).setAttribute("data-dj-uid", uid);
+      }
+
+      div.parentNode.replaceChild(child, div);
+      changed = true;
+    }
+  }
+}
+
+function collectFlattenCandidates(node: Element, out: Element[]): void {
+  // Pre-order traversal so outer wrappers are considered first; if an
+  // outer wrapper unwraps, the inner becomes a candidate in the next
+  // pass.
+  if (isStructurallyPassThrough(node)) out.push(node);
+  for (let child: Element | null = node.firstElementChild; child; child = child.nextElementSibling) {
+    collectFlattenCandidates(child, out);
+  }
+}
+
+function isStructurallyPassThrough(el: Element): boolean {
+  if (el.tagName !== "DIV") return false;
+  if (el.children.length !== 1) return false;
+  // No raw text nodes (would dump text content into parent if unwrapped).
+  for (let n = el.firstChild; n; n = n.nextSibling) {
+    if (n.nodeType === 3 /* TEXT_NODE */) {
+      const text = (n.nodeValue ?? "").trim();
+      if (text !== "") return false;
+    }
+  }
+  for (const attr of Array.from(el.attributes)) {
+    if (attr.name === "class") continue;
+    if (attr.name === "data-dj-uid") continue;
+    return false;
+  }
+  return true;
 }
