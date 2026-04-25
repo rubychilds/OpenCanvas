@@ -21,6 +21,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { App } from "../overlay/App.js";
 import "../overlay/overlay.css";
 import { createWalker } from "../capture/dom-walker.js";
+import { captureFullPagePixels } from "../capture/screenshot-stitcher.js";
 import { collectFontLinks, serialize } from "../capture/style-serializer.js";
 
 const ROOT_ID = "designjs-capture-root";
@@ -153,7 +154,7 @@ function stopCapture(): void {
  */
 const PAGE_CAPTURE_HARD_LIMIT = 2 * 1024 * 1024;
 
-function capturePage(): void {
+async function capturePage(): Promise<void> {
   if (walker) {
     walker.stop();
     walker = null;
@@ -211,6 +212,26 @@ function capturePage(): void {
   );
   const name = document.title || new URL(window.location.href).hostname;
 
+  // ADR-0012 §1 hybrid backplate — best-effort full-page screenshot
+  // composited under the HTML tree at low opacity. Runs after structural
+  // serialization so a stitcher failure (rate-limit, hidden tab,
+  // permission revoke) doesn't lose the structural capture.
+  window.postMessage(
+    {
+      type: "designjs:capture:progress",
+      phase: "screenshotting",
+      nodeCount: result.nodeCount,
+      byteCount: result.byteCount,
+    },
+    "*",
+  );
+  let screenshotDataUrl: string | null = null;
+  try {
+    screenshotDataUrl = await captureFullPagePixels();
+  } catch (err) {
+    console.warn("[designjs] backplate stitcher failed, continuing without:", err);
+  }
+
   window.postMessage(
     {
       type: "designjs:capture:progress",
@@ -227,6 +248,7 @@ function capturePage(): void {
       newArtboard: { name, width, height },
       nodeCount: result.nodeCount,
       byteCount: result.byteCount,
+      screenshotDataUrl: screenshotDataUrl ?? undefined,
     },
     (bgResponse: { ok: boolean; error?: string } | undefined) => {
       if (bgResponse?.ok !== true) {
@@ -254,7 +276,10 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === "toggle-overlay") toggleOverlay();
   if (msg?.type === "capture:start") startCapture();
   if (msg?.type === "capture:stop") stopCapture();
-  if (msg?.type === "capture:page") capturePage();
+  if (msg?.type === "capture:page")
+    capturePage().catch((err: Error) =>
+      console.warn("[designjs] capturePage failed:", err),
+    );
 });
 
 // The overlay's Start/Stop button posts via window.postMessage (simpler
@@ -264,5 +289,8 @@ window.addEventListener("message", (ev) => {
   if (ev.source !== window) return;
   if (ev.data?.type === "designjs:capture:start") startCapture();
   if (ev.data?.type === "designjs:capture:stop") stopCapture();
-  if (ev.data?.type === "designjs:capture:page") capturePage();
+  if (ev.data?.type === "designjs:capture:page")
+    capturePage().catch((err: Error) =>
+      console.warn("[designjs] capturePage failed:", err),
+    );
 });

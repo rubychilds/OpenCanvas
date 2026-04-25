@@ -50,15 +50,61 @@ chrome.action.onClicked.addListener((tab) => {
  * Element capture keeps its simpler single-call path: it appends into
  * the first existing frame, and sizing is the user's concern.
  */
+/**
+ * Hybrid backplate styling — ADR-0012 §1. Wrapper sits at z-index:-1
+ * below the in-flow HTML tree (negative z-index keeps it behind without
+ * requiring the HTML tree to declare a stacking context). Inline styles
+ * are stripped by GrapesJS' parseHtml on most components, so we hoist
+ * the rules into a `<style>` block and target via class — same load-
+ * bearing pattern as the structural serializer (commit 959331d).
+ */
+const BACKPLATE_STYLE_BLOCK =
+  '<style data-designjs-backplate-css="">' +
+  ".designjs-backplate-wrapper{position:absolute;inset:0;z-index:-1;pointer-events:none;}" +
+  ".designjs-backplate-img{display:block;width:100%;height:100%;opacity:0.15;}" +
+  "</style>";
+
+function buildBackplateHtml(dataUrl: string): string {
+  return (
+    BACKPLATE_STYLE_BLOCK +
+    `<div class="designjs-backplate-wrapper" data-designjs-backplate-wrapper="">` +
+    `<img class="designjs-backplate-img" data-designjs-backplate="" src="${dataUrl}">` +
+    `</div>`
+  );
+}
+
 async function relayCapture(msg: {
   html: string;
   newArtboard?: { name?: string; width: number; height: number };
+  /** Optional full-page screenshot data URL — ADR-0012 §1 hybrid backplate. */
+  screenshotDataUrl?: string;
 }): Promise<unknown> {
   if (msg.newArtboard) {
     const { artboard } = (await bridge.send({
       tool: "create_artboard",
       params: msg.newArtboard,
     })) as { artboard: { id: string } };
+
+    // Backplate goes in first so it sits *behind* the HTML tree in
+    // document order. The actual stacking is handled by z-index:-1 on
+    // the wrapper; document order matters because the artboard's
+    // wrapper isn't itself a stacking context.
+    if (msg.screenshotDataUrl) {
+      try {
+        await bridge.send({
+          tool: "add_components",
+          params: {
+            html: buildBackplateHtml(msg.screenshotDataUrl),
+            artboardId: artboard.id,
+          },
+        });
+      } catch (err) {
+        // Backplate is best-effort — if it fails the structural capture
+        // still lands. No silent corruption either way.
+        console.warn("[designjs] backplate insertion failed:", err);
+      }
+    }
+
     const addResult = await bridge.send({
       tool: "add_components",
       params: { html: msg.html, artboardId: artboard.id },
@@ -80,11 +126,32 @@ async function relayCapture(msg: {
   return bridge.send({ tool: "add_components", params: { html: msg.html } });
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "capture:send") {
     relayCapture(msg)
       .then((result) => sendResponse({ ok: true, result }))
       .catch((err: Error) => sendResponse({ ok: false, error: err.message }));
+    return true; // async response
+  }
+  if (msg?.type === "capture:visible-tab") {
+    // chrome.tabs.captureVisibleTab can only run from the background
+    // context. Capture the originating tab's window so multi-window
+    // setups don't capture the wrong viewport.
+    const windowId = sender.tab?.windowId;
+    chrome.tabs.captureVisibleTab(
+      windowId ?? chrome.windows.WINDOW_ID_CURRENT,
+      { format: "png" },
+      (dataUrl?: string) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({
+            ok: false,
+            error: chrome.runtime.lastError.message ?? "captureVisibleTab failed",
+          });
+          return;
+        }
+        sendResponse({ ok: true, dataUrl });
+      },
+    );
     return true; // async response
   }
   if (msg?.type === "bridge-status:request") {
