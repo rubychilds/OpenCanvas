@@ -165,6 +165,23 @@ function WHRow({
   const widthNum = parsePx(width);
   const heightNum = parsePx(height);
 
+  // Min/Max clamps — independent of mode (a Fill axis can still carry a
+  // `max-width` cap; a Fixed axis a `min-width` floor). Empty string means
+  // unset; the SizeField overflow popover writes `null` to clear.
+  const minWidth = readStyle(component, "min-width");
+  const maxWidth = readStyle(component, "max-width");
+  const minHeight = readStyle(component, "min-height");
+  const maxHeight = readStyle(component, "max-height");
+
+  const setClamp = (prop: "min-width" | "max-width" | "min-height" | "max-height") =>
+    (next: number | null) => {
+      if (next == null) {
+        clearStyle(component, prop);
+      } else {
+        writeStyle(component, prop, `${next}px`);
+      }
+    };
+
   // Availability rules mirror Figma: Hug only when *this* element lays out
   // its own content (auto-layout container); Fill only when the *parent*
   // does (so "stretch to fill parent" is meaningful).
@@ -218,6 +235,10 @@ function WHRow({
         availableModes={widthModes}
         onModeChange={(m) => writeSize(component, "width", m, widthNum ?? 0)}
         onFixedChange={onWFixed}
+        minValue={minWidth}
+        maxValue={maxWidth}
+        onMinChange={setClamp("min-width")}
+        onMaxChange={setClamp("max-width")}
         data-testid="oc-ins-width"
       />
       <SizeField
@@ -227,6 +248,10 @@ function WHRow({
         availableModes={heightModes}
         onModeChange={(m) => writeSize(component, "height", m, heightNum ?? 0)}
         onFixedChange={onHFixed}
+        minValue={minHeight}
+        maxValue={maxHeight}
+        onMinChange={setClamp("min-height")}
+        onMaxChange={setClamp("max-height")}
         data-testid="oc-ins-height"
       />
       <Tooltip>
