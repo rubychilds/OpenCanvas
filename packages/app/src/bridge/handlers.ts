@@ -364,7 +364,12 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       // workflow: create_artboard → add_components → fit_artboard). Retry
       // briefly so the wrapper + body become measurable. setTimeout (not
       // rAF) because rAF can be throttled in background/detached states.
-      const deadline = Date.now() + 1500;
+      // Bumped 1500ms → 3000ms once Google Fonts started landing (epic-8-
+      // followups §3.3, §3.1) — `@font-face` loading delays text layout,
+      // and large captures + screenshot backplate (ADR-0012 §1) settle
+      // slower than the prior budget allowed.
+      const FIT_TIMEOUT_MS = 3000;
+      const deadline = Date.now() + FIT_TIMEOUT_MS;
       let height: number | null = null;
       while (Date.now() < deadline) {
         height = fitArtboardToContent(editor, input.artboardId);
@@ -373,7 +378,7 @@ export function buildHandlers(editor: Editor): Record<string, ToolHandler> {
       }
       if (height == null) {
         throw new Error(
-          `cannot fit artboard: ${input.artboardId} (wrapper/content not measurable within 1500ms)`,
+          `cannot fit artboard: ${input.artboardId} (wrapper/content not measurable within ${FIT_TIMEOUT_MS}ms)`,
         );
       }
       const artboard = listArtboards(editor).find((a) => a.id === input.artboardId);
