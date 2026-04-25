@@ -1,6 +1,6 @@
 # ADR-0011: Browser extension architecture — transport + style serialization
 
-**Status:** Proposed
+**Status:** Accepted (2026-04-24)
 **Date:** April 22, 2026
 **Owner:** Architecture
 **Related:** [ADR-0001](./0001-frontend-ui-stack.md) (WebSocket bridge on `127.0.0.1:29170`); PRD Story 8.1 (element selection + capture), Story 8.2 (style serialization), Story 8.3 (send to DesignJS); **extended by [ADR-0012](./0012-capture-fidelity-evolution.md)** (v0.3.5 hybrid screenshot backplate + v0.4 CDP pivot + three-tool split + author/computed hybrid modes)
@@ -106,3 +106,43 @@ The hybrid is the Goldilocks option — easier to implement than Option B but ti
 - [ADR-0001](./0001-frontend-ui-stack.md) — WebSocket bridge + multi-peer routing foundation
 - Existing scaffold: `chrome-ext/` (pre-strip) → `packages/chrome-extension/` (post-strip, post-rehome)
 - Anima / Locofy / Penpot-exporter Figma plugins (Plugin API pattern; this is the *web* equivalent via Chrome extension)
+
+---
+
+## Addendum (2026-04-24) — implementation status
+
+The v0.3 stories shipped in the early-Epic-8 chain (`3ad3214`, `36d2df2`,
+`e1a38fd`, `341ee77`, `959331d`); status flipped to Accepted with two
+v0.3 polish landings on top:
+
+- `bb916ae` — v0.4 prep stubs from epic-8-followups §4.1 / §4.2.
+  `serialize()` now stamps `data-dj-uid="<n>"` on every cloned element
+  (reserved for ADR-0012 §3 snapshot UID addressing) and accepts an
+  explicit `mode: "computed"` option, throwing on any other value so a
+  forward call site asking for "author" or "hybrid" fails loud rather
+  than silently returning computed-mode output mislabelled. Both
+  content-script call sites updated to pass `mode: "computed"` through.
+  Ships with a defensive jsdom-compat guard on the `SVGImageElement
+  instanceof` check so the new vitest spec can exercise the serializer
+  without a browser. No behaviour change in MV3 contexts.
+- `b1e0d0b` — Google Fonts / external `@font-face` polish per
+  followups §3.1. New `collectFontLinks(document.head)` helper walks the
+  host page's head for `<link rel="stylesheet">` whose URL hostname
+  matches a narrow allowlist (`fonts.googleapis.com`, `fonts.bunny.net`,
+  `use.typekit.net`, `p.typekit.net`) and emits clean `<link rel="stylesheet"
+  crossorigin>` tags. The result is spliced into the captured page right
+  after the outer `<div>`'s opening tag (post body→div swap) so the
+  canvas iframe loads them before text renders. Closes the system-
+  fallback-font symptom that Inter / Geist / Satoshi pages were
+  hitting. Allowlist deliberately narrow — only services that
+  exclusively ship font CSS, so adding the helper doesn't re-open the
+  security gap that the LINK strip closes.
+
+The remaining followups items (§3.3 fit_artboard retry-window bump,
+§3.4 wrapper flattening) and ADR-0012's larger v0.4 work (CDP pivot,
+three-tool split, author/computed/hybrid modes) are tracked in their
+respective documents.
+
+---
+
+*End of ADR-0011.*

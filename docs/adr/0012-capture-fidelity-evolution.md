@@ -1,6 +1,6 @@
 # ADR-0012: Capture fidelity evolution — hybrid screenshot backplate, CDP pivot, three-tool split
 
-**Status:** Proposed
+**Status:** §1 Accepted (2026-04-24); §§2–4 remain Proposed
 **Date:** 2026-04-23
 **Owner:** Architecture
 **Related:** [ADR-0011](./0011-browser-extension-architecture.md) (Epic 8 browser extension; superseded in part — see Consequences), PRD Story 8.1 / 8.2 / 8.3, Ruby's research notes ([website-capture-research.md](https://github.com/anthropics/meta-docs) / [capture-tool-comparison.md](https://github.com/anthropics/meta-docs) — working copies in the Obsidian vault)
@@ -142,3 +142,65 @@ These are different features solving different user problems with different mech
 - SingleFile (AGPL / commercial) — reference implementation for author-mode capture (§4)
 - Paper Snapshot — the UX blueprint for G1 (closed-source; behavior inferred from docs + public MCP tool surface)
 - Onlook (Apache-2.0) — reference for G2 (kept separate per §5)
+
+---
+
+## Addendum (2026-04-24) — §1 implementation status
+
+§1 hybrid screenshot backplate landed in `f6ae37f` on
+`adr-0012-v035-backplate`. §§2–4 (CDP pivot, three-tool split,
+author/computed/hybrid modes) remain Proposed.
+
+What shipped:
+
+- New `packages/chrome-extension/src/capture/screenshot-stitcher.ts` —
+  pattern lifted from `simov/screenshot-capture` (MIT), code rewritten.
+  Exports `captureFullPagePixels()` (content-script orchestrator:
+  scroll-tile loop + scrollbar suppression + 350ms throttle to stay
+  under chrome.tabs.captureVisibleTab's 2/sec quota) and
+  `compositeTiles()` (pure-ish DPR-aware compositor with injected
+  `loadImage` / `createCanvas` / `toDataUrl` deps so tests can exercise
+  the maths without a real DOM canvas).
+- `chrome.runtime.onMessage` handler `capture:visible-tab` in the
+  background — the only context where `chrome.tabs.captureVisibleTab`
+  can run. Captures the originating tab's window so multi-window setups
+  don't capture the wrong viewport.
+- `relayCapture` extended with optional `screenshotDataUrl`. When
+  present: `create_artboard` → backplate `add_components` → HTML
+  `add_components` → `fit_artboard`. Backplate is best-effort so a
+  stitcher / add_components failure doesn't lose the structural
+  capture.
+- Backplate styling lives in a hoisted `<style data-designjs-backplate-
+  css>` block targeting the `.designjs-backplate-wrapper` (z-index:-1,
+  position:absolute, inset:0, pointer-events:none) and
+  `.designjs-backplate-img` (display:block, opacity:0.15) classes —
+  same load-bearing class-hoist pattern as `959331d` so GrapesJS'
+  inline-style strip doesn't drop the layout. Marker attributes
+  `data-designjs-backplate` / `data-designjs-backplate-wrapper` give
+  future inspector / MCP work a structural hook.
+
+Notes:
+
+- **The dedicated "Source screenshot backplate" inspector toggle** the
+  Decision §1 sketches is **deferred to a follow-up.** v0.3.5 users
+  reach the opacity slider via the existing generic Appearance →
+  Opacity control after selecting the backplate img. The marker
+  attributes are forward-compatible for a dedicated control later.
+- **§3 / §4 prep stubs from epic-8-followups (§4.1 `data-dj-uid`, §4.2
+  `mode` param)** landed separately on `adr-0011-prep-stubs` (`bb916ae`)
+  — referenced from the ADR-0011 addendum. §1 has no remaining
+  prerequisites.
+- **§§2–4 remain Proposed.** SingleFile commercial license price-check
+  (epic-8-followups §7) is still the gate for the v0.4 author-mode
+  path; the CDP pivot still needs the manifest `"debugger"` permission
+  and the three-tool split design.
+
+Vitest coverage: 5 specs in
+`src/capture/__tests__/screenshot-stitcher.test.ts` — DPR canvas
+sizing, per-tile y-offset, partial trailing tile DPR, dimension
+guard, return-value pass-through. All green; full chrome-extension
+suite 15/15 green; typecheck clean.
+
+---
+
+*End of ADR-0012.*
