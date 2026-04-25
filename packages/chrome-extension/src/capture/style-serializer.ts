@@ -31,11 +31,23 @@ export interface SerializeError {
   byteCount: number;
 }
 
+/**
+ * Serialization mode. v0.3 ships only `"computed"` (current behavior:
+ * resolved values from `getComputedStyle` per element). v0.4 will add
+ * `"author"` (source-stylesheet preservation) and `"hybrid"` (cascade-
+ * fallback) per ADR-0012 §4. Reserving the namespace today so call
+ * sites are forwards-compatible — passing anything other than
+ * `"computed"` throws so we don't ship a silent no-op.
+ */
+export type SerializeMode = "computed";
+
 export interface SerializeOptions {
   /** Hard abort threshold in bytes. Defaults to 500KB (element selection). Whole-page captures pass a larger cap. */
   hardLimit?: number;
   /** Soft warning threshold. Defaults to 80% of hardLimit. */
   softLimit?: number;
+  /** v0.3 prep-stub for ADR-0012 §4 — only `"computed"` is supported today. */
+  mode?: SerializeMode;
 }
 
 const DEFAULT_SOFT_LIMIT = 400 * 1024;
@@ -180,7 +192,11 @@ function normalizeMediaAttrs(clone: Element, src: Element): void {
     if (src.href) clone.setAttribute("href", src.href);
     return;
   }
-  if (src instanceof SVGImageElement && clone instanceof SVGImageElement) {
+  if (
+    typeof SVGImageElement !== "undefined" &&
+    src instanceof SVGImageElement &&
+    clone instanceof SVGImageElement
+  ) {
     const href = src.href?.baseVal || src.getAttribute("xlink:href");
     if (href) {
       try {
@@ -237,6 +253,14 @@ interface Counters {
    */
   styleToClass: Map<string, string>;
   classCounter: { n: number };
+  /**
+   * Monotonic UID handed to each cloned element via `data-dj-uid`. Lays
+   * the foundation for the snapshot UID system in ADR-0012 §3 — v0.4
+   * `take_snapshot` keys results by these IDs so re-captures can address
+   * the same element across requests. v0.3 just emits them; nothing
+   * reads them yet.
+   */
+  uidCounter: { n: number };
 }
 
 function stripAndInline(
@@ -263,6 +287,11 @@ function stripAndInline(
   // Always drop any pre-existing style attribute — it came from the
   // source page and our class covers the same ground (or more).
   (clone as HTMLElement).removeAttribute("style");
+
+  // Stamp a monotonic UID per element. Reserved for ADR-0012 §3 re-
+  // capture addressing; ignored by v0.3 consumers.
+  const uid = counters.uidCounter.n++;
+  (clone as HTMLElement).setAttribute("data-dj-uid", String(uid));
 
   // Strip dangerous attributes from the clone.
   for (const attr of Array.from(clone.attributes)) {
@@ -312,6 +341,16 @@ export function serialize(
     return { error: "empty-input", nodeCount: 0, byteCount: 0 };
   }
 
+  // v0.3 only ships `"computed"`. Any other value is a request for v0.4
+  // capture modes that don't exist yet — fail loud rather than silently
+  // returning the computed-mode result and pretending it's author-mode.
+  const mode: SerializeMode = opts.mode ?? "computed";
+  if (mode !== "computed") {
+    throw new Error(
+      `serialize: mode "${mode}" is reserved for ADR-0012 §4 (not yet implemented). v0.3 supports only "computed".`,
+    );
+  }
+
   const hardLimit = opts.hardLimit ?? DEFAULT_HARD_LIMIT;
   const softLimit = opts.softLimit ?? Math.min(DEFAULT_SOFT_LIMIT, Math.floor(hardLimit * 0.8));
 
@@ -329,6 +368,7 @@ export function serialize(
     hardLimit,
     styleToClass: new Map(),
     classCounter: { n: 0 },
+    uidCounter: { n: 0 },
   };
 
   const ok = stripAndInline(clone, root, root.parentElement, counters);

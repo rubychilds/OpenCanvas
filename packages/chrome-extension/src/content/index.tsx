@@ -83,7 +83,7 @@ function startCapture(): void {
   if (walker) return;
   walker = createWalker({
     onCommit: (el) => {
-      const result = serialize(el);
+      const result = serialize(el, { mode: "computed" });
       if ("error" in result) {
         window.postMessage(
           {
@@ -167,7 +167,7 @@ function capturePage(): void {
     return;
   }
   const t0 = performance.now();
-  const result = serialize(root, { hardLimit: PAGE_CAPTURE_HARD_LIMIT });
+  const result = serialize(root, { hardLimit: PAGE_CAPTURE_HARD_LIMIT, mode: "computed" });
   const t1 = performance.now();
   if ("error" in result) {
     console.warn("[designjs] page serialize failed:", result);
