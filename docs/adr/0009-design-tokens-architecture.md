@@ -304,9 +304,52 @@ On next save, the file is written with `tokens` populated and `cssVariables` omi
 
 Projects not migrated yet continue to work via the deprecated `get_variables` / `set_variables` shape — no forced migration.
 
----
+### 9. UX — table-with-mode-columns + chip-in-input + global mode switcher
 
-## Consequences
+The data model (§§1–7a) determines what's stored. This section determines what users see. Patterns lifted, adapted, and rejected from a 2026-04-24 Figma Variables UX audit (full research notes in `DesignJS-Notes/figma-variables-ux-research.md`):
+
+**Two surfaces, not one:**
+
+- **Quick popover (existing)** — `packages/app/src/components/VariablesPopover.tsx`. Stays as the topbar entry-point for fast apply. Becomes a flat list with type filter; not the authoring surface.
+- **Variables view (new)** — full-width modal launched from the popover, from a left-rail entry, or via the keyboard. Bulk authoring, mode columns, alias editing all live here. The popover cannot scale to multi-collection × multi-mode without losing the "quick" property.
+
+**Browse / authoring layout:**
+
+- **Table with one column per mode**, leftmost = default. Variable name on the left; one cell per mode. This is the single most distinctive Figma pattern and matches our DTCG mode-extension shape exactly.
+- **Three-level hierarchy**: `Collection → Group → Variable`. Collection switcher in the modal's left sidebar; groups are nested object keys in the underlying JSON (DTCG already does this).
+- **Type filter** ("Sizing" / "Color" / "Typography" / "Effect"). DTCG distinguishes `dimension` / `color` / `fontFamily` / `duration` / `cubicBezier` etc. — keep those as explicit `$type`s (Figma collapses them all into `Number`; we do not, because CSS emission needs unit information). Picker groups by family so the surface still feels scannable.
+- **Visually collapse identical-across-modes rows** — Figma renders them as repeated values, which is noise at scale. We render a single span when all modes resolve to the same value.
+
+**Apply flow (where users meet the inspector):**
+
+- **`=` shortcut** in any numeric inspector field opens the variable picker scoped to compatible types. Lifted from Figma — lowest-friction apply flow they ship. Wire into our inspector's number-input primitives.
+- **Chip-in-input** — applied variable renders as a `gray pill: token-name + resolved-value` chip *inside* the property field (e.g. "spacing.lg / 16px"). Hover-icon on the chip detaches.
+- **Right-click → Apply variable** on color swatches, text properties, and visibility (boolean) controls.
+- **Square-vs-circle swatch** convention reserved for if we ever ship a second token-like primitive (presets / styles); for v0.3 we have one shape.
+
+**Aliases:**
+
+- Created via right-click → "Create alias" on a value cell, then picking another variable of the same `$type`.
+- Aliased cell renders the resolved value plus a reference-pill showing the source variable's name.
+- **Improve on Figma**: hover the reference-pill and we render the *full* alias chain (semantic → primitive → CSS value) in a tooltip. Important because devs reading our emitted Tailwind `@theme` need the chain — Figma only shows the immediate parent.
+
+**Mode switching:**
+
+- **Per-frame mode override** in the inspector (when a frame is selected) — same shape as Figma's "Apply variable mode" affordance, lives in the Layout or Appearance section. Mode-tag pill renders next to the layer in the Layers panel for any node with an override.
+- **Global preview switcher in the topbar** — a top-bar dropdown that flips the entire canvas between modes for preview. Figma deliberately doesn't ship this. We do, because for an HTML/CSS-native tool a global toggle (matching OS dark-mode toggles, Storybook backgrounds) is the strongest mental model. Maps onto a `data-designjs-mode` attribute selector on the document root in emitted CSS.
+- **Inheritance via CSS cascade** — modes set on an ancestor flow to descendants until a descendant overrides, matching how `prefers-color-scheme` / theme classes already work in real CSS. Free of cost; consistent with the HTML-native bet.
+
+**Single-token edit surface:**
+
+- Modal dialog opened from a hover-row → edit-icon. Fields: Name, Description, Value (per mode), Hide-from-publishing (when v0.4 ships publishing). DROP Figma's per-platform "Code syntax" field (Web/iOS/Android) — we emit one CSS target.
+- **Type immutable post-creation.** Dramatically simplifies emission and matches Figma's behaviour. Migration from flat `cssVariables` (§8) infers the type once on first load; subsequent edits cannot change it.
+
+**Explicitly skipped:**
+
+- **Styles vs Variables duality.** Figma carries this for legacy reasons — Color Styles predate Variables and handle multi-value resources (gradients, images, effects) that early Variables couldn't. We have no legacy. DTCG covers gradients via composite types (v0.4); Tailwind v4 `@theme` is the single emission target. One picker, one swatch shape.
+- **Authenticated-library publishing flows.** Figma's team-library / publishing UX is its own subsystem. Out of scope for v0.3; revisit if/when DesignJS grows a team-library story.
+
+
 
 - **Interchange unlocks.** DesignJS gains tokens round-trip with Tokens Studio, Style Dictionary, and (via ADR-0008 relay) Figma Variables. Doesn't ship as a DesignJS feature we market — it's a platform primitive that future features assume.
 - **Tailwind utilities just work.** Users set a color token, get `bg-brand-primary` in the block palette and in agent-generated HTML without extra plumbing. The `@theme` emission is ~20-line runtime code; the value prop is disproportionate.
