@@ -251,14 +251,14 @@ Shipped across four commits plus the Min/Max clamp follow-up on
   is titled **"Other CSS"** per the rename.
 - `4bf2ad8` — visual-density / lucide-only icons polish over the new
   surfaces.
-- *adr-0006-sizing-canvas branch* — ADR §1 Min/Max clamps. SizeField
-  gains `minValue` / `maxValue` / `onMinChange` / `onMaxChange` props
-  and a Figma-style overflow popover (`⋯` trigger to the right of the
-  px label) exposing two clearable numeric rows. LayoutSection's W/H
-  consumers wire to `min-width` / `max-width` / `min-height` /
-  `max-height` longhands via `readStyle` / `writeStyle` / `clearStyle`.
-  Empty input clears; clamps are mode-independent — a Hug or Fill axis
-  can still carry a clamp (verified by spec). New thin wrapper
+- `e126aa4` — ADR §1 Min/Max clamps. SizeField gains `minValue` /
+  `maxValue` / `onMinChange` / `onMaxChange` props and a Figma-style
+  overflow popover (`⋯` trigger to the right of the px label)
+  exposing two clearable numeric rows. LayoutSection's W/H consumers
+  wire to `min-width` / `max-width` / `min-height` / `max-height`
+  longhands via `readStyle` / `writeStyle` / `clearStyle`. Empty
+  input clears; clamps are mode-independent — a Hug or Fill axis can
+  still carry a clamp (verified by spec). New thin wrapper
   `packages/app/src/components/ui/popover.tsx` around the existing
   `@radix-ui/react-popover` dep. E2E coverage:
   `e2e/story-inspector-min-max-clamps.spec.ts` (2 specs, both green).

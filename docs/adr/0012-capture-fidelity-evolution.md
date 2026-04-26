@@ -147,9 +147,8 @@ These are different features solving different user problems with different mech
 
 ## Addendum (2026-04-24) — §1 implementation status
 
-§1 hybrid screenshot backplate landed in `f6ae37f` on
-`adr-0012-v035-backplate`. §§2–4 (CDP pivot, three-tool split,
-author/computed/hybrid modes) remain Proposed.
+§1 hybrid screenshot backplate landed in `f6ae37f`. §§2–4 (CDP pivot,
+three-tool split, author/computed/hybrid modes) remain Proposed.
 
 What shipped:
 
