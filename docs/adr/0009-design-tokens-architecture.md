@@ -261,6 +261,8 @@ Modes emit per-mode via CSS attribute selectors:
 
 The canvas sets `data-designjs-mode` on the `:root` element to switch the active mode. Mode switching is a local editor UI (Topbar dropdown, stretch goal for v0.3); not persisted to `.designjs.json` beyond the default-mode pointer in `$extensions.designjs.collections`.
 
+**Name-collision detection** — the path-to-CSS-variable transform is deterministic, so two distinct DTCG paths can collapse to the same CSS variable name (e.g. `color.brand.primary` and `color.brand-primary` both → `--color-brand-primary`). The emission pipeline detects this at load time and **refuses to emit until resolved**, surfacing the conflict in the Topbar via the existing variable-count badge as a red "X conflicts" marker. Style Dictionary precedent: same shape (build fails, lists offending tokens). Tailwind v4 has no built-in collision detection, so we own this. See Open Q §7 for the rationale.
+
 ### 6. Agent surface — new typed tools replace old
 
 The new typed tool set:
@@ -375,7 +377,7 @@ The data model (§§1–7a) determines what's stored. This section determines wh
 
 1. ~~**Paper.design verification.**~~ **Resolved 2026-04-22:** Paper does not ship a structured token MCP surface. Tokens are CSS strings applied via `update_styles`/`write_html`; no DTCG, no variable collections, no mode primitive. Our DTCG-first bet differentiates us (see §Survey → Paper.design). No cross-tool structured round-trip possible; agent prompt-translation is the only Paper ⇄ DesignJS path. *Left here as a record of the decision.*
 
-2. **Scope field — v0.4?** Figma's `scopes: ["ALL_FILLS", "CORNER_RADIUS", …]` prevents a spacing token from being applied to a fill. Not in DTCG core. Worth adopting as an `$extensions.designjs.scopes` string[] in v0.4 once the inspector can enforce it. Deferring for now.
+2. ~~**Scope field — v0.4?**~~ **Resolved 2026-04-24: skip indefinitely.** Only Figma ships per-token scopes, and verified-2026-04-24 their "enforcement" is just picker-visibility filtering (out-of-scope variables are *omitted* from the picker for that field) — not validation, not warning, not a real constraint. Tokens Studio, Style Dictionary, DTCG core, and Pencil all rely on `$type` alone. For an HTML/CSS-native canvas, the browser already silently ignores malformed bindings, so the marginal value of a soft-filter UX is dev-experience nice-to-have, not a load-bearing piece. Reserve `$extensions.designjs.scopes` namespace if a v0.5+ user-flow surfaces a real need. *Left here as a record.*
 
 3. ~~**OKLCH / lab / Display P3.**~~ **Resolved 2026-04-24:** §2 promotes OKLCH to canonical with a `$extensions.designjs.colorSpace` field for graceful degradation. Driven by Tailwind v4 being our emission target (canonical OKLCH there); Figma uses sRGB and the ADR-0008 relay does the conversion at the import/export edge. OKLCH-to-sRGB is lossy on Figma export (gamut clamp); flagged in relay docs. *Left here as a record.*
 
@@ -383,9 +385,11 @@ The data model (§§1–7a) determines what's stored. This section determines wh
 
 5. ~~**Deprecation timeline.**~~ **Resolved 2026-04-24:** Not applicable. DesignJS has not done a public release; no third-party clients depend on the legacy `get_variables` / `set_variables` shape. §6 now removes them outright at the same time the new typed tools land — no deprecation window needed. Revisit only if a public release ships before the data-model migration. *Left here as a record.*
 
-6. **Migration for projects with cross-frame tokens.** Today `setProperty` iterates all frames (fixed in the alpha.1 regression pass). The new `@theme` emission writes a single `<style>` per frame. Is there a scenario where a frame should see a *different* set of tokens than its neighbours? None I can think of at v0.3. Flagging in case "sandbox frame" becomes a feature.
+6. ~~**Migration for projects with cross-frame tokens.**~~ **Resolved 2026-04-24:** split into two cases, both addressed.
+   - **Per-frame *mode* override** (frame picks which mode of the existing collection it renders) — already shipping in §9 Mode-switching. Matches Figma + Pencil + Storybook precedent. Use cases: brand A/B side-by-side, light/dark comparison frames.
+   - **Per-frame *value* override** (frame redefines token values, separate from mode) — **deferred to a future ADR.** Penpot tried this exact thing and called it "complex, no roadmap" (verified 2026-04-24); we follow their lead. Re-open if a real demand surfaces. *Left here as a record.*
 
-7. **Name-space collisions in Tailwind's `@theme`.** If a user defines both `color.brand.primary` (→ `--color-brand-primary`) and `color.brand-primary` (→ `--color-brand-primary`), the two collide in the emitted CSS. Proposed resolution: error at load time, surface in the Topbar via the existing variable-count badge as a red "X conflicts" marker. Small implementation item.
+7. ~~**Name-space collisions in Tailwind's `@theme`.**~~ **Resolved 2026-04-24: error at load time, hard-fail.** If a user defines both `color.brand.primary` (→ `--color-brand-primary`) and `color.brand-primary` (→ `--color-brand-primary`), the two collide in the emitted CSS. The §5 emission pipeline detects the collision deterministically and refuses to emit, surfacing the conflict in the Topbar via the existing variable-count badge as a red "X conflicts" marker until resolved. Style Dictionary's collision-warning precedent (verified 2026-04-24) confirms this is the right shape — silent last-write-wins is a deferred bug. Tailwind v4 itself has no built-in collision detection, so we own this. *Left here as a record.*
 
 ---
 
