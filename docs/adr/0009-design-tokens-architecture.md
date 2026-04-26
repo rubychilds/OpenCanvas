@@ -261,9 +261,9 @@ Modes emit per-mode via CSS attribute selectors:
 
 The canvas sets `data-designjs-mode` on the `:root` element to switch the active mode. Mode switching is a local editor UI (Topbar dropdown, stretch goal for v0.3); not persisted to `.designjs.json` beyond the default-mode pointer in `$extensions.designjs.collections`.
 
-### 6. Agent surface — new typed tools, old tools deprecated
+### 6. Agent surface — new typed tools replace old
 
-New tools alongside the existing flat ones:
+The new typed tool set:
 
 - `get_tokens({ mode?: string, resolve?: boolean })` → DTCG-shaped JSON. `resolve=true` chases aliases; default returns the raw tree with alias strings intact.
 - `set_tokens({ tokens: DTCGTree, mode?: string, replace?: boolean })` — merges by default; `replace` swaps the whole tree (Pencil's pattern).
@@ -271,7 +271,7 @@ New tools alongside the existing flat ones:
 - `list_modes({ collection?: string })` → per-collection mode list + default.
 - `set_mode(modeId)` — switches the canvas preview; equivalent to clicking the Topbar dropdown.
 
-The **existing `get_variables` / `set_variables` tools stay** for backwards compatibility, returning / accepting a flat view derived from the DTCG store (default mode, aliases resolved). Marked `@deprecated` in the MCP tool descriptions; removed in v0.5 with a migration guide.
+The existing `get_variables` / `set_variables` tools are **removed**, not deprecated. DesignJS has not done a public release; there are no third-party clients depending on the flat shape, so a deprecation window would be pure ceremony. The new typed tools land alongside the §1 data-model migration; the legacy MCP tools come out at the same time.
 
 Pattern borrowed from Pencil: a single `get_tokens` response includes both the tree and the available modes, so agents don't round-trip to discover what modes exist.
 
@@ -381,7 +381,7 @@ The data model (§§1–7a) determines what's stored. This section determines wh
 
 4. ~~**Token-set composition (Tokens Studio's richer model) — v0.5?**~~ **Deferred to a future ADR (post-v0.3).** Modes cover the 80% case for v0.3. Token sets (layered files, `"theme": "Brand A + Dark"`) require their own design pass — composition rules, conflict resolution, UI for layering — and are not in scope this cycle. Re-open if multi-brand users push back. *Left here as a record.*
 
-5. **Deprecation timeline.** `get_variables` / `set_variables` removal in v0.5. Is that aggressive or lenient? Depends on external agent proliferation — if third-party clients rely on the flat shape, a longer deprecation window is kinder. Default to v0.5; revisit if user feedback suggests longer.
+5. ~~**Deprecation timeline.**~~ **Resolved 2026-04-24:** Not applicable. DesignJS has not done a public release; no third-party clients depend on the legacy `get_variables` / `set_variables` shape. §6 now removes them outright at the same time the new typed tools land — no deprecation window needed. Revisit only if a public release ships before the data-model migration. *Left here as a record.*
 
 6. **Migration for projects with cross-frame tokens.** Today `setProperty` iterates all frames (fixed in the alpha.1 regression pass). The new `@theme` emission writes a single `<style>` per frame. Is there a scenario where a frame should see a *different* set of tokens than its neighbours? None I can think of at v0.3. Flagging in case "sandbox frame" becomes a feature.
 
