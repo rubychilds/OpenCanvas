@@ -318,6 +318,8 @@ Projects not migrated yet continue to work via the deprecated `get_variables` / 
 
 The data model (§§1–7a) determines what's stored. This section determines what users see. Patterns lifted, adapted, and rejected from a 2026-04-24 Figma Variables UX audit (full research notes in `DesignJS-Notes/figma-variables-ux-research.md`):
 
+**UX philosophy — alignment first, divergence with justification.** Default to existing design-tool patterns (Figma primarily; Penpot, Pencil, Storybook secondary). Users arrive with mental models from those tools; re-learning is the dominant source of UX complexity. Borrow patterns where they fit; diverge only with a one-sentence written justification covering *what* we're doing differently, *why* the established pattern doesn't fit our context (HTML/CSS-native, agent-driven, pre-public), and *what compensates* for the unfamiliarity. If a behaviour exists in zero competitors, that's a yellow flag — usually means we're solving a non-problem or carrying an unstated constraint we should question. Each "Diverge from Figma" entry below carries its justification inline; "Lift from Figma" entries don't need one since alignment is the default.
+
 **Three surfaces** — each tuned to a different user state:
 
 - **Topbar popover (existing)** — `packages/app/src/components/VariablesPopover.tsx`. Always-accessible quick CRUD for the "I want to add or tweak one variable fast" mental model. Stays as a flat list with type filter; the existing affordance our users already know.
@@ -360,7 +362,58 @@ The data model (§§1–7a) determines what's stored. This section determines wh
 - **Styles vs Variables duality.** Figma carries this for legacy reasons — Color Styles predate Variables and handle multi-value resources (gradients, images, effects) that early Variables couldn't. We have no legacy. DTCG covers gradients via composite types (v0.4); Tailwind v4 `@theme` is the single emission target. One picker, one swatch shape.
 - **Authenticated-library publishing flows.** Figma's team-library / publishing UX is its own subsystem. Out of scope for v0.3; revisit if/when DesignJS grows a team-library story.
 
+### 10. Implementation phasing — three phases, two gates
 
+The full §§1–9 surface is ~5–6 weeks of focused work. Splitting into three checkpoints reduces blast radius, ships user-visible value at each gate, and isolates the highest-risk single change (storage shape migration) into the smallest phase.
+
+**Phase 1 — v0.3: foundation (~1.5 weeks).** Data shape + emission only; existing UX surface unchanged.
+
+| § | Scope | Notes |
+|---|---|---|
+| §1 | DTCG-shaped storage (flat-with-dots) | No `$extensions.designjs.modes` wiring yet |
+| §2 | All 7 typed primitives + OKLCH canonical | Conversion logic + `$extensions.designjs.colorSpace` field |
+| §5 | Tailwind v4 `@theme` dual-emit + collision detection | The headline user-visible payoff (`bg-brand-primary` "for free") |
+| §7 | DTCG import / export | Basic JSON pipe |
+| §8 | Migration from flat `cssVariables` | Auto-migrate on load with conservative type inference |
+
+Existing `VariablesPopover` continues unchanged behaviourally — it just reads/writes the new DTCG store underneath. Existing `get_variables` / `set_variables` MCP tools continue, returning a flat default-mode view derived from the DTCG store.
+
+**Phase 2 — v0.4-α: data + MCP (~1.5–2 weeks).** Modes, aliases, and the new typed agent surface. No new UX surface yet — Phase 2 is data-and-API only so the contract can settle before building UI on top of it.
+
+| § | Scope | Notes |
+|---|---|---|
+| §3 | Modes — Figma-shaped, `$extensions.designjs.modes` | Data model + per-mode resolution; no per-frame override UI yet |
+| §4 | Aliases — lazy resolution + cycle detection | `{path.to.token}` syntax + `resolve_alias` MCP tool |
+| §6 | 5 new typed MCP tools land; legacy `get_variables` / `set_variables` removed | No deprecation window per pre-public release (memory: feedback_no_premature_deprecation) |
+| §7a | Kit baseline tokens cascade | **Unblocks ADR-0007 implementation at this point** |
+
+By the end of Phase 2, agents can fully use the typed token surface; the canvas can resolve aliases and apply modes via the new MCP `set_mode` tool. Existing popover still works but shows only default-mode values — explicitly a transition state.
+
+**Phase 3 — v0.4-β: UX (~2–3 weeks).** The full §9 surface. Every UX decision in this phase aligns with Figma / Penpot / Pencil patterns first; divergences carry the inline justification per the §9 philosophy.
+
+| § | Scope | Notes |
+|---|---|---|
+| §9 surfaces | Three-tier — popover refactored, deselected-state sidebar section, full modal "Variables view" | Modal: modes-as-columns table, collection switcher, group folders, type-grouped picker, alias editor, edit dialog |
+| §9 apply flow | `=` shortcut in numeric inspector fields, chip-in-input, right-click apply | Wires into existing inspector primitives |
+| §9 mode switching | Topbar global mode switcher, per-frame override UI, layer-tree mode-tag pill | Topbar is the one diverge-from-Figma in this phase (justified per §9 philosophy: HTML/CSS-native users have an OS-dark-mode mental model Figma users don't) |
+| §9 alias UI | Right-click → Create alias + reference-pill + full-chain tooltip | Full-chain tooltip is the second justified divergence (devs reading emitted Tailwind `@theme` need the chain) |
+
+**Why this split:**
+
+1. **v0.3 is independently shippable + valuable.** Tailwind `@theme` emission alone is the "disproportionate value prop" (Consequences below) — typed primitives + auto-generated utilities + OKLCH fidelity without users learning a new UI.
+2. **Phase 2 / 3 boundary lets the data contract settle before UX is built on it.** Modes + aliases + new MCP tools land first; UX in Phase 3 is built against a stable substrate.
+3. **No half-baked UX.** Modes, aliases, and the modal are interdependent — splitting them across phases forces confusing mid-states ("modes column header but you can only have one mode"). They land together in Phase 3.
+4. **ADR-0007 unblocks at the Phase 2 boundary** when §7a kit cascade ships. ADR-0007 implementation can begin in parallel with Phase 3.
+5. **Migration risk is contained to v0.3.** Storage shape change (flat → DTCG) is the riskiest single change; isolating it in the smallest phase reduces blast radius.
+
+**Open at this layer (not architectural, project-planning):**
+
+- Calendar dates for each phase. Depend on prioritisation against other v0.3 work (Epic 8 polish, kit research, etc.) — outside the ADR's scope.
+- Whether Phase 3 itself sub-splits further if it runs long (e.g. modal first, then sidebar + topbar). Defer until Phase 3 estimate is concrete.
+
+---
+
+## Consequences
 
 - **Interchange unlocks.** DesignJS gains tokens round-trip with Tokens Studio, Style Dictionary, and (via ADR-0008 relay) Figma Variables. Doesn't ship as a DesignJS feature we market — it's a platform primitive that future features assume.
 - **Tailwind utilities just work.** Users set a color token, get `bg-brand-primary` in the block palette and in agent-generated HTML without extra plumbing. The `@theme` emission is ~20-line runtime code; the value prop is disproportionate.
