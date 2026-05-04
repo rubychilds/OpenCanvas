@@ -1,6 +1,6 @@
 # ADR-0009: Design tokens — data model, modes, CSS emission, agent surface
 
-**Status:** Proposed
+**Status:** Phase 1 Accepted (2026-05-04); Phases 2 + 3 Proposed
 **Date:** April 22, 2026
 **Owner:** Architecture
 **Related:** [ADR-0001](./0001-frontend-ui-stack.md) (Tailwind v4 CDN in iframe), [ADR-0003](./0003-panel-information-architecture.md) (Assets panel deferred — the home for grouped tokens UI), [ADR-0007](./0007-user-extensibility.md) (kits + Tailwind `@theme`-file theming), [ADR-0008](./0008-figma-import-strategy.md) (Figma relay — Variables flow via `get_variable_defs`); PRD Story 6.2 (Design tokens / CSS variables — partially shipped, category-grouping + mode-aware AC still open)
@@ -466,3 +466,94 @@ By the end of Phase 2, agents can fully use the typed token surface; the canvas 
 - `packages/app/src/components/VariablesPopover.tsx` — current Topbar UI
 - PRD Story 6.2 — the ship state this ADR evolves
 - [ADR-0008](./0008-figma-import-strategy.md) — relay path for Figma Variables ingest
+
+---
+
+## Addendum (2026-05-04) — Phase 1 implementation status
+
+Phase 1 (per §10 phasing — §§1, 2, 5, 7 data layer, 8) shipped in
+four chunks on `adr-0009-phase-1`. Existing surface (popover, MCP
+`get_variables` / `set_variables`, persistence) continues unchanged
+behaviourally — the new DTCG store sits underneath and projects
+through a flat-shape adapter so every Phase 1 commit is non-breaking
+to consumers.
+
+What landed:
+
+- `67499c8` — **Chunk A: DTCG store + migration + variables.ts adapter.**
+  New `packages/app/src/canvas/tokens.ts` with DTCG types
+  (`Token`, `TokenTree`), module-level mutable store, dot-path
+  operations (get / set / delete / walk), the
+  `pathToCssVariable` ↔ `cssVariableToPath` bijection, all 7 §2
+  validators, key-prefix-first type inference (§8), and the legacy
+  round-trip helpers `inflateFromCssVariables` /
+  `flattenToCssVariables`. `variables.ts` refactored from a flat-Map
+  store into a thin adapter — public API unchanged so the popover,
+  MCP handlers, and persistence's `getExtras` channel keep working.
+- `563a906` — **Chunk B: OKLCH-canonical color storage + colorSpace.**
+  New `color-conversion.ts` — pure CSS Color 4 math, no deps. Parsers
+  for hex / rgb() / hsl() / oklch() (full unit coverage); conversion
+  path sRGB → linear sRGB → OKLab (Björn Ottosson's pre-composed
+  matrices) → OKLCH; `formatOKLCH` rounds to 4 / 4 / 3 decimals for
+  stable round-trip. `inflateFromCssVariables` now canonicalises
+  color tokens and tags `$extensions.designjs.colorSpace`.
+  Unrecognised literals (named colors, `currentColor`, `var(...)`)
+  preserve raw value — graceful degradation per §2.
+- `dcd055e` — **Chunk C: Tailwind v4 `@theme` dual-emit + collisions.**
+  New `token-emit.ts` walks the tree and emits two CSS blocks:
+  `@theme { ... }` for tokens whose CSS variable matches a Tailwind
+  v0.3 namespace (17 prefixes — color, spacing, font, radius,
+  shadow, ease, etc.), `:root { --x: ...; }` for everything else.
+  Collision detection per §7 — paths that collapse to the same CSS
+  variable name are *omitted* from emitted CSS (no last-write-wins
+  ambiguity reaches the canvas) and reported in the result's
+  `collisions: Collision[]` array so UI can surface the badge.
+  Output is sorted for deterministic round-trip.
+- `7742953` — **Chunk D: DTCG file import / export.** New `token-io.ts`
+  with `parseDTCG` / `serialiseDTCG`. Color tokens canonicalise on
+  parse but preserve any existing `colorSpace` annotation so external
+  DTCG files round-trip with their origin metadata intact.
+  `$description` and proprietary `$extensions` (Tokens Studio,
+  custom) pass through opaquely. Pretty-printed 2-space-indent
+  output; round-trip target met.
+
+Test coverage at Phase 1 close: **95/95** vitest specs across four
+files green; typecheck clean; existing legacy-flat consumers
+unchanged.
+
+What's deferred (per §10):
+
+- **Phase 2 (v0.4-α):** §3 modes, §4 aliases, §6 new typed MCP tools
+  (replace legacy at the same time — no deprecation per pre-public
+  release), §7a kit cascade. **Unblocks ADR-0007** at Phase 2 close.
+- **Phase 3 (v0.4-β):** §9 surfaces — full modal "Variables view",
+  deselected-state sidebar section, Topbar global mode switcher,
+  per-frame override UI, layer-tree mode-tag pill, `=` shortcut +
+  chip-in-input + right-click apply, alias UX. Topbar `Cmd+Shift+E`
+  DTCG export action also lands here (data-layer is in Chunk D
+  already).
+
+Three notes worth recording:
+
+- **The popover continues to work unchanged in Phase 1.** It reads
+  via the legacy `variables.ts` adapter, which projects DTCG to the
+  flat shape. Phase 3 replaces the popover wholesale with the new
+  three-surface UX (§9). Until then it shows default-mode values
+  with no mode/alias affordance — explicitly a transition state, not
+  the destination.
+- **`@theme` emission is wired but not yet *injected* into iframes.**
+  `emitTokens` returns CSS strings; consuming the strings (a runtime
+  `<style>` injected into each frame's `<head>` via the existing
+  `canvas:frame:load` listener in `App.tsx`) is a thin wiring step
+  that lands in Phase 2 alongside modes — modes share the injection
+  surface and we want to wire it once.
+- **Color canonicalisation is one-way today.** OKLCH → sRGB
+  conversion (for ADR-0008 relay export to Figma) is not yet
+  implemented; the colorSpace annotation flags the original source
+  space so Phase 2 / ADR-0008's relay can do the export-edge clamp.
+  v0.3 readers (browsers, Style Dictionary, Tokens Studio) all
+  understand OKLCH natively.
+
+---
+
+*End of ADR-0009.*
