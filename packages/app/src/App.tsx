@@ -10,16 +10,42 @@ import { attachPasteImport, importPastedHtml } from "./canvas/paste-import.js";
 import { attachPersistence, loadProject, saveProject } from "./canvas/persistence.js";
 import {
   getVariables,
+  loadTokens,
   loadVariables,
   resetVariablesStore,
   setVariables,
 } from "./canvas/variables.js";
+import { getTokenTree, type TokenTree } from "./canvas/tokens.js";
 import { BridgeClient } from "./bridge/client.js";
 import { buildHandlers } from "./bridge/handlers.js";
 import { Topbar, type SaveStatus } from "./components/Topbar.js";
 import { Shell } from "./components/Shell.js";
 import { CommandPalette } from "./components/CommandPalette.js";
 import { TooltipProvider } from "./components/ui/tooltip.js";
+
+/**
+ * Hydrate the design-tokens store from saved data, preferring the new
+ * DTCG-shaped `tokens` field and falling back to the legacy
+ * `cssVariables` flat-map with a one-time migration log per
+ * ADR-0009 §8. Both fields absent → no-op (fresh canvas).
+ */
+function applyTokenStateFromSaved(
+  editor: Editor,
+  tokens: TokenTree | undefined,
+  cssVariables: Record<string, string> | undefined,
+): void {
+  if (tokens) {
+    loadTokens(editor, tokens);
+    return;
+  }
+  if (cssVariables && Object.keys(cssVariables).length > 0) {
+    console.info(
+      "[designjs] migrating legacy cssVariables → DTCG tokens (ADR-0009 §8). " +
+        "Saved file will use the new shape on next save.",
+    );
+    loadVariables(editor, cssVariables);
+  }
+}
 
 export function App() {
   const [connected, setConnected] = useState(false);
@@ -84,12 +110,13 @@ export function App() {
     try {
       const saved = await loadProject();
       if (saved) {
-        const { cssVariables, ...projectData } = saved as {
+        const { tokens, cssVariables, ...projectData } = saved as {
+          tokens?: TokenTree;
           cssVariables?: Record<string, string>;
           [k: string]: unknown;
         };
         editor.loadProjectData(projectData);
-        if (cssVariables) loadVariables(editor, cssVariables);
+        applyTokenStateFromSaved(editor, tokens, cssVariables);
       }
     } catch (err) {
       console.warn("[designjs] load failed:", err);
@@ -142,17 +169,18 @@ export function App() {
       save: () =>
         saveProject({
           ...(editor.getProjectData() as Record<string, unknown>),
-          cssVariables: getVariables(),
+          tokens: getTokenTree(),
         }),
       load: async () => {
         const data = await loadProject();
         if (data) {
-          const { cssVariables, ...projectData } = data as {
+          const { tokens, cssVariables, ...projectData } = data as {
+            tokens?: TokenTree;
             cssVariables?: Record<string, string>;
             [k: string]: unknown;
           };
           editor.loadProjectData(projectData);
-          if (cssVariables) loadVariables(editor, cssVariables);
+          applyTokenStateFromSaved(editor, tokens, cssVariables);
         }
         return data;
       },
@@ -197,7 +225,7 @@ export function App() {
         setSaveStatus("error");
         setSaveError(err.message);
       },
-      getExtras: () => ({ cssVariables: getVariables() }),
+      getExtras: () => ({ tokens: getTokenTree() }),
     });
 
     const handlers = buildHandlers(editor);
@@ -223,7 +251,7 @@ export function App() {
     try {
       await saveProject({
         ...(editor.getProjectData() as Record<string, unknown>),
-        cssVariables: getVariables(),
+        tokens: getTokenTree(),
       });
       setSaveStatus("saved");
       setSaveError(null);
