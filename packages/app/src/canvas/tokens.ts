@@ -14,6 +14,8 @@
  * MCP surface (§6) and Phase 3 swaps the popover (§9).
  */
 
+import { canonicaliseColor } from "./color-conversion.js";
+
 /** DTCG primitive types shipping in v0.3 (ADR-0009 §2). */
 export type DTCGType =
   | "color"
@@ -23,6 +25,14 @@ export type DTCGType =
   | "cubicBezier"
   | "fontFamily"
   | "fontWeight";
+
+/**
+ * Re-export of {@link import("./color-conversion.js").ColorSpace} so
+ * downstream callers can import token-type-related symbols from one
+ * place. Stored on color tokens at `$extensions.designjs.colorSpace`
+ * per ADR-0009 §2.
+ */
+export type { ColorSpace } from "./color-conversion.js";
 
 /**
  * DTCG token leaf. `$type` is optional in DTCG core but we always
@@ -320,13 +330,66 @@ export function inflateFromCssVariables(
   flat: Record<string, string>,
 ): TokenTree {
   const tree: TokenTree = {};
+  let nonOklchColors = 0;
   for (const [cssVar, value] of Object.entries(flat)) {
     const path = cssVariableToPath(cssVar);
     const type = inferType(cssVar, value);
-    const token: Token = type ? { $type: type, $value: value } : { $value: value };
+    let token: Token;
+    if (type === "color") {
+      const canon = canonicaliseColor(value);
+      if (canon) {
+        token = {
+          $type: "color",
+          $value: canon.value,
+          $extensions: { "designjs.colorSpace": canon.sourceSpace },
+        };
+        if (canon.sourceSpace !== "oklch") nonOklchColors += 1;
+      } else {
+        // Unrecognised color literal (e.g. named-color, currentColor,
+        // var(...) reference). Store as-is without a colorSpace tag —
+        // graceful degradation per ADR-0009 §2.
+        token = { $type: "color", $value: value };
+      }
+    } else if (type) {
+      token = { $type: type, $value: value };
+    } else {
+      token = { $value: value };
+    }
     setToken(tree, path, token);
   }
+  if (nonOklchColors > 0) {
+    // One-time per-load info log — ADR-0009 §2 conversion notice. Quiet
+    // by design: a single line summarising the count, not per-token.
+    console.info(
+      `[designjs] inflateFromCssVariables: converted ${nonOklchColors} non-OKLCH color${
+        nonOklchColors === 1 ? "" : "s"
+      } to OKLCH (sRGB inputs preserved via $extensions.designjs.colorSpace).`,
+    );
+  }
   return tree;
+}
+
+/**
+ * Create a color token with OKLCH-canonical `$value` from any supported
+ * CSS color string. Returns the Token; caller is responsible for
+ * placing it via {@link setToken}. Unrecognised inputs return a Token
+ * with the raw `$value` and no `colorSpace` annotation — same
+ * graceful-degradation policy as the migration helper.
+ */
+export function makeColorToken(rawValue: string, description?: string): Token {
+  const canon = canonicaliseColor(rawValue);
+  if (canon) {
+    const token: Token = {
+      $type: "color",
+      $value: canon.value,
+      $extensions: { "designjs.colorSpace": canon.sourceSpace },
+    };
+    if (description) token.$description = description;
+    return token;
+  }
+  const token: Token = { $type: "color", $value: rawValue };
+  if (description) token.$description = description;
+  return token;
 }
 
 /**

@@ -217,14 +217,44 @@ describe("inferType", () => {
 });
 
 describe("inflateFromCssVariables / flattenToCssVariables (legacy round-trip)", () => {
-  it("preserves keys and values across a round trip", () => {
+  it("preserves keys and non-color values across a round trip", () => {
+    // Non-color values round-trip losslessly. Color values get OKLCH-
+    // canonicalised on inflation per ADR-0009 §2 (Chunk B), so round-
+    // trip equality is asserted only on the non-color subset here; the
+    // color-canonicalisation behaviour is covered separately below.
     const flat: Record<string, string> = {
-      "--color-brand-primary": "#ff3366",
       "--space-4": "16px",
       "--font-weight-bold": "700",
     };
     const tree = inflateFromCssVariables(flat);
     expect(flattenToCssVariables(tree)).toEqual(flat);
+  });
+
+  it("canonicalises color values to OKLCH on inflation (ADR-0009 §2)", () => {
+    const tree = inflateFromCssVariables({
+      "--color-brand-primary": "#ff3366",
+    });
+    const token = getToken(tree, "color.brand.primary");
+    expect(token?.$type).toBe("color");
+    expect(String(token?.$value)).toMatch(/^oklch\(/);
+    expect(token?.$extensions).toEqual({ "designjs.colorSpace": "srgb" });
+  });
+
+  it("passes already-OKLCH color values through with sourceSpace=oklch", () => {
+    const tree = inflateFromCssVariables({
+      "--color-brand-primary": "oklch(0.65 0.23 13.3)",
+    });
+    const token = getToken(tree, "color.brand.primary");
+    expect(token?.$extensions).toEqual({ "designjs.colorSpace": "oklch" });
+  });
+
+  it("preserves unrecognised color literals (e.g. var() refs) without colorSpace", () => {
+    const tree = inflateFromCssVariables({
+      "--color-aliased": "var(--color-brand-primary)",
+    });
+    const token = getToken(tree, "color.aliased");
+    expect(token?.$value).toBe("var(--color-brand-primary)");
+    expect(token?.$extensions).toBeUndefined();
   });
 
   it("attaches inferred $type during inflation", () => {
