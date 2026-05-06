@@ -101,12 +101,15 @@ describe("validateValue", () => {
 });
 
 describe("cssVariableToPath / pathToCssVariable", () => {
-  it("round-trips simple paths", () => {
-    expect(cssVariableToPath("--color-brand-primary")).toBe("color.brand.primary");
-    expect(pathToCssVariable("color.brand.primary")).toBe("--color-brand-primary");
+  it("treats a CSS variable name as a single path segment", () => {
+    // Hyphens in CSS variable names aren't hierarchy separators (see
+    // header comment in tokens.ts) — `--color-brand-primary` is one
+    // token with one name, not three nested groups.
+    expect(cssVariableToPath("--color-brand-primary")).toBe("color-brand-primary");
+    expect(pathToCssVariable("color-brand-primary")).toBe("--color-brand-primary");
   });
 
-  it("round-trips short paths", () => {
+  it("handles a single-word variable", () => {
     expect(cssVariableToPath("--brand")).toBe("brand");
     expect(pathToCssVariable("brand")).toBe("--brand");
   });
@@ -117,10 +120,23 @@ describe("cssVariableToPath / pathToCssVariable", () => {
       "--space-4",
       "--font-weight-bold",
       "--radius-lg",
+      "--brand-primary",
+      "--brand-primary-hover",
     ];
     for (const cssVar of samples) {
       expect(pathToCssVariable(cssVariableToPath(cssVar))).toBe(cssVar);
     }
+  });
+
+  it("preserves prefix-overlapping CSS variable names without collision", () => {
+    // Regression: previously `--brand-primary` was split into the path
+    // `brand.primary` and `--brand-primary-hover` into `brand.primary.hover`,
+    // causing the second write to silently destroy the first when both
+    // landed in the same tree (Figma → DesignJS relay payloads routinely
+    // mix names like these).
+    expect(cssVariableToPath("--brand-primary")).not.toBe(
+      cssVariableToPath("--brand-primary-hover"),
+    );
   });
 });
 
@@ -234,7 +250,7 @@ describe("inflateFromCssVariables / flattenToCssVariables (legacy round-trip)", 
     const tree = inflateFromCssVariables({
       "--color-brand-primary": "#ff3366",
     });
-    const token = getToken(tree, "color.brand.primary");
+    const token = getToken(tree, "color-brand-primary");
     expect(token?.$type).toBe("color");
     expect(String(token?.$value)).toMatch(/^oklch\(/);
     expect(token?.$extensions).toEqual({ "designjs.colorSpace": "srgb" });
@@ -244,7 +260,7 @@ describe("inflateFromCssVariables / flattenToCssVariables (legacy round-trip)", 
     const tree = inflateFromCssVariables({
       "--color-brand-primary": "oklch(0.65 0.23 13.3)",
     });
-    const token = getToken(tree, "color.brand.primary");
+    const token = getToken(tree, "color-brand-primary");
     expect(token?.$extensions).toEqual({ "designjs.colorSpace": "oklch" });
   });
 
@@ -252,7 +268,7 @@ describe("inflateFromCssVariables / flattenToCssVariables (legacy round-trip)", 
     const tree = inflateFromCssVariables({
       "--color-aliased": "var(--color-brand-primary)",
     });
-    const token = getToken(tree, "color.aliased");
+    const token = getToken(tree, "color-aliased");
     expect(token?.$value).toBe("var(--color-brand-primary)");
     expect(token?.$extensions).toBeUndefined();
   });
@@ -262,8 +278,8 @@ describe("inflateFromCssVariables / flattenToCssVariables (legacy round-trip)", 
       "--color-brand-primary": "#ff3366",
       "--space-4": "16px",
     });
-    expect(getToken(tree, "color.brand.primary")?.$type).toBe("color");
-    expect(getToken(tree, "space.4")?.$type).toBe("dimension");
+    expect(getToken(tree, "color-brand-primary")?.$type).toBe("color");
+    expect(getToken(tree, "space-4")?.$type).toBe("dimension");
   });
 
   it("leaves $type undefined when nothing matches", () => {
@@ -274,5 +290,22 @@ describe("inflateFromCssVariables / flattenToCssVariables (legacy round-trip)", 
   it("handles empty input as empty tree", () => {
     expect(inflateFromCssVariables({})).toEqual({});
     expect(flattenToCssVariables({})).toEqual({});
+  });
+
+  it("preserves all keys when names share a hyphenated prefix (ADR-0008 relay regression)", () => {
+    // The Figma → DesignJS Path A relay routinely emits names like
+    // `--brand-primary` alongside `--brand-primary-hover`. Earlier path-
+    // inference logic split both into a tree where the longer name
+    // overwrote the shorter one. Both must survive the round-trip
+    // (values are colour-canonicalised, so we assert presence + key
+    // distinctness rather than byte equality).
+    const tree = inflateFromCssVariables({
+      "--brand-primary": "oklch(0.55 0.2 260)",
+      "--brand-primary-hover": "oklch(0.5 0.22 260)",
+    });
+    const restored = flattenToCssVariables(tree);
+    expect(restored["--brand-primary"]).toBeDefined();
+    expect(restored["--brand-primary-hover"]).toBeDefined();
+    expect(restored["--brand-primary"]).not.toBe(restored["--brand-primary-hover"]);
   });
 });

@@ -135,13 +135,16 @@ export function* walkTokens(
 }
 
 // ────────────────────────────────────────────────────────────────────
-// CSS variable ↔ dot-path mapping
+// CSS variable ↔ path mapping
 //
-// `color.brand.primary` ↔ `--color-brand-primary`. Lossless in both
-// directions assuming token-name segments don't contain `-` themselves
-// (Tailwind v4 emission convention; collision detection in Chunk C
-// catches the edge case where `color.brand.primary` and
-// `color.brand-primary` both map to `--color-brand-primary`).
+// `--color-brand-primary` round-trips as a single path segment. Hyphens
+// in CSS variable names are *not* hierarchy separators — recovering tree
+// structure from a flat name is fundamentally ambiguous (e.g.
+// `--brand-primary` and `--brand-primary-hover` collide), and the
+// established design-token tools (Figma Variables, Tokens Studio,
+// Style Dictionary) all source hierarchy from explicit nested input
+// rather than inferring it from CSS. Hierarchy enters this store via
+// the DTCG-shaped `parseDTCG` / `loadTokenTree` paths.
 // ────────────────────────────────────────────────────────────────────
 
 export function pathToCssVariable(path: string): string {
@@ -149,7 +152,7 @@ export function pathToCssVariable(path: string): string {
 }
 
 export function cssVariableToPath(cssVar: string): string {
-  return cssVar.replace(/^--/, "").replace(/-/g, ".");
+  return cssVar.replace(/^--/, "");
 }
 
 // ────────────────────────────────────────────────────────────────────
