@@ -556,4 +556,45 @@ Three notes worth recording:
 
 ---
 
+## Addendum (2026-05-06) — Post-Phase-1 fix: hyphen-as-separator inference removed
+
+Phase 1 Chunk A's `cssVariableToPath` split CSS variable names on `-`
+to derive a tree path (e.g. `--color-brand-primary` → `color.brand.primary`).
+That made the mapping non-injective: writing both `--brand-primary` and
+`--brand-primary-hover` through `set_variables` silently destroyed the
+first because their inferred paths overlapped, and `setToken` clobbers a
+leaf when a deeper path lands on it.
+
+Surfaced as a real failure on the ADR-0008 Path A Figma relay e2e
+(`e7fc44d`), where the fixture mirrors how Figma Variables / Tokens
+Studio / Style Dictionary all emit names in practice — flat CSS-var-
+style with internal hyphens that don't denote hierarchy. None of those
+tools try to recover hierarchy from a flat name; they all source it
+from explicit nested input. Aligning with that — `cssVariableToPath`
+now returns the CSS variable name as a single path segment — fixes the
+relay without precluding the hybrid-hierarchy story for the Phase 2
+MCP surface or the Phase 3 popover, both of which take explicit nested
+input via `parseDTCG` / `loadTokenTree`.
+
+What landed:
+
+- `2055408` — **Drop hyphen-as-separator inference.** `cssVariableToPath`
+  is now `cssVar.replace(/^--/, "")`. Header comment in `tokens.ts`
+  rewritten to record the contract and the established-tools
+  precedent. Two existing tests for the dotted-path inference
+  rewritten to assert the new contract; one regression test asserts
+  that prefix-overlapping names round-trip without one clobbering the
+  other.
+
+Test coverage post-fix: **97/97** vitest specs (was 95/95 — added the
+prefix-collision regression and a `pathToCssVariable` distinctness
+assertion); ADR-0008 Path A relay e2e now passes end-to-end.
+
+The §1 "hybrid hierarchy" decision is unchanged — hierarchy always
+came from DTCG-shaped input, not from the legacy CSS-var adapter.
+This fix removes a sharp edge from the legacy path that the §10
+Phase 1 scope had glossed over.
+
+---
+
 *End of ADR-0009.*
